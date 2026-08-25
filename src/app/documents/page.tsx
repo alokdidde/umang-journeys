@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Baby, Car, Download, Files, Filter, LoaderCircle, Plus, Search, ShieldCheck } from "lucide-react";
+import { ArrowRight, Baby, Car, Download, Files, Filter, HeartPulse, LoaderCircle, Plus, Search, ShieldCheck } from "lucide-react";
 import { DocumentDesk } from "@/components/document-desk";
 import { useCitizenHub } from "@/components/use-citizen-hub";
 import type { DocumentLibraryItem } from "@/domain/citizen-hub";
@@ -44,7 +44,7 @@ export default function DocumentsPage() {
 }
 
 function DocumentRow({ document }: { document: DocumentLibraryItem }) {
-  const icon = document.category === "vehicle" ? <Car /> : document.category === "family" ? <Baby /> : <Files />;
+  const icon = document.category === "vehicle" ? <Car /> : document.category === "family" ? <Baby /> : document.category === "health" ? <HeartPulse /> : <Files />;
   return <article className="document-row">
     <span className={`library-document-icon ${document.category}`}>{icon}</span>
     <div className="document-row-primary"><strong>{document.title}</strong><span>{document.fileName ?? "Interactive service record"}</span><small>{document.sourceLabel} · {formatDate(document.createdAt)}</small></div>

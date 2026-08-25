@@ -13,6 +13,7 @@ type JourneyContextValue = {
   submitRegistration: (id: string) => Promise<boolean>;
   advanceService: (id: string, nodeKey: string) => Promise<boolean>;
   completeVehicleDetails: (id: string, facts: Record<string, string>) => Promise<boolean>;
+  completeHealthProfile: (id: string, facts: Record<string, string>) => Promise<boolean>;
   updateJourneyFacts: (id: string, facts: Record<string, string>) => Promise<boolean>;
   addEvidence: (id: string, type: EvidenceType, file?: File) => Promise<boolean>;
   resetJourney: () => Promise<void>;
@@ -92,6 +93,22 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
+  const completeHealthProfile = useCallback(async (id: string, facts: Record<string, string>) => {
+    dispatch({ type: "operation_started" });
+    try {
+      const journey = await requestJson<ServerJourney>(`/api/journeys/${encodeURIComponent(id)}/nodes/health_profile/submit`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...facts, idempotencyKey: crypto.randomUUID() }),
+      });
+      dispatch({ type: "server_journey_loaded", journey });
+      return true;
+    } catch (error) {
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Health profile could not be confirmed." });
+      return false;
+    }
+  }, [dispatch]);
+
   const addEvidence = useCallback(async (id: string, type: EvidenceType, file?: File) => {
     dispatch({ type: "operation_started" });
     try {
@@ -157,7 +174,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
-  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, advanceService, completeVehicleDetails, updateJourneyFacts, addEvidence, resetJourney }}>{children}</JourneyContext.Provider>;
+  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, advanceService, completeVehicleDetails, completeHealthProfile, updateJourneyFacts, addEvidence, resetJourney }}>{children}</JourneyContext.Provider>;
 }
 
 export function useJourney() {

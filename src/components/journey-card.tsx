@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Baby, Car, Check, Clock3, CreditCard, FileText, Gift, HeartPulse, IdCard, ShieldCheck, Syringe } from "lucide-react";
+import { ArrowRight, Baby, Car, Check, Clock3, CreditCard, FileHeart, FileText, Gift, HeartPulse, IdCard, Landmark, ShieldCheck, ShieldPlus, Syringe, UserRound } from "lucide-react";
 import type { JourneySummary } from "@/domain/journey-summary";
 
 export function JourneyCard({ journey }: { journey: JourneySummary }) {
@@ -8,7 +8,7 @@ export function JourneyCard({ journey }: { journey: JourneySummary }) {
     <article className="home-journey-card panel">
       <header>
         <span className={`journey-avatar ${journey.subject.type}`}>
-          {journey.subject.type === "vehicle" ? <Car /> : <Baby />}
+          {journey.subject.type === "vehicle" ? <Car /> : journey.subject.type === "person" ? <UserRound /> : <Baby />}
         </span>
         <div><p>{journey.title}</p><h3>{journey.subject.displayName}</h3></div>
       </header>
@@ -33,5 +33,10 @@ function ActionIcon({ nodeKey }: { nodeKey: string }) {
   if (nodeKey === "fastag_setup") return <CreditCard />;
   if (nodeKey === "compliance_calendar") return <Clock3 />;
   if (nodeKey === "vehicle_details") return <Car />;
+  if (nodeKey === "health_profile") return <UserRound />;
+  if (nodeKey === "coverage_review") return <ShieldPlus />;
+  if (nodeKey === "public_scheme_check") return <Landmark />;
+  if (nodeKey === "abha_records") return <FileHeart />;
+  if (nodeKey === "cashless_readiness") return <HeartPulse />;
   return <Baby />;
 }

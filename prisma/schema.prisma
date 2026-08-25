@@ -41,6 +41,7 @@ enum ExternalActionStatus {
 enum JourneySubjectType {
   CHILD
   VEHICLE
+  PERSON
 }
 
 model UserProfile {

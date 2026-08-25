@@ -23,6 +23,13 @@ describe("deterministic intake fallback", () => {
     expect(result.clarification.key).toBe("vehicle.ownershipTransferred");
   });
 
+  it("does not mistake cashless care for a car journey", () => {
+    const result = deterministicResolve("I want to understand my health insurance and prepare for cashless care in Hyderabad.");
+
+    expect(result.lifeEvent.value).toBe("managing_health_cover");
+    expect(result.clarification.key).toBe("health.currentCover");
+  });
+
   it("prefers Vercel AI Gateway configuration when its key is available", () => {
     expect(createIntakeClientConfig({ AI_GATEWAY_API_KEY: "gateway-key", OPENAI_API_KEY: "direct-key" })).toEqual({
       apiKey: "gateway-key",

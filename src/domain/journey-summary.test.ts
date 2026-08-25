@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compileJourney, completeNode, newBabyTemplate, vehiclePurchaseTemplate } from "./journey-engine";
+import { compileJourney, completeNode, healthInsuranceTemplate, newBabyTemplate, vehiclePurchaseTemplate } from "./journey-engine";
 import { buildJourneySummary } from "./journey-summary";
 
 describe("journey summary", () => {
@@ -41,6 +41,22 @@ describe("journey summary", () => {
 
     expect(summary.title).toBe("Buying a Vehicle");
     expect(summary.nextAction?.href).toBe("/journeys/journey-vehicle/vehicle-details");
+  });
+
+  it("summarises a personal health journey with its profile route", () => {
+    const summary = buildJourneySummary({
+      id: "journey-health",
+      status: "active",
+      subject: { id: "person-1", type: "person", displayName: "Ananya Sharma" },
+      projection: compileJourney(healthInsuranceTemplate),
+      facts: {},
+      serviceRuns: {},
+      createdAt: "2026-08-26T10:00:00.000Z",
+      updatedAt: "2026-08-26T10:00:00.000Z",
+    });
+
+    expect(summary.title).toBe("Health & Insurance");
+    expect(summary.nextAction?.href).toBe("/journeys/journey-health/health-profile");
   });
 
   it("prioritises resumable provider work and includes its partial progress", () => {

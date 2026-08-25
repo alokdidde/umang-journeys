@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Baby, Car, CheckCircle2, LoaderCircle, Plus, Route } from "lucide-react";
+import { Baby, Car, CheckCircle2, LoaderCircle, Plus, Route, ShieldPlus } from "lucide-react";
 import { JourneyCard } from "@/components/journey-card";
 import { useJourney } from "@/components/journey-provider";
 import type { JourneySummary } from "@/domain/journey-summary";
@@ -45,6 +45,6 @@ export default function JourneysPage() {
         <header><div><h2 id="completed-journeys-title">Completed journeys</h2><p>Open a journey whenever you need its records or documents.</p></div><span>{completedJourneys.length}</span></header>
         <div className="journey-card-grid">{completedJourneys.map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>
       </section> : null}
-    </> : <section className="collection-state panel content-layer"><Route /><h2>No journeys yet</h2><p>Start with a life event and the app will assemble the relevant service plan.</p><div><button type="button" className="primary-cta" onClick={() => start("We had a baby yesterday at Apollo Hospital in Hyderabad.")}><Baby />Start a baby journey</button><button type="button" className="secondary-button" onClick={() => start("I bought a used Tata Nexon in Hyderabad.")}><Car />Start a vehicle journey</button></div></section>}
+    </> : <section className="collection-state panel content-layer"><Route /><h2>No journeys yet</h2><p>Start with a life event and the app will assemble the relevant service plan.</p><div><button type="button" className="primary-cta" onClick={() => start("We had a baby yesterday at Apollo Hospital in Hyderabad.")}><Baby />Start a baby journey</button><button type="button" className="secondary-button" onClick={() => start("I bought a used Tata Nexon in Hyderabad.")}><Car />Start a vehicle journey</button><button type="button" className="secondary-button" onClick={() => start("I want to understand my health insurance and prepare for cashless care in Hyderabad.")}><ShieldPlus />Start health &amp; insurance</button></div></section>}
   </main>;
 }

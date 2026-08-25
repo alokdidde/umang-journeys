@@ -3,7 +3,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
 export const intakeSchema = z.object({
-  lifeEvent: z.object({ value: z.enum(["having_a_baby", "buying_a_vehicle"]), confidence: z.number().min(0).max(1) }),
+  lifeEvent: z.object({ value: z.enum(["having_a_baby", "buying_a_vehicle", "managing_health_cover"]), confidence: z.number().min(0).max(1) }),
   facts: z.array(z.object({
     key: z.string(),
     value: z.string(),
@@ -11,7 +11,7 @@ export const intakeSchema = z.object({
     source: z.enum(["user_statement", "derived_from_city", "relative_date_parse"]),
   })),
   clarification: z.object({
-    key: z.enum(["birth.registeredByHospital", "vehicle.ownershipTransferred"]),
+    key: z.enum(["birth.registeredByHospital", "vehicle.ownershipTransferred", "health.currentCover"]),
     question: z.string(),
     choices: z.array(z.enum(["yes", "not_sure", "no"])),
   }),
@@ -40,8 +40,9 @@ export function createIntakeClientConfig(environment: IntakeEnvironment) {
 export function deterministicResolve(statement: string): IntakeResult {
   const normalized = statement.toLowerCase();
   const isBaby = /baby|born|birth|daughter|son/.test(normalized);
-  const isVehicle = /vehicle|car|bike|scooter|motorcycle|nexon|creta/.test(normalized);
-  if (!isBaby && !isVehicle) throw Object.assign(new Error("This prototype currently supports Having a Baby and Buying a Vehicle."), { code: "UNSUPPORTED_LIFE_EVENT" });
+  const isVehicle = /\b(vehicle|car|bike|scooter|motorcycle|nexon|creta)\b/.test(normalized);
+  const isHealth = /health|medical|hospital cover|cashless|abha|ayushman|pm-?jay|health insurance/.test(normalized);
+  if (!isBaby && !isVehicle && !isHealth) throw Object.assign(new Error("This prototype currently supports Having a Baby, Buying a Vehicle, and Health & Insurance."), { code: "UNSUPPORTED_LIFE_EVENT" });
   const city = /vizag|visakhapatnam/.test(normalized) ? "Visakhapatnam" : "Hyderabad";
   const state = city === "Hyderabad" ? "Telangana" : "Andhra Pradesh";
   if (isVehicle) {
@@ -57,6 +58,17 @@ export function deterministicResolve(statement: string): IntakeResult {
         { key: "vehicle.purchaseDate", value: "2026-08-25", confidence: 0.72, source: "relative_date_parse" },
       ],
       clarification: { key: "vehicle.ownershipTransferred", question: "Is the registration certificate already in your name?", choices: ["yes", "not_sure", "no"] },
+    };
+  }
+  if (isHealth) {
+    return {
+      resolver: "deterministic",
+      lifeEvent: { value: "managing_health_cover", confidence: 0.96 },
+      facts: [
+        { key: "person.city", value: city, confidence: 0.9, source: "user_statement" },
+        { key: "person.state", value: state, confidence: 0.9, source: "derived_from_city" },
+      ],
+      clarification: { key: "health.currentCover", question: "Do you have a health policy or government scheme card?", choices: ["yes", "not_sure", "no"] },
     };
   }
   return {
@@ -85,7 +97,7 @@ export async function resolveIntake(statement: string): Promise<IntakeResult> {
     const response = await client.responses.parse({
       model: config.model,
       input: [
-        { role: "developer", content: "Extract only facts explicitly stated or safely normalized. This prototype supports Having a Baby and Buying a Vehicle. For a vehicle, identify whether it is new or used when stated and ask whether ownership has transferred. Never infer official status, eligibility, approval, or identity data. Resolve relative dates against 2026-08-25." },
+        { role: "developer", content: "Extract only facts explicitly stated or safely normalized. This prototype supports Having a Baby, Buying a Vehicle, and Managing Health Cover. For a vehicle, identify whether it is new or used when stated and ask whether ownership has transferred. For health cover, ask whether the person has a health policy or government scheme card. Never infer official status, eligibility, approval, diagnosis, or identity data. Resolve relative dates against 2026-08-25." },
         { role: "user", content: statement },
       ],
       text: { format: zodTextFormat(intakeSchema, "umang_intake") },

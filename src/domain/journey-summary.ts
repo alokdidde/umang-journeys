@@ -4,7 +4,7 @@ import type { SandboxServiceKey, SandboxServiceRun } from "./service-workflows";
 
 export type JourneySubject = {
   id: string;
-  type: "child" | "vehicle";
+  type: "child" | "vehicle" | "person";
   displayName: string;
 };
 
@@ -48,6 +48,7 @@ type JourneyActionSource = Pick<SummarizableJourney, "id" | "projection" | "fact
 function nodeHref(journeyId: string, nodeKey: string) {
   if (nodeKey === "birth_registration") return `/journeys/${journeyId}/birth-registration`;
   if (nodeKey === "vehicle_details") return `/journeys/${journeyId}/vehicle-details`;
+  if (nodeKey === "health_profile") return `/journeys/${journeyId}/health-profile`;
   return `/journeys/${journeyId}/services/${nodeKey}`;
 }
 

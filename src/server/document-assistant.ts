@@ -43,6 +43,17 @@ function documentFacts(analysis: DocumentAnalysis) {
     "insurance.registrationNumber": analysis.fields.registrationNumber,
     "insurance.status": "policy_document_recorded",
   };
+  if (analysis.kind === "health_insurance_policy") return {
+    "person.name": analysis.fields.insuredName,
+    "person.dateOfBirth": analysis.fields.dateOfBirth,
+    "person.state": analysis.fields.state || "Telangana",
+    "health.currentCover": "yes",
+    "health.policyNumber": analysis.fields.policyNumber,
+    "health.insurer": analysis.fields.insurer,
+    "health.sumInsured": analysis.fields.sumInsured,
+    "health.validUntil": analysis.fields.validUntil,
+    "intake.source": "health_insurance_policy",
+  };
   if (analysis.kind === "hospital_discharge_summary") return {
     "child.name": analysis.fields.childName,
     "child.dateOfBirth": analysis.fields.dateOfBirth,
@@ -112,6 +123,9 @@ export class DocumentAssistantService {
     } else if (intake.proposal.toolName === "createChildJourneyFromDischargeSummary") {
       const journey = await this.journeys.create(sessionId, facts, "new-baby.india.v1");
       journeyId = journey.id;
+    } else if (intake.proposal.toolName === "createHealthJourneyFromPolicy") {
+      const journey = await this.journeys.create(sessionId, facts, "health-insurance.india.v1");
+      journeyId = journey.id;
     } else if (journeyId) {
       await this.journeys.updateFacts(sessionId, journeyId, facts);
     }
@@ -147,6 +161,8 @@ export class DocumentAssistantService {
         ? "The vaccination receipt was added and the child’s timeline was refreshed."
         : intake.proposal.toolName === "recordVehicleInsurance"
           ? "The policy was added to the matching vehicle journey."
+          : intake.proposal.toolName === "createHealthJourneyFromPolicy" || intake.proposal.toolName === "recordHealthInsurance"
+            ? "The health policy was added and the health journey is ready for review."
           : intake.proposal.toolName === "createChildJourneyFromDischargeSummary" || intake.proposal.toolName === "updateChildFromDischargeSummary"
             ? "The hospital record was added and the child journey was pre-filled for review."
         : "The RC was attached and the vehicle journey is ready for review.",

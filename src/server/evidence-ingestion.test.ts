@@ -36,4 +36,21 @@ describe("vehicle evidence ingestion", () => {
       },
     });
   });
+
+  it("generates a health policy with person and coverage fields", async () => {
+    const evidence = await createSampleEvidence("health_insurance_policy", {
+      "person.name": "Ananya Sharma",
+      "person.dateOfBirth": "1992-04-18",
+    });
+
+    expect(evidence).toMatchObject({
+      type: "health_insurance_policy",
+      source: "sample",
+      extractedFields: {
+        insuredName: "Ananya Sharma",
+        policyNumber: "HLT-SBX-502781",
+        sumInsured: "INR 500000",
+      },
+    });
+  });
 });

@@ -28,5 +28,15 @@
     "footer": "none",
     "knobs": "low-density/progressive-disclosure/one-action/plain-language",
     "brief": "UMANG Journeys · simplify the dense workspace for a broad, occasional-use public audience"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "Health & Insurance journey",
+    "macrostructure": "Guided Citizen Lane",
+    "nav": "existing familiar top navigation and mobile bottom navigation",
+    "hero": "one current health-cover action",
+    "footer": "none",
+    "knobs": "low-density/sequential/evidence-first/safety-labelled",
+    "brief": "UMANG Journeys · personal health cover, public-scheme screening, ABHA records, and cashless-care readiness"
   }
 ]

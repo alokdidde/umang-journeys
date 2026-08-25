@@ -1,4 +1,4 @@
-export const evidenceTypes = ["vehicle_rc", "sale_agreement", "insurance_policy", "vaccination_receipt", "hospital_discharge_summary"] as const;
+export const evidenceTypes = ["vehicle_rc", "sale_agreement", "insurance_policy", "health_insurance_policy", "vaccination_receipt", "hospital_discharge_summary"] as const;
 
 export type EvidenceType = (typeof evidenceTypes)[number];
 export type EvidenceSource = "user_upload" | "sample";
@@ -25,6 +25,7 @@ export const evidenceLabels: Record<EvidenceType, { title: string; description: 
   vehicle_rc: { title: "Registration certificate (RC)", description: "The vehicle number and chassis suffix must be readable." },
   sale_agreement: { title: "Sale agreement or delivery note", description: "It should identify the buyer, seller, vehicle and sale date." },
   insurance_policy: { title: "Motor insurance policy", description: "The vehicle number, policy number and validity dates must be readable." },
+  health_insurance_policy: { title: "Health policy or scheme card", description: "The insured person, policy or scheme number, validity, and cover details must be readable." },
   vaccination_receipt: { title: "Vaccination receipt", description: "The child’s name, vaccine, date, and provider must be readable." },
   hospital_discharge_summary: { title: "Hospital discharge summary", description: "The child’s name, birth date, hospital, and discharge reference must be readable." },
 };
@@ -32,6 +33,7 @@ export const evidenceLabels: Record<EvidenceType, { title: string; description: 
 export const serviceEvidenceRequirements: Partial<Record<string, EvidenceType[]>> = {
   ownership_transfer: ["vehicle_rc", "sale_agreement"],
   insurance_cover: ["insurance_policy"],
+  coverage_review: ["health_insurance_policy"],
 };
 
 export function missingEvidence(nodeKey: string, evidence: JourneyEvidence[]) {

@@ -74,6 +74,28 @@ describe("document intake proposals", () => {
     });
   });
 
+  it("proposes a personal health journey from a health policy", () => {
+    const proposal = proposeDocumentAction({
+      kind: "health_insurance_policy",
+      confidence: 0.97,
+      fields: {
+        insuredName: "Ananya Sharma",
+        dateOfBirth: "1992-04-18",
+        policyNumber: "HLT-SBX-502781",
+        insurer: "National Health Insurance Sandbox",
+        sumInsured: "INR 500000",
+        validUntil: "2027-03-31",
+      },
+    }, []);
+
+    expect(proposal).toMatchObject({
+      action: "create_health_journey",
+      canApply: true,
+      title: "Start a health journey for Ananya Sharma",
+      toolName: "createHealthJourneyFromPolicy",
+    });
+  });
+
   it("proposes a pre-filled child journey from a hospital discharge summary", () => {
     const proposal = proposeDocumentAction({
       kind: "hospital_discharge_summary",

@@ -34,11 +34,16 @@ export async function POST(request: Request) {
     let source: "sample" | "user_upload";
     let analysis;
 
-    if (sampleType === "vehicle_rc" || sampleType === "vaccination_receipt" || sampleType === "insurance_policy" || sampleType === "hospital_discharge_summary") {
+    if (sampleType === "vehicle_rc" || sampleType === "vaccination_receipt" || sampleType === "insurance_policy" || sampleType === "health_insurance_policy" || sampleType === "hospital_discharge_summary") {
       const journeys = await journeyRepository.list(sessionId);
       const child = journeys.find((journey) => journey.subject.type === "child");
       const vehicle = journeys.find((journey) => journey.subject.type === "vehicle");
-      const sampleFacts: Record<string, string> = sampleType === "vehicle_rc" || sampleType === "insurance_policy" ? {
+      const person = journeys.find((journey) => journey.subject.type === "person");
+      const sampleFacts: Record<string, string> = sampleType === "health_insurance_policy" ? {
+        "person.name": person?.subject.displayName ?? "Ananya Sharma",
+        "person.dateOfBirth": person?.facts["person.dateOfBirth"] ?? "1992-04-18",
+        "person.state": person?.facts["person.state"] ?? "Telangana",
+      } : sampleType === "vehicle_rc" || sampleType === "insurance_policy" ? {
         "vehicle.registrationNumber": vehicle?.facts["vehicle.registrationNumber"] ?? "TS09EV4321",
         "vehicle.makeModel": vehicle?.facts["vehicle.makeModel"] ?? "Tata Nexon EV",
         "vehicle.chassisLast5": "7K2P9",

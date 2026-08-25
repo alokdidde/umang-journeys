@@ -13,6 +13,7 @@ export type AppState = {
   statement: string;
   hospitalRegistered: "yes" | "not_sure" | "no" | null;
   vehicleOwnershipTransferred: "yes" | "not_sure" | "no" | null;
+  healthCoverageKnown: "yes" | "not_sure" | "no" | null;
   projection: JourneyProjection;
   form: RegistrationForm;
   facts: Record<string, string>;
@@ -36,6 +37,7 @@ export type AppAction =
   | { type: "set_statement"; value: string }
   | { type: "set_hospital_registered"; value: "yes" | "not_sure" | "no" }
   | { type: "set_vehicle_ownership_transferred"; value: "yes" | "not_sure" | "no" }
+  | { type: "set_health_coverage_known"; value: "yes" | "not_sure" | "no" }
   | { type: "set_field"; field: keyof RegistrationForm; value: string }
   | { type: "submit_registration" }
   | { type: "server_journey_loaded"; journey: ServerJourney }
@@ -53,6 +55,7 @@ export const pristineState: AppState = {
   statement: goldenStatement,
   hospitalRegistered: null,
   vehicleOwnershipTransferred: null,
+  healthCoverageKnown: null,
   projection: compileJourney(newBabyTemplate),
   form: { childName: "", localWard: "" },
   facts: {},
@@ -72,6 +75,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, hospitalRegistered: action.value };
     case "set_vehicle_ownership_transferred":
       return { ...state, vehicleOwnershipTransferred: action.value };
+    case "set_health_coverage_known":
+      return { ...state, healthCoverageKnown: action.value };
     case "set_field":
       return {
         ...state,

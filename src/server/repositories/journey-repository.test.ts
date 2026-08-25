@@ -30,6 +30,14 @@ describe("journey repository", () => {
     expect(journey.projection.nodes[0]?.key).toBe("vehicle_details");
   });
 
+  it("creates a health journey for the person without treating them as a permanent patient", async () => {
+    const repository = new MemoryJourneyRepository();
+    const journey = await repository.create("session-health", { "person.name": "Ananya Sharma" }, "health-insurance.india.v1");
+
+    expect(journey.subject).toMatchObject({ type: "person", displayName: "Ananya Sharma" });
+    expect(journey.projection.nodes[0]?.key).toBe("health_profile");
+  });
+
   it("completes vehicle details without changing the vehicle template", async () => {
     const repository = new MemoryJourneyRepository();
     const created = await repository.create("session-driver", {}, "vehicle-purchase.india.v1");

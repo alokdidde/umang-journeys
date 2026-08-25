@@ -48,14 +48,17 @@ export class MemoryJourneyRepository implements JourneyRepository {
     if (!template) throw new Error(`Unknown journey template: ${templateId}`);
     const timestamp = now();
     const isVehicle = template.lifeEvent === "buying_a_vehicle";
-    const subjectId = `${isVehicle ? "vehicle" : "child"}-${crypto.randomUUID()}`;
+    const isPerson = template.lifeEvent === "managing_health_cover";
+    const subjectId = `${isVehicle ? "vehicle" : isPerson ? "person" : "child"}-${crypto.randomUUID()}`;
     const journey: StoredJourney = {
       id: `journey-${crypto.randomUUID()}`,
       sessionId,
       status: "active",
       subject: isVehicle
         ? { id: subjectId, type: "vehicle", displayName: facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || "Your vehicle" }
-        : { id: subjectId, type: "child", displayName: facts["child.name"]?.trim() || "Your baby" },
+        : isPerson
+          ? { id: subjectId, type: "person", displayName: facts["person.name"]?.trim() || "Ananya Sharma" }
+          : { id: subjectId, type: "child", displayName: facts["child.name"]?.trim() || "Your baby" },
       projection: compileJourney(template),
       facts,
       serviceRuns: {},
@@ -78,9 +81,10 @@ export class MemoryJourneyRepository implements JourneyRepository {
     if (!journey) return null;
     const childName = facts["child.name"]?.trim();
     const vehicleName = facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim();
+    const personName = facts["person.name"]?.trim();
     const updated = {
       ...journey,
-      subject: childName || vehicleName ? { ...journey.subject, displayName: childName || vehicleName || journey.subject.displayName } : journey.subject,
+      subject: childName || vehicleName || personName ? { ...journey.subject, displayName: childName || vehicleName || personName || journey.subject.displayName } : journey.subject,
       facts: { ...journey.facts, ...facts },
       updatedAt: now(),
     };

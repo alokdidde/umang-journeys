@@ -84,7 +84,7 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
     await analyseForm(form);
   }
 
-  async function analyseSample(sampleType: "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "hospital_discharge_summary") {
+  async function analyseSample(sampleType: "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "health_insurance_policy" | "hospital_discharge_summary") {
     const form = new FormData();
     form.set("sampleType", sampleType);
     await analyseForm(form);
@@ -146,6 +146,7 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
           <button type="button" onClick={() => void analyseSample("vehicle_rc")}><Car />Registration certificate</button>
           <button type="button" onClick={() => void analyseSample("vaccination_receipt")}><Syringe />Vaccination receipt</button>
           <button type="button" onClick={() => void analyseSample("insurance_policy")}><ShieldCheck />Insurance policy</button>
+          <button type="button" onClick={() => void analyseSample("health_insurance_policy")}><ShieldCheck />Health policy</button>
           <button type="button" onClick={() => void analyseSample("hospital_discharge_summary")}><Hospital />Discharge summary</button>
         </div>
       </div> : null}
@@ -196,12 +197,14 @@ function ProposalReview({ document, decide }: { document: DocumentDeskRecord; de
       ? "Vaccination receipt"
       : document.analysis.kind === "insurance_policy"
         ? "Motor insurance policy"
+        : document.analysis.kind === "health_insurance_policy"
+          ? "Health insurance policy"
         : document.analysis.kind === "hospital_discharge_summary"
           ? "Hospital discharge summary"
           : "Unrecognised document";
   return <div className="document-proposal">
     <header>
-      <span>{document.analysis.kind === "vaccination_receipt" ? <Syringe /> : document.analysis.kind === "hospital_discharge_summary" ? <Hospital /> : document.analysis.kind === "insurance_policy" ? <ShieldCheck /> : <FileText />}</span>
+      <span>{document.analysis.kind === "vaccination_receipt" ? <Syringe /> : document.analysis.kind === "hospital_discharge_summary" ? <Hospital /> : document.analysis.kind === "insurance_policy" || document.analysis.kind === "health_insurance_policy" ? <ShieldCheck /> : <FileText />}</span>
       <div><p>{kindLabel} · {Math.round(document.analysis.confidence * 100)}% confidence</p><h3>{proposal.title}</h3><small>{document.fileName} · {formatFileSize(document.size)}</small></div>
       <em><Check />Analysis complete</em>
     </header>

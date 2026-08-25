@@ -24,6 +24,26 @@ _Avoid_: User, account, applicant
 A Journey whose subject is one identified vehicle and whose steps coordinate ownership, coverage, tolling, and compliance outcomes after purchase.
 _Avoid_: Car form, transport application
 
+**Health & Insurance Journey**:
+A Journey for one person that coordinates health-cover understanding, public-scheme screening, digital health records, and preparation for cashless care.
+_Avoid_: Patient application, insurance claim
+
+**Coverage**:
+The financial protection available through a commercial health policy or a public health scheme. A policy and a scheme entitlement remain distinct sources of Coverage.
+_Avoid_: Approval, guaranteed payment
+
+**Eligibility Indication**:
+A sandbox screening result that suggests an official public-scheme check may be worthwhile. It is not an eligibility decision or enrolment.
+_Avoid_: Eligibility, approval
+
+**Cashless Readiness**:
+A prepared set of records, contacts, and pre-authorisation steps for seeking cashless care. The insurer or scheme and network provider still decide authorization.
+_Avoid_: Cashless approved, claim accepted
+
+**Coverage Pack**:
+A synthetic UMANG summary of a person’s Coverage, evidence, and care-readiness steps. It is not an insurance card, policy, or guarantee of payment.
+_Avoid_: Health card, insurance certificate
+
 **Journey Step**:
 One service or outcome within a Journey whose state and dependencies are tracked independently.
 _Avoid_: Screen, page, form

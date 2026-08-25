@@ -32,6 +32,15 @@ function extractedFields(type: EvidenceType, facts: Record<string, string>): Rec
     state: facts["birth.state"] ?? "Telangana",
     dischargeReference: facts["birth.dischargeReference"] ?? "DS-SBX-2048",
   };
+  if (type === "health_insurance_policy") return {
+    insuredName: facts["person.name"] ?? "Ananya Sharma",
+    dateOfBirth: facts["person.dateOfBirth"] ?? "1992-04-18",
+    policyNumber: "HLT-SBX-502781",
+    insurer: "National Health Insurance Sandbox",
+    sumInsured: "INR 500000",
+    validFrom: "2026-04-01",
+    validUntil: "2027-03-31",
+  };
   return {
     policyNumber: "MTR-SBX-884210",
     registrationNumber: facts["vehicle.registrationNumber"] ?? "TS09EV4321",
@@ -45,6 +54,7 @@ function titleFor(type: EvidenceType) {
   if (type === "sale_agreement") return "SYNTHETIC VEHICLE SALE AGREEMENT";
   if (type === "vaccination_receipt") return "SYNTHETIC VACCINATION RECEIPT";
   if (type === "hospital_discharge_summary") return "SYNTHETIC HOSPITAL DISCHARGE SUMMARY";
+  if (type === "health_insurance_policy") return "SYNTHETIC HEALTH INSURANCE POLICY";
   return "SYNTHETIC MOTOR INSURANCE POLICY";
 }
 

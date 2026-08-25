@@ -61,6 +61,26 @@ const services: Record<SandboxServiceKey, Omit<SandboxServiceResult, "receipt">>
     actionType: "build_vehicle_compliance_calendar",
     summary: "A dated vehicle compliance calendar was generated from the available records.",
   },
+  coverage_review: {
+    adapterKey: "sandbox-health-insurer",
+    actionType: "review_health_cover",
+    summary: "A synthetic policy summary was prepared with limits and terms still requiring insurer confirmation.",
+  },
+  public_scheme_check: {
+    adapterKey: "sandbox-nha-eligibility",
+    actionType: "screen_public_health_scheme",
+    summary: "A possible public-scheme pathway was identified for official verification; no eligibility decision was made.",
+  },
+  abha_records: {
+    adapterKey: "sandbox-abdm-personal-records",
+    actionType: "prepare_abha_records",
+    summary: "An ABHA and consent-aware health-record checklist was prepared without creating a real identity.",
+  },
+  cashless_readiness: {
+    adapterKey: "sandbox-health-claims-exchange",
+    actionType: "prepare_cashless_care_pack",
+    summary: "A synthetic cashless-care pack was prepared; no hospital or insurer authorization was requested.",
+  },
 };
 
 export function simulateExternalService(
@@ -271,6 +291,82 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
           { title: "Insurance renewal", meta: "Due 31 July 2027", status: "upcoming" },
         ] }],
         notice: "Dates are planning aids derived from synthetic records; verify every obligation with the issuing authority.",
+      };
+    case "coverage_review":
+      return {
+        title: "Health coverage summary",
+        subtitle: "Plain-language review of the supplied synthetic policy",
+        referenceLabel: "Policy review reference",
+        referenceValue: `HLT-POL-${reference.slice(-8)}`,
+        facts: [
+          { label: "Insured person", value: facts["person.name"] ?? "Ananya Sharma", status: "verified" },
+          { label: "Sum insured", value: "₹5,00,000 · sample policy", status: "information" },
+          { label: "Valid until", value: "31 March 2027", status: "ready" },
+        ],
+        groups: [{ title: "Terms to know before care", description: "These values come from synthetic evidence and demonstrate the questions a real policy review should answer.", items: [
+          { title: "Room entitlement", meta: "Single private room · sample term", status: "information" },
+          { title: "Waiting period", meta: "Two-year condition-specific clause · review with insurer", status: "review" },
+          { title: "Co-payment", meta: "None shown on the sample schedule", status: "information" },
+          { title: "Cashless network", meta: "Hospital must be checked with the insurer before admission", status: "due" },
+        ] }],
+        notice: "This summary does not alter, renew, or guarantee coverage. The policy wording and insurer’s current network determine actual benefits.",
+      };
+    case "public_scheme_check":
+      return {
+        title: "Public-scheme eligibility indication",
+        subtitle: "A possible PM-JAY verification path—not an eligibility decision",
+        referenceLabel: "Screening reference",
+        referenceValue: `NHA-SBX-${reference.slice(-8)}`,
+        facts: [
+          { label: "State", value: facts["person.state"] ?? "Telangana", status: "verified" },
+          { label: "Household size", value: facts["household.size"] ?? "3", status: "verified" },
+          { label: "Result", value: "Official beneficiary check required", status: "review" },
+        ],
+        groups: [{ title: "How to verify", items: [
+          { title: "Use the official beneficiary service", meta: "Search using the accepted identity and household details", status: "due" },
+          { title: "Visit a CSC or empanelled hospital", meta: "Ask for an official beneficiary verification if online matching is unclear", status: "information" },
+          { title: "Keep alternate valid ID available", meta: "The authorized service confirms accepted evidence", status: "information" },
+        ] }],
+        notice: "Only the authorized scheme service can confirm beneficiary status, issue a card, or approve treatment. This sandbox did none of those things.",
+      };
+    case "abha_records":
+      return {
+        title: "ABHA & health-record checklist",
+        subtitle: "A consent-aware plan for digital health identity and records",
+        referenceLabel: "Checklist reference",
+        referenceValue: `ABDM-GUIDE-${reference.slice(-7)}`,
+        facts: [
+          { label: "ABHA status", value: facts["health.abhaStatus"] === "yes" ? "User says an ABHA exists" : "Official check or creation needed", status: "review" },
+          { label: "Sandbox identifier", value: `${reference.slice(0, 2)}-${reference.slice(2, 6)}-${reference.slice(6, 10)}-${reference.slice(10)}`, status: "information" },
+          { label: "Real record sharing", value: "Not performed", status: "verified" },
+        ],
+        groups: [{ title: "Your record controls", items: [
+          { title: "Create or retrieve ABHA", meta: "Use an official ABDM-enabled citizen service", status: "due" },
+          { title: "Discover and link records", meta: "Review each provider record before linking", status: "information" },
+          { title: "Share with time-bound consent", meta: "Choose purpose, recipient, record types, and expiry", status: "information" },
+          { title: "Revoke access when needed", meta: "Manage consent from the chosen PHR application", status: "information" },
+        ] }],
+        notice: "The displayed number is synthetic. No ABHA was created, retrieved, or linked, and no medical record left this evaluation environment.",
+      };
+    case "cashless_readiness":
+      return {
+        title: "Cashless care readiness pack",
+        subtitle: "Documents, contacts, and decisions to prepare before admission",
+        referenceLabel: "Coverage pack reference",
+        referenceValue: `CARE-SBX-${reference.slice(-8)}`,
+        facts: [
+          { label: "Preferred care city", value: facts["health.careCity"] ?? "Hyderabad", status: "verified" },
+          { label: "Network hospital", value: "Must be confirmed before admission", status: "due" },
+          { label: "Cashless authorization", value: "Not requested", status: "information" },
+        ],
+        groups: [{ title: "Keep these ready", items: [
+          { title: "Policy or scheme card", meta: "Use the current, official document—not this summary", status: "ready" },
+          { title: "Government photo ID", meta: "Carry the accepted original or digital credential", status: "ready" },
+          { title: "Doctor and hospital documents", meta: "Admission advice, diagnosis, estimates, and clinical records come from the provider", status: "due" },
+          { title: "Pre-authorisation request", meta: "The network hospital sends this to the insurer or TPA", status: "due" },
+          { title: "Insurer or scheme escalation", meta: "Use the official helpline if authorization is delayed or denied", status: "information" },
+        ] }],
+        notice: "Cashless readiness is not cashless approval. A network provider and the insurer or scheme must complete pre-authorisation for the actual admission.",
       };
   }
 }

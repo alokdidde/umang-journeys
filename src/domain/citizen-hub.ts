@@ -10,7 +10,7 @@ type HubServiceRun = {
 
 export type HubJourneyInput = {
   id: string;
-  subject: { type: "child" | "vehicle"; displayName: string };
+  subject: { type: "child" | "vehicle" | "person"; displayName: string };
   title: string;
   createdAt: string;
   updatedAt: string;
@@ -35,7 +35,7 @@ export type HubDocumentInput = {
 export type DocumentLibraryItem = {
   id: string;
   origin: "uploaded" | "issued";
-  category: "family" | "vehicle" | "identity" | "benefits" | "other";
+  category: "family" | "vehicle" | "health" | "identity" | "benefits" | "other";
   title: string;
   fileName: string | null;
   mimeType: string | null;
@@ -70,12 +70,14 @@ const documentTitles: Record<DocumentKind, string> = {
   vehicle_rc: "Registration certificate",
   vaccination_receipt: "Vaccination receipt",
   insurance_policy: "Motor insurance policy",
+  health_insurance_policy: "Health insurance policy",
   hospital_discharge_summary: "Hospital discharge summary",
   unknown: "Uploaded document",
 };
 
 function documentCategory(kind: DocumentKind): DocumentLibraryItem["category"] {
   if (kind === "vehicle_rc" || kind === "insurance_policy") return "vehicle";
+  if (kind === "health_insurance_policy") return "health";
   if (kind === "vaccination_receipt" || kind === "hospital_discharge_summary") return "family";
   return "other";
 }
@@ -83,11 +85,13 @@ function documentCategory(kind: DocumentKind): DocumentLibraryItem["category"] {
 function evidenceCategory(type: string): DocumentLibraryItem["category"] {
   if (["vehicle_rc", "sale_agreement", "insurance_policy"].includes(type)) return "vehicle";
   if (["vaccination_receipt", "hospital_discharge_summary"].includes(type)) return "family";
+  if (type === "health_insurance_policy") return "health";
   return "other";
 }
 
 function serviceCategory(nodeKey: string): DocumentLibraryItem["category"] {
   if (["ownership_transfer", "insurance_cover", "fastag_setup", "compliance_calendar"].includes(nodeKey)) return "vehicle";
+  if (["coverage_review", "public_scheme_check", "abha_records", "cashless_readiness"].includes(nodeKey)) return "health";
   if (nodeKey === "child_identity") return "identity";
   if (nodeKey === "eligible_benefits") return "benefits";
   return "family";

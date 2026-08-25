@@ -42,6 +42,10 @@ const guidanceLinks: Record<string, { label: string; href: string }> = {
   ownership_transfer: { label: "Read Parivahan transfer guidance", href: "https://mparivahan.parivahan.gov.in/mstatic/english/rc-info-ownership.html" },
   fastag_setup: { label: "Read the current IHMCL FASTag guidance", href: "https://ihmcl.co.in/faq/" },
   compliance_calendar: { label: "Open Parivahan vehicle services", href: "https://parivahan.gov.in/parivahan/" },
+  coverage_review: { label: "Read IRDAI health insurance guidance", href: "https://irdai.gov.in/health-dept" },
+  public_scheme_check: { label: "Read official PM-JAY entitlement guidance", href: "https://nha.gov.in/img/resources/Adhikar-Patra.pdf" },
+  abha_records: { label: "Read ABDM citizen guidance", href: "https://abdm.gov.in/citizens" },
+  cashless_readiness: { label: "Read IRDAI cashless-service guidance", href: "https://irdai.gov.in/faqs-on-health-insurance-regulations" },
 };
 
 function formatTimestamp(value: string) {
@@ -87,7 +91,7 @@ export default function SandboxServicePage() {
   if (!definition || !validKey) return <main className="page workflow-state"><h1>Service not found</h1><p>This journey does not include that service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
   if (state.pending && state.journeyId !== id) return <main className="page workflow-state"><LoaderCircle className="service-spinner" /><p>Loading service workspace…</p></main>;
   if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>Unable to load this service.</h1><p>{state.error}</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
-  if (node?.status === "locked") return <main className="page workflow-state"><LockKeyhole /><h1>This service is still locked.</h1><p>Complete the birth registration to share verified birth details with the sandbox.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
+  if (node?.status === "locked") return <main className="page workflow-state"><LockKeyhole /><h1>This service is still locked.</h1><p>Complete the previous journey step before using this service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
 
   const completed = run?.status === "completed";
   const nextStage = definition.stages[run?.currentStage ?? 0];
@@ -119,8 +123,8 @@ export default function SandboxServicePage() {
 
         <div className="service-workspace-grid">
           <div className="service-main-column">
-            {!run && ["ownership_transfer", "insurance_cover", "fastag_setup", "compliance_calendar"].includes(validKey) ? (
-              <VehicleServicePreparation
+            {!run && ["ownership_transfer", "insurance_cover", "fastag_setup", "compliance_calendar", "coverage_review", "public_scheme_check", "abha_records", "cashless_readiness"].includes(validKey) ? (
+              <ServicePreparation
                 id={id}
                 nodeKey={validKey}
                 evidence={state.evidence}
@@ -196,7 +200,7 @@ export default function SandboxServicePage() {
   );
 }
 
-function VehicleServicePreparation({ id, nodeKey, evidence, facts, pending, error, action, addEvidence, updateFacts, start }: {
+function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, action, addEvidence, updateFacts, start }: {
   id: string;
   nodeKey: SandboxServiceRun["nodeKey"];
   evidence: JourneyEvidence[];
@@ -213,11 +217,22 @@ function VehicleServicePreparation({ id, nodeKey, evidence, facts, pending, erro
   const [consent, setConsent] = useState(false);
   const [mobileLast4, setMobileLast4] = useState(facts["fastag.mobileLast4"] ?? "4421");
   const [issuer, setIssuer] = useState(facts["fastag.issuer"] ?? "NHAI FASTag");
+  const [householdRecord, setHouseholdRecord] = useState(facts["health.householdRecord"] ?? "not_sure");
+  const [careCity, setCareCity] = useState(facts["health.careCity"] ?? "Hyderabad");
   const fastagReady = nodeKey !== "fastag_setup" || (/^\d{4}$/.test(mobileLast4) && issuer.length > 1);
+  const healthReady = nodeKey !== "cashless_readiness" || careCity.trim().length > 1;
 
   async function begin() {
     if (nodeKey === "fastag_setup") {
       const saved = await updateFacts(id, { "fastag.mobileLast4": mobileLast4, "fastag.issuer": issuer });
+      if (!saved) return;
+    }
+    if (nodeKey === "public_scheme_check") {
+      const saved = await updateFacts(id, { "health.householdRecord": householdRecord });
+      if (!saved) return;
+    }
+    if (nodeKey === "cashless_readiness") {
+      const saved = await updateFacts(id, { "health.careCity": careCity });
       if (!saved) return;
     }
     await start();
@@ -239,9 +254,11 @@ function VehicleServicePreparation({ id, nodeKey, evidence, facts, pending, erro
       </article>;
     })}</div> : null}
     {nodeKey === "fastag_setup" ? <div className="fastag-inputs"><label htmlFor="mobile-last-four">Mobile number ending</label><span className="field-helper">Enter only the last four digits; the sandbox simulates OTP verification.</span><input id="mobile-last-four" inputMode="numeric" maxLength={4} pattern="[0-9]{4}" value={mobileLast4} onChange={(event) => setMobileLast4(event.target.value.replace(/\D/g, ""))} /><label htmlFor="fastag-issuer">Issuer</label><select id="fastag-issuer" value={issuer} onChange={(event) => setIssuer(event.target.value)}><option>NHAI FASTag</option><option>State Bank of India</option><option>ICICI Bank</option></select></div> : null}
+    {nodeKey === "public_scheme_check" ? <div className="fastag-inputs"><label htmlFor="household-record">Do you have a ration card or another household record?</label><span className="field-helper">This only changes the verification checklist. It does not decide eligibility.</span><select id="household-record" value={householdRecord} onChange={(event) => setHouseholdRecord(event.target.value)}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></select></div> : null}
+    {nodeKey === "cashless_readiness" ? <div className="fastag-inputs"><label htmlFor="care-city">City where you are likely to seek care</label><span className="field-helper">The final pack will remind you to verify the hospital’s current network status.</span><input id="care-city" value={careCity} onChange={(event) => setCareCity(event.target.value)} /></div> : null}
     <label className="simulation-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span><strong>I authorise this evaluation-only submission</strong><small>No production provider, bank account, or government record will be changed.</small></span></label>
     {error ? <p className="workflow-error" role="alert">{error}</p> : null}
-    <button className="primary-cta service-action" type="button" disabled={pending || missing.length > 0 || !fastagReady || !consent} onClick={() => void begin()}>{pending ? "Saving requirements…" : action}<ArrowRight /></button>
+    <button className="primary-cta service-action" type="button" disabled={pending || missing.length > 0 || !fastagReady || !healthReady || !consent} onClick={() => void begin()}>{pending ? "Saving requirements…" : action}<ArrowRight /></button>
   </section>;
 }
 
@@ -278,7 +295,7 @@ function ServiceArtifactView({ artifact }: { artifact: ServiceArtifact }) {
   return (
     <section className="panel service-artifact">
       <header><span><BadgeCheck /></span><div><p className="eyebrow">Generated result</p><h2>{artifact.title}</h2><p>{artifact.subtitle}</p></div><div className="artifact-reference"><small>{artifact.referenceLabel}</small><strong>{artifact.referenceValue}</strong></div></header>
-      <dl className="artifact-facts">{artifact.facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd>{fact.status ? <span className={`artifact-status ${fact.status}`}>{statusLabel(fact.status)}</span> : null}</div>)}</dl>
+      <dl className="artifact-facts">{artifact.facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd><span>{fact.value}</span>{fact.status ? <span className={`artifact-status ${fact.status}`}>{statusLabel(fact.status)}</span> : null}</dd></div>)}</dl>
       {artifact.groups.map((group) => <section className="artifact-group" key={group.title}><h3>{group.title}</h3>{group.description ? <p>{group.description}</p> : null}<div>{group.items.map((item) => <article key={item.title}><span className={`artifact-item-icon ${item.status}`}>{item.status === "verified" || item.status === "ready" ? <CheckCircle2 /> : item.status === "due" || item.status === "review" ? <Clock3 /> : <Circle />}</span><div><strong>{item.title}</strong><p>{item.meta}</p>{item.detail ? <small>{item.detail}</small> : null}</div><span className={`artifact-status ${item.status}`}>{statusLabel(item.status)}</span></article>)}</div></section>)}
       <p className="artifact-notice"><ShieldCheck />{artifact.notice}</p>
     </section>

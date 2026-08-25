@@ -8,6 +8,10 @@ export const sandboxServiceKeys = [
   "insurance_cover",
   "fastag_setup",
   "compliance_calendar",
+  "coverage_review",
+  "public_scheme_check",
+  "abha_records",
+  "cashless_readiness",
 ] as const;
 
 export type SandboxServiceKey = (typeof sandboxServiceKeys)[number];
@@ -191,6 +195,62 @@ export const serviceWorkflowDefinitions: Record<SandboxServiceKey, ServiceWorkfl
       { key: "check_validity", title: "Validity dates checked", detail: "Insurance, PUC, tax and registration dates were normalised.", progress: 52, state: "waiting_external" },
       { key: "calculate_actions", title: "Next actions calculated", detail: "Due and upcoming obligations were separated without assuming compliance.", progress: 78, state: "running" },
       { key: "publish_calendar", title: "Calendar published", detail: "A synthetic compliance calendar and reminder plan are ready.", progress: 100, state: "completed" },
+    ],
+  },
+  coverage_review: {
+    agency: "Health insurer policy sandbox",
+    agencyShort: "Policy sandbox",
+    action: "Review my health cover",
+    explanation: "Read the supplied policy or scheme card and explain the cover, limits, waiting periods, exclusions, and cashless conditions without confirming a real claim.",
+    turnaround: "About 4 simulated checks",
+    dataShared: ["Insured person and policy reference", "Cover and validity details", "Waiting periods, limits, and network terms"],
+    stages: [
+      { key: "read_cover", title: "Cover document read", detail: "The sandbox extracted the person, policy reference, validity, and sum insured.", progress: 24, state: "running" },
+      { key: "match_person", title: "Insured person matched", detail: "The supplied name and date of birth matched this health journey.", progress: 52, state: "waiting_external" },
+      { key: "explain_terms", title: "Important terms explained", detail: "Waiting periods, room limits, co-pay, exclusions, and cashless terms were separated for review.", progress: 78, state: "running" },
+      { key: "publish_cover", title: "Cover summary prepared", detail: "A synthetic, plain-language coverage summary is ready.", progress: 100, state: "completed" },
+    ],
+  },
+  public_scheme_check: {
+    agency: "National Health Authority eligibility sandbox",
+    agencyShort: "NHA sandbox",
+    action: "Check possible scheme cover",
+    explanation: "Screen the confirmed household facts against a synthetic PM-JAY pathway and clearly separate a possible match from official eligibility.",
+    turnaround: "About 4 simulated checks",
+    dataShared: ["Name, state, and household size", "Existing cover status", "Household-record availability"],
+    stages: [
+      { key: "prepare_household", title: "Household details prepared", detail: "Only the confirmed state, household size, and record availability were used.", progress: 24, state: "running" },
+      { key: "query_pathway", title: "Public-scheme pathway checked", detail: "The sandbox checked whether an official PM-JAY eligibility lookup may be useful.", progress: 52, state: "waiting_external" },
+      { key: "label_uncertainty", title: "Uncertainty labelled", detail: "The result was kept as an indication because official beneficiary verification was not performed.", progress: 78, state: "running" },
+      { key: "publish_guidance", title: "Verification guidance prepared", detail: "The official check options and evidence list are ready.", progress: 100, state: "completed" },
+    ],
+  },
+  abha_records: {
+    agency: "Ayushman Bharat Digital Mission sandbox",
+    agencyShort: "ABDM sandbox",
+    action: "Prepare ABHA & records",
+    explanation: "Prepare a consent-aware ABHA and health-record checklist without creating an identity or sharing a real medical record.",
+    turnaround: "About 4 simulated checks",
+    dataShared: ["Name and date of birth", "Existing ABHA status", "Evaluation-only record-sharing consent"],
+    stages: [
+      { key: "verify_consent", title: "Consent preference recorded", detail: "The simulation recorded permission for this evaluation run only.", progress: 24, state: "running" },
+      { key: "check_existing", title: "Existing status assessed", detail: "The stated ABHA status was used without attempting a real identity lookup.", progress: 52, state: "waiting_external" },
+      { key: "prepare_linking", title: "Record-linking plan prepared", detail: "Discovery, linking, viewing, and time-bound sharing were separated into clear actions.", progress: 78, state: "running" },
+      { key: "publish_checklist", title: "ABHA checklist ready", detail: "A synthetic identity and records checklist is ready.", progress: 100, state: "completed" },
+    ],
+  },
+  cashless_readiness: {
+    agency: "Health claims exchange sandbox",
+    agencyShort: "Claims sandbox",
+    action: "Build my cashless care pack",
+    explanation: "Combine the cover summary, public-scheme indication, and health-record plan into practical steps for seeking cashless care.",
+    turnaround: "About 4 simulated checks",
+    dataShared: ["Coverage summary and policy reference", "Preferred care city", "Documents needed for pre-authorisation"],
+    stages: [
+      { key: "collect_cover", title: "Coverage records collected", detail: "The synthetic policy summary and public-scheme indication were brought together.", progress: 24, state: "running" },
+      { key: "check_network", title: "Network check prepared", detail: "The sandbox prepared a hospital-network verification step without asserting empanelment.", progress: 52, state: "waiting_external" },
+      { key: "assemble_documents", title: "Pre-authorisation pack assembled", detail: "Identity, policy, clinical, and provider documents were grouped by who supplies them.", progress: 78, state: "running" },
+      { key: "publish_pack", title: "Care-readiness pack published", detail: "A synthetic emergency checklist and escalation path are ready.", progress: 100, state: "completed" },
     ],
   },
 };

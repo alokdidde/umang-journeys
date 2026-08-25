@@ -1,4 +1,4 @@
-export type DocumentKind = "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "hospital_discharge_summary" | "unknown";
+export type DocumentKind = "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "health_insurance_policy" | "hospital_discharge_summary" | "unknown";
 
 export type DocumentAnalysis = {
   kind: DocumentKind;
@@ -8,17 +8,17 @@ export type DocumentAnalysis = {
 
 export type JourneyMatchCandidate = {
   id: string;
-  subject: { type: "child" | "vehicle"; displayName: string };
+  subject: { type: "child" | "vehicle" | "person"; displayName: string };
   facts: Record<string, string>;
 };
 
 export type DocumentProposal = {
-  action: "create_vehicle_journey" | "update_vehicle_journey" | "record_vaccination" | "record_vehicle_insurance" | "create_child_journey" | "update_child_journey" | "needs_review";
+  action: "create_vehicle_journey" | "update_vehicle_journey" | "record_vaccination" | "record_vehicle_insurance" | "create_health_journey" | "record_health_insurance" | "create_child_journey" | "update_child_journey" | "needs_review";
   canApply: boolean;
   targetJourneyId: string | null;
   title: string;
   description: string;
-  toolName: "createVehicleJourneyFromRC" | "updateVehicleFromRC" | "recordVaccination" | "recordVehicleInsurance" | "createChildJourneyFromDischargeSummary" | "updateChildFromDischargeSummary" | null;
+  toolName: "createVehicleJourneyFromRC" | "updateVehicleFromRC" | "recordVaccination" | "recordVehicleInsurance" | "createHealthJourneyFromPolicy" | "recordHealthInsurance" | "createChildJourneyFromDischargeSummary" | "updateChildFromDischargeSummary" | null;
   changes: Array<{ label: string; value: string }>;
 };
 
@@ -93,6 +93,32 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
         { label: "Registration number", value: analysis.fields.registrationNumber },
         { label: "Policy number", value: analysis.fields.policyNumber },
         { label: "Insurer", value: analysis.fields.insurer },
+        { label: "Valid until", value: analysis.fields.validUntil },
+      ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
+    };
+  }
+
+  if (analysis.kind === "health_insurance_policy") {
+    const insuredName = analysis.fields.insuredName?.trim();
+    const dateOfBirth = analysis.fields.dateOfBirth;
+    const matches = journeys.filter((journey) => journey.subject.type === "person" && (
+      Boolean(insuredName && journey.subject.displayName.trim().toLocaleLowerCase("en-IN") === insuredName.toLocaleLowerCase("en-IN")) ||
+      Boolean(dateOfBirth && journey.facts["person.dateOfBirth"] === dateOfBirth)
+    ));
+    const match = matches.length === 1 ? matches[0] : null;
+    const complete = Boolean(insuredName && analysis.fields.policyNumber && analysis.fields.validUntil);
+    return {
+      action: match ? "record_health_insurance" : "create_health_journey",
+      canApply: analysis.confidence >= 0.8 && complete && matches.length <= 1,
+      targetJourneyId: match?.id ?? null,
+      title: match ? `Add health cover for ${match.subject.displayName}` : `Start a health journey for ${insuredName || "this person"}`,
+      description: match ? "Attach the policy and make it available to the coverage review." : "Create a Health & Insurance journey and pre-fill the supported policy details for review.",
+      toolName: match ? "recordHealthInsurance" : "createHealthJourneyFromPolicy",
+      changes: [
+        { label: "Insured person", value: insuredName },
+        { label: "Policy number", value: analysis.fields.policyNumber },
+        { label: "Insurer", value: analysis.fields.insurer },
+        { label: "Sum insured", value: analysis.fields.sumInsured },
         { label: "Valid until", value: analysis.fields.validUntil },
       ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
     };

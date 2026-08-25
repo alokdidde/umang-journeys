@@ -16,6 +16,9 @@ Dials: variance 3, motion 2, density 3, art direction 6
 - https://www.digilocker.gov.in/web/about/faq — viewed 2026-08-26.
 - https://design-system.service.gov.uk/components/task-list/ — viewed 2026-08-26.
 - https://design-system.service.gov.uk/patterns/navigate-a-service/ — viewed 2026-08-26.
+- https://irdai.gov.in/health-dept — viewed 2026-08-26.
+- https://abdm.gov.in/citizens — viewed 2026-08-26.
+- https://nha.gov.in/img/resources/Adhikar-Patra.pdf — viewed 2026-08-26.
 
 ## Borrow
 - Palette/material: preserve UMANG blue, warm white surfaces, and restrained purple AI emphasis.
@@ -23,6 +26,7 @@ Dials: variance 3, motion 2, density 3, art direction 6
 - Layout/composition: one reading lane, one next action, vertical task lists, and progressive disclosure.
 - Motion/interaction: short state feedback only; no scroll storytelling or decorative motion.
 - Asset language: status icons, document previews, and journey glyphs that carry meaning.
+- Health journeys: surface policy limits and verification gaps as decisions, and keep eligibility, identity, and cashless approval explicitly outside the sandbox result.
 
 ## Avoid
 - Permanent side navigation, KPI strips, two-column workbenches, and equal-weight information walls.

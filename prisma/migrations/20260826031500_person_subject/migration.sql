@@ -1,0 +1,1 @@
+ALTER TYPE "JourneySubjectType" ADD VALUE IF NOT EXISTS 'PERSON';

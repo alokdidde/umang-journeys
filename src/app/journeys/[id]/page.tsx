@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, Car, CheckCircle2, FileCheck2, LockKeyhole, MapPin, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, Car, CheckCircle2, FileCheck2, HeartPulse, LockKeyhole, MapPin, ShieldCheck, UserRound, Users } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { journeyIcons } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
@@ -18,6 +18,7 @@ export default function JourneyRevealPage() {
   if (state.pending && state.journeyId !== id) return <main className="page workflow-state"><p>Loading your journey…</p></main>;
   if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>We couldn’t load this journey.</h1><p>{state.error}</p><Link href="/intake" className="primary-cta">Start again</Link></main>;
   if (state.projection.templateId === "vehicle-purchase.india.v1") return <VehicleJourney id={id} />;
+  if (state.projection.templateId === "health-insurance.india.v1") return <HealthInsuranceJourney id={id} />;
   const nextAction = selectJourneyNextAction({ id, projection: state.projection, facts: state.facts, serviceRuns: state.serviceRuns });
   return (
     <main className="page journey-page">
@@ -42,6 +43,27 @@ export default function JourneyRevealPage() {
       <JourneySteps id={id} title="Your baby’s steps" />
     </main>
   );
+}
+
+function HealthInsuranceJourney({ id }: { id: string }) {
+  const { state } = useJourney();
+  const nextAction = selectJourneyNextAction({ id, projection: state.projection, facts: state.facts, serviceRuns: state.serviceRuns });
+  return <main className="page journey-page health-insurance-journey-page">
+    <ScenicBackdrop />
+    <Link href="/journeys" className="floating-back content-layer"><ArrowLeft />All journeys</Link>
+    <section className="journey-heading content-layer"><p className="eyebrow"><HeartPulse />Health &amp; insurance</p><h1>{state.facts["person.name"] ?? "Ananya Sharma"}</h1><p>Understand your cover now, before you need care.</p></section>
+    <div className="primary-cta-wrap content-layer">{nextAction ? <Link href={nextAction.href} className="primary-cta"><ShieldCheck />{nextAction.nodeKey === "health_profile" ? "Confirm your health profile" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : <p className="journey-complete-cta"><CheckCircle2 />Your coverage pack is ready</p>}<TrustNote>Every match, identifier, and provider response in this journey is synthetic.</TrustNote></div>
+    <details className="journey-about content-layer">
+      <summary>About this health plan</summary>
+      <section className="context-strip">
+        <article><span className="mini-icon green"><UserRound /></span><div><small>For</small><strong>{state.facts["person.name"] ?? "Ananya Sharma"}</strong><em>Evaluation profile</em></div></article>
+        <article><span className="mini-icon blue"><ShieldCheck /></span><div><small>Current cover</small><strong>{state.facts["health.currentCover"] === "yes" ? "Policy or card available" : state.facts["health.currentCover"] === "no" ? "No cover recorded" : "Needs verification"}</strong><em>No approval assumed</em></div></article>
+        <article><span className="mini-icon purple"><HeartPulse /></span><div><small>ABHA</small><strong>{state.facts["health.abhaStatus"] === "yes" ? "Already available" : "Check or prepare"}</strong><em>Consent required</em></div></article>
+        <article><span className="mini-icon amber"><MapPin /></span><div><small>State</small><strong>{state.facts["person.state"] ?? "Telangana"}</strong><em>India</em></div></article>
+      </section>
+    </details>
+    <JourneySteps id={id} title="Your health & insurance steps" />
+  </main>;
 }
 
 function VehicleJourney({ id }: { id: string }) {
@@ -73,7 +95,7 @@ function JourneySteps({ id, title }: { id: string; title: string }) {
     <ol>{state.projection.nodes.map((node, index) => {
       const Icon = journeyIcons[node.icon];
       const locked = node.status === "locked";
-      const href = node.key === "birth_registration" ? `/journeys/${id}/birth-registration` : node.key === "vehicle_details" ? `/journeys/${id}/vehicle-details` : `/journeys/${id}/services/${node.key}`;
+      const href = node.key === "birth_registration" ? `/journeys/${id}/birth-registration` : node.key === "vehicle_details" ? `/journeys/${id}/vehicle-details` : node.key === "health_profile" ? `/journeys/${id}/health-profile` : `/journeys/${id}/services/${node.key}`;
       const label = node.status === "completed" ? "Done" : node.status === "in_progress" || node.status === "waiting_external" ? "In progress" : locked ? "Later" : "Ready";
       const content = <><span className="vehicle-step-number">{index + 1}</span><span className={`event-icon tone-${index}`}><Icon /></span><div><strong>{node.title}</strong><p>{node.description}</p></div><em className={`status ${node.status}`}>{locked ? <LockKeyhole /> : node.status === "completed" ? <CheckCircle2 /> : null}{label}</em></>;
       return <li key={node.key}>{locked ? <article>{content}</article> : <Link href={href}>{content}</Link>}</li>;

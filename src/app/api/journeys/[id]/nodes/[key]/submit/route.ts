@@ -16,6 +16,15 @@ const vehicleDetailsSchema = z.object({
   "vehicle.transferScope": z.enum(["same_state", "interstate"]),
   idempotencyKey: z.string().min(8),
 });
+const healthProfileSchema = z.object({
+  "person.name": z.string().trim().min(2),
+  "person.dateOfBirth": z.iso.date(),
+  "person.state": z.string().trim().min(2),
+  "household.size": z.string().regex(/^\d{1,2}$/),
+  "health.currentCover": z.enum(["yes", "not_sure", "no"]),
+  "health.abhaStatus": z.enum(["yes", "not_sure", "no"]),
+  idempotencyKey: z.string().min(8),
+});
 export async function POST(request: Request, { params }: { params: Promise<{ id: string; key: string }> }) {
   const { id, key } = await params;
   const sessionId = await getDemoSession();
@@ -31,6 +40,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (key === "vehicle_details") {
     const parsed = vehicleDetailsSchema.safeParse(payload);
     if (!parsed.success) return NextResponse.json({ code: "MISSING_REQUIREMENTS", message: "Complete all vehicle and purchase details using the requested format." }, { status: 400 });
+    const { idempotencyKey, ...facts } = parsed.data;
+    await journeyRepository.updateFacts(sessionId, id, facts);
+    const journey = await journeyRepository.completeStep(sessionId, id, key, idempotencyKey);
+    return journey ? NextResponse.json({ ...journey, synthetic: true }) : NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
+  }
+  if (key === "health_profile") {
+    const parsed = healthProfileSchema.safeParse(payload);
+    if (!parsed.success) return NextResponse.json({ code: "MISSING_REQUIREMENTS", message: "Complete the person and coverage details using the requested format." }, { status: 400 });
     const { idempotencyKey, ...facts } = parsed.data;
     await journeyRepository.updateFacts(sessionId, id, facts);
     const journey = await journeyRepository.completeStep(sessionId, id, key, idempotencyKey);

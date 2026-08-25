@@ -270,6 +270,61 @@ test("the document assistant records an approved vaccination receipt on the matc
   await page.request.post("/api/demo/reset");
 });
 
+test("a health policy starts and completes a safe Health & Insurance journey", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+
+  await openDocumentAssistant(page);
+  await page.getByRole("button", { name: "Health policy" }).click();
+  await expect(page.getByRole("heading", { name: "Start a health journey for Ananya Sharma" })).toBeVisible();
+  await expect(page.getByText("HLT-SBX-502781", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Approve update/i }).click();
+  await expect(page.getByText("The health policy was added and the health journey is ready for review.")).toBeVisible();
+  await page.getByRole("link", { name: "Open updated journey" }).click();
+  await expect(page.getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
+  const healthId = page.url().split("/").at(-1)!;
+
+  await page.getByRole("link", { name: "Confirm your health profile" }).click();
+  await expect(page.getByRole("heading", { name: "Who is this health plan for?" })).toBeVisible();
+  const profileA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(profileA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+  await page.getByRole("button", { name: "Confirm and continue" }).click();
+  await expect(page.getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
+
+  const services = [
+    ["coverage_review", "Review my health cover", "Health coverage summary"],
+    ["public_scheme_check", "Check possible scheme cover", "Public-scheme eligibility indication"],
+    ["abha_records", "Prepare ABHA & records", "ABHA & health-record checklist"],
+    ["cashless_readiness", "Build my cashless care pack", "Cashless care readiness pack"],
+  ] as const;
+  for (const [key, action, artifactTitle] of services) {
+    await page.goto(`/journeys/${healthId}/services/${key}`);
+    if (key === "coverage_review") {
+      await expect(page.locator(".evidence-requirements article")).toHaveClass(/verified/);
+      const previewHref = await page.getByRole("link", { name: "Preview" }).getAttribute("href");
+      const policy = await page.request.get(previewHref ?? "");
+      expect(policy.headers()["content-type"]).toBe("application/pdf");
+      expect((await policy.body()).subarray(0, 4).toString()).toBe("%PDF");
+    }
+    await page.getByLabel("I authorise this evaluation-only submission").check();
+    await page.getByRole("button", { name: action }).click();
+    await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
+    await expect(page.locator(".service-artifact").getByRole("heading", { name: artifactTitle })).toBeVisible();
+  }
+  const cashlessA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(cashlessA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+
+  await page.goto(`/journeys/${healthId}`);
+  await expect(page.getByText("Done", { exact: true })).toHaveCount(5);
+  await expect(page.getByText("Your coverage pack is ready")).toBeVisible();
+  await page.goto("/journeys");
+  await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
+  await page.goto("/documents");
+  await expect(page.getByText("Health insurance policy", { exact: true })).toBeVisible();
+  await expect(page.getByText("Cashless care readiness pack", { exact: true })).toBeVisible();
+  await page.request.post("/api/demo/reset");
+});
+
 test("document tools create and enrich journeys while the library and activity ledger stay inspectable", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");

@@ -11,7 +11,7 @@ export type ServiceNodeDefinition = {
   key: string;
   title: string;
   description: string;
-  icon: "baby" | "certificate" | "health" | "vaccine" | "identity" | "benefits" | "vehicle" | "transfer" | "insurance" | "fastag" | "calendar";
+  icon: "baby" | "certificate" | "health" | "vaccine" | "identity" | "benefits" | "vehicle" | "transfer" | "insurance" | "fastag" | "calendar" | "person" | "coverage" | "scheme" | "records" | "care";
   timing: string;
   dependsOn?: string[];
 };
@@ -19,7 +19,7 @@ export type ServiceNodeDefinition = {
 export type JourneyTemplate = {
   id: string;
   version: number;
-  lifeEvent: "having_a_baby" | "buying_a_vehicle";
+  lifeEvent: "having_a_baby" | "buying_a_vehicle" | "managing_health_cover";
   title: string;
   nodes: ServiceNodeDefinition[];
 };
@@ -64,7 +64,21 @@ export const vehiclePurchaseTemplate: JourneyTemplate = {
   ],
 };
 
-export const journeyTemplates = [newBabyTemplate, vehiclePurchaseTemplate] as const;
+export const healthInsuranceTemplate: JourneyTemplate = {
+  id: "health-insurance.india.v1",
+  version: 1,
+  lifeEvent: "managing_health_cover",
+  title: "Health & Insurance",
+  nodes: [
+    { key: "health_profile", title: "Your health profile", description: "Confirm who this cover and care plan is for.", icon: "person", timing: "Start with the basics" },
+    { key: "coverage_review", title: "Understand your cover", description: "Read the policy, limits, waiting periods and cashless terms.", icon: "coverage", timing: "Review before you need care", dependsOn: ["health_profile"] },
+    { key: "public_scheme_check", title: "Check public schemes", description: "Screen for a possible government health-cover pathway.", icon: "scheme", timing: "Official verification is still required", dependsOn: ["coverage_review"] },
+    { key: "abha_records", title: "ABHA & health records", description: "Prepare a digital health identity and consent-aware record plan.", icon: "records", timing: "Link records only with your consent", dependsOn: ["public_scheme_check"] },
+    { key: "cashless_readiness", title: "Prepare for cashless care", description: "Keep the right documents and authorization steps ready.", icon: "care", timing: "Keep this pack easy to reach", dependsOn: ["abha_records"] },
+  ],
+};
+
+export const journeyTemplates = [newBabyTemplate, vehiclePurchaseTemplate, healthInsuranceTemplate] as const;
 
 export function getJourneyTemplate(templateId: string) {
   return journeyTemplates.find((template) => template.id === templateId);

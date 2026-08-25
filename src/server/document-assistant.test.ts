@@ -126,6 +126,32 @@ describe("document assistant", () => {
     expect(saved?.evidence).toContainEqual(expect.objectContaining({ type: "insurance_policy" }));
   });
 
+  it("creates a health journey from an approved health policy", async () => {
+    const journeys = new MemoryJourneyRepository();
+    const documents = new MemoryDocumentIntakeRepository();
+    const service = new DocumentAssistantService(journeys, documents);
+    const intake = await service.propose("session-health-policy", {
+      fileName: "health-policy.pdf",
+      mimeType: "application/pdf",
+      bytes: new Uint8Array(Buffer.from("%PDF synthetic health policy")),
+      source: "sample",
+      analysis: {
+        kind: "health_insurance_policy",
+        confidence: 0.97,
+        fields: { insuredName: "Ananya Sharma", dateOfBirth: "1992-04-18", policyNumber: "HLT-SBX-502781", insurer: "National Health Insurance Sandbox", sumInsured: "INR 500000", validUntil: "2027-03-31" },
+      },
+    });
+
+    const result = await service.apply("session-health-policy", intake.id, true);
+    const saved = result.journeyId ? await journeys.get("session-health-policy", result.journeyId) : null;
+
+    expect(saved).toMatchObject({
+      subject: { type: "person", displayName: "Ananya Sharma" },
+      facts: { "health.policyNumber": "HLT-SBX-502781", "health.currentCover": "yes" },
+      evidence: [expect.objectContaining({ type: "health_insurance_policy" })],
+    });
+  });
+
   it("creates a pre-filled child journey from an approved discharge summary", async () => {
     const journeys = new MemoryJourneyRepository();
     const documents = new MemoryDocumentIntakeRepository();
