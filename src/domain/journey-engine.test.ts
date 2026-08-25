@@ -19,4 +19,11 @@ describe("journey compiler", () => {
     expect(journey.nodes.find((node) => node.key === "birth_certificate")?.status).toBe("available");
     expect(journey.nodes.filter((node) => node.status === "available")).toHaveLength(5);
   });
+
+  it("recommends the first unfinished service after the certificate completes", () => {
+    const registered = completeNode(compileJourney(newBabyTemplate), "birth_registration");
+    const certified = completeNode(registered, "birth_certificate");
+
+    expect(certified.nodes.find((node) => node.recommended)?.key).toBe("child_health_record");
+  });
 });

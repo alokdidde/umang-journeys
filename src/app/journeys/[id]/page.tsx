@@ -3,11 +3,12 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, LockKeyhole, MapPin, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, CheckCircle2, LockKeyhole, MapPin, Users } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { journeyIcons } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
 import { isSandboxServiceKey } from "@/domain/service-workflows";
+import { selectJourneyNextAction } from "@/domain/journey-summary";
 
 export default function JourneyRevealPage() {
   const { state, loadJourney } = useJourney();
@@ -18,6 +19,7 @@ export default function JourneyRevealPage() {
   if (state.pending && state.journeyId !== id) return <main className="page workflow-state"><p>Loading your journey…</p></main>;
   if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>We couldn’t load this journey.</h1><p>{state.error}</p><Link href="/intake" className="primary-cta">Start again</Link></main>;
   const [registration, certificate, ...downstream] = state.projection.nodes;
+  const nextAction = selectJourneyNextAction({ id, projection: state.projection, facts: state.facts, serviceRuns: state.serviceRuns });
   return (
     <main className="page journey-page">
       <ScenicBackdrop />
@@ -49,7 +51,12 @@ export default function JourneyRevealPage() {
           </div>
         </div>
       </section>
-      <div className="primary-cta-wrap content-layer"><Link href={registration.status === "completed" ? `/journeys/${id}/services/birth_certificate` : `/journeys/${id}/birth-registration`} className="primary-cta"><Baby />{registration.status === "completed" ? "Continue with birth certificate" : "Review birth registration"}<ArrowRight /></Link><TrustNote>Your information stays within this evaluation sandbox.</TrustNote></div>
+      <div className="primary-cta-wrap content-layer">
+        {nextAction
+          ? <Link href={nextAction.href} className="primary-cta"><Baby />{nextAction.nodeKey === "birth_registration" ? "Review birth registration" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link>
+          : <p className="journey-complete-cta"><CheckCircle2 />All services in this journey are complete</p>}
+        <TrustNote>Your information stays within this evaluation sandbox.</TrustNote>
+      </div>
     </main>
   );
 }

@@ -115,6 +115,27 @@ test("home prioritises the saved child journey and keeps starting another one av
   await page.request.post("/api/demo/reset");
 });
 
+test("journey CTA advances past a completed birth certificate", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  const id = await seedJourney(page);
+  await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, {
+    data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "cta-registration" },
+  });
+  for (let stage = 1; stage <= 4; stage += 1) {
+    await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, {
+      data: { idempotencyKey: `cta-certificate-${stage}` },
+    });
+  }
+
+  await page.goto(`/journeys/${id}`);
+  await expect(page.getByRole("link", { name: "Continue with child health record" })).toHaveAttribute(
+    "href",
+    `/journeys/${id}/services/child_health_record`,
+  );
+  await page.request.post("/api/demo/reset");
+});
+
 test("authenticated workflow pages have no serious accessibility violations", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");

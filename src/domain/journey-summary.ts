@@ -42,6 +42,8 @@ export type JourneySummary = {
   updatedAt: string;
 };
 
+type JourneyActionSource = Pick<SummarizableJourney, "id" | "projection" | "facts" | "serviceRuns">;
+
 function nodeHref(journeyId: string, nodeKey: string) {
   return nodeKey === "birth_registration"
     ? `/journeys/${journeyId}/birth-registration`
@@ -65,7 +67,7 @@ function actionTimingLabel(nodeKey: string, fallback: string, facts: Record<stri
   return `6-week milestone · ${formatted}`;
 }
 
-export function buildJourneySummary(journey: SummarizableJourney): JourneySummary {
+export function selectJourneyNextAction(journey: JourneyActionSource): JourneyNextAction | null {
   const actionable = journey.projection.nodes.filter(
     (node): node is typeof node & { status: JourneyNextAction["status"] } =>
       !["locked", "completed", "skipped"].includes(node.status),
@@ -77,33 +79,39 @@ export function buildJourneySummary(journey: SummarizableJourney): JourneySummar
   const nextRun = nextNode && nextNode.key in journey.serviceRuns
     ? journey.serviceRuns[nextNode.key as SandboxServiceKey]
     : undefined;
+
+  return nextNode ? {
+    nodeKey: nextNode.key,
+    title: nextNode.title,
+    description: nextNode.description,
+    status: nextNode.status,
+    stateLabel: actionStateLabel(nextNode.status, nextRun?.progress),
+    timingLabel: actionTimingLabel(nextNode.key, nextNode.timing, journey.facts),
+    href: nodeHref(journey.id, nextNode.key),
+    progress: nextRun?.progress,
+  } : null;
+}
+
+export function buildJourneySummary(journey: SummarizableJourney): JourneySummary {
+  const nextAction = selectJourneyNextAction(journey);
   const completed = journey.projection.nodes.filter((node) => node.status === "completed" || node.status === "skipped").length;
   const total = journey.projection.nodes.length;
-  const partialProgress = nextNode?.status === "in_progress" || nextNode?.status === "waiting_external"
-    ? (nextRun?.progress ?? 0) / 100
+  const partialProgress = nextAction?.status === "in_progress" || nextAction?.status === "waiting_external"
+    ? (nextAction.progress ?? 0) / 100
     : 0;
 
   return {
     id: journey.id,
     templateId: journey.projection.templateId,
     title: "Having a Baby",
-    status: actionable.length === 0 ? "completed" : journey.status,
+    status: nextAction === null ? "completed" : journey.status,
     subject: journey.subject,
     progress: {
       completed,
       total,
       percent: total === 0 ? 100 : Math.round(((completed + partialProgress) / total) * 100),
     },
-    nextAction: nextNode ? {
-      nodeKey: nextNode.key,
-      title: nextNode.title,
-      description: nextNode.description,
-      status: nextNode.status,
-      stateLabel: actionStateLabel(nextNode.status, nextRun?.progress),
-      timingLabel: actionTimingLabel(nextNode.key, nextNode.timing, journey.facts),
-      href: nodeHref(journey.id, nextNode.key),
-      progress: nextRun?.progress,
-    } : null,
+    nextAction,
     updatedAt: journey.updatedAt,
   };
 }
