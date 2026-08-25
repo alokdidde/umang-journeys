@@ -25,6 +25,7 @@ export type NewDocumentIntake = Pick<StoredDocumentIntake,
 
 export interface DocumentIntakeRepository {
   create(sessionId: string, input: NewDocumentIntake): Promise<StoredDocumentIntake>;
+  list(sessionId: string): Promise<StoredDocumentIntake[]>;
   get(sessionId: string, id: string): Promise<StoredDocumentIntake | null>;
   setDecision(sessionId: string, id: string, status: "applied" | "rejected", appliedJourneyId?: string): Promise<StoredDocumentIntake | null>;
   reset(sessionId: string): Promise<void>;
@@ -50,6 +51,12 @@ export class MemoryDocumentIntakeRepository implements DocumentIntakeRepository 
 
   async get(sessionId: string, id: string) {
     return this.records.get(`${sessionId}:${id}`) ?? null;
+  }
+
+  async list(sessionId: string) {
+    return [...this.records.values()]
+      .filter((record) => record.sessionId === sessionId)
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }
 
   async setDecision(sessionId: string, id: string, status: "applied" | "rejected", appliedJourneyId?: string) {
@@ -123,6 +130,28 @@ export class PrismaDocumentIntakeRepository implements DocumentIntakeRepository 
       createdAt: record.createdAt.toISOString(),
       updatedAt: record.updatedAt.toISOString(),
     };
+  }
+
+  async list(sessionId: string) {
+    const records = await getPrisma().documentIntake.findMany({
+      where: { profile: { sessionId } },
+      orderBy: { createdAt: "desc" },
+    });
+    return records.map((record) => ({
+      id: record.id,
+      sessionId,
+      status: record.status as DocumentIntakeStatus,
+      fileName: record.fileName,
+      mimeType: record.mimeType,
+      size: record.size,
+      source: record.source as StoredDocumentIntake["source"],
+      contentBase64: record.contentBase64,
+      analysis: record.analysisJson as DocumentAnalysis,
+      proposal: record.proposalJson as DocumentProposal,
+      appliedJourneyId: record.journeyId,
+      createdAt: record.createdAt.toISOString(),
+      updatedAt: record.updatedAt.toISOString(),
+    }));
   }
 
   async setDecision(sessionId: string, id: string, status: "applied" | "rejected", appliedJourneyId?: string) {

@@ -34,17 +34,20 @@ export async function POST(request: Request) {
     let source: "sample" | "user_upload";
     let analysis;
 
-    if (sampleType === "vehicle_rc" || sampleType === "vaccination_receipt") {
+    if (sampleType === "vehicle_rc" || sampleType === "vaccination_receipt" || sampleType === "insurance_policy" || sampleType === "hospital_discharge_summary") {
       const journeys = await journeyRepository.list(sessionId);
       const child = journeys.find((journey) => journey.subject.type === "child");
-      const sampleFacts: Record<string, string> = sampleType === "vehicle_rc" ? {
-        "vehicle.registrationNumber": "TS09EV4321",
-        "vehicle.makeModel": "Tata Nexon EV",
+      const vehicle = journeys.find((journey) => journey.subject.type === "vehicle");
+      const sampleFacts: Record<string, string> = sampleType === "vehicle_rc" || sampleType === "insurance_policy" ? {
+        "vehicle.registrationNumber": vehicle?.facts["vehicle.registrationNumber"] ?? "TS09EV4321",
+        "vehicle.makeModel": vehicle?.facts["vehicle.makeModel"] ?? "Tata Nexon EV",
         "vehicle.chassisLast5": "7K2P9",
       } : {
-        "child.name": child?.subject.displayName ?? "Aarav Sharma",
-        "child.dateOfBirth": child?.facts["child.dateOfBirth"] ?? "2026-08-24",
+        "child.name": child?.subject.displayName ?? (sampleType === "hospital_discharge_summary" ? "Mira Sharma" : "Aarav Sharma"),
+        "child.dateOfBirth": child?.facts["child.dateOfBirth"] ?? (sampleType === "hospital_discharge_summary" ? "2026-08-25" : "2026-08-24"),
         "birth.hospital": child?.facts["birth.hospital"] ?? child?.facts["hospital.name"] ?? "Apollo Hospital",
+        "birth.city": child?.facts["birth.city"] ?? "Hyderabad",
+        "birth.state": child?.facts["birth.state"] ?? "Telangana",
       };
       const sample = await createSampleEvidence(sampleType, sampleFacts);
       fileName = sample.fileName;

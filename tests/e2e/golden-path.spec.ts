@@ -158,7 +158,7 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await expect(page.getByRole("heading", { name: "Your vehicle journey is ready." })).toBeVisible();
 
   await page.goto("/");
-  await expect(page.getByText("2 journeys")).toBeVisible();
+  await expect(page.getByRole("link", { name: "2 Journeys" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Start next step/i })).toHaveCount(2);
@@ -214,7 +214,7 @@ test("the document assistant creates a vehicle journey from an approved sample R
   await page.getByRole("button", { name: /Approve update/i }).click();
   await expect(page.getByText("The RC was attached and the vehicle journey is ready for review.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tata Nexon EV" })).toBeVisible();
-  await expect(page.getByText("2 journeys")).toBeVisible();
+  await expect(page.getByRole("link", { name: "2 Journeys" })).toBeVisible();
 
   const journeysResponse = await page.request.get("/api/journeys");
   const journeysBody = await journeysResponse.json() as { journeys: Array<{ id: string; subject: { type: string }; nextAction: { nodeKey: string } | null }> };
@@ -250,6 +250,51 @@ test("the document assistant records an approved vaccination receipt on the matc
   expect(saved.evidence).toEqual([expect.objectContaining({ type: "vaccination_receipt" })]);
   expect(saved.serviceRuns.vaccination_timeline?.progress).toBe(100);
   expect(saved.projection.nodes.find((node) => node.key === "vaccination_timeline")?.status).toBe("completed");
+  await page.request.post("/api/demo/reset");
+});
+
+test("document tools create and enrich journeys while the library and activity ledger stay inspectable", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  await page.goto("/documents");
+  await expect(page.getByRole("link", { name: "Documents" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { name: "Your documents" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Discharge summary" }).click();
+  await expect(page.getByRole("heading", { name: "Start a journey for Mira Sharma" })).toBeVisible();
+  await page.getByRole("button", { name: /Approve update/i }).click();
+  await expect(page.getByText("The hospital record was added and the child journey was pre-filled for review.")).toBeVisible();
+  await expect(page.getByText("Hospital discharge summary", { exact: true })).toBeVisible();
+  const hospitalFileHref = await page.getByRole("link", { name: "View file" }).first().getAttribute("href");
+  const hospitalFile = await page.request.get(hospitalFileHref ?? "");
+  expect(hospitalFile.ok()).toBeTruthy();
+  expect(hospitalFile.headers()["content-type"]).toBe("application/pdf");
+  expect((await hospitalFile.body()).subarray(0, 4).toString()).toBe("%PDF");
+
+  await page.getByRole("button", { name: "Use another document" }).click();
+  await page.getByRole("button", { name: "Registration certificate" }).click();
+  await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
+  await page.getByRole("button", { name: /Approve update/i }).click();
+  await expect(page.getByText("The RC was attached and the vehicle journey is ready for review.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Use another document" }).click();
+  await page.getByRole("button", { name: "Insurance policy" }).click();
+  await expect(page.getByRole("heading", { name: "Add insurance for Tata Nexon EV" })).toBeVisible();
+  await page.getByRole("button", { name: /Approve update/i }).click();
+  await expect(page.getByText("The policy was added to the matching vehicle journey.")).toBeVisible();
+  await expect(page.getByText("Motor insurance policy", { exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: "View document activity" }).click();
+  await expect(page.getByRole("link", { name: "Activity", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
+  await expect(page.getByText("Document update approved")).toHaveCount(3);
+  await expect(page.getByText("Having a Baby journey started")).toBeVisible();
+  await expect(page.getByText("Buying a Vehicle journey started")).toBeVisible();
+
+  await page.getByRole("link", { name: "Journeys", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Your journeys" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mira Sharma" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tata Nexon EV" })).toBeVisible();
   await page.request.post("/api/demo/reset");
 });
 
@@ -290,7 +335,7 @@ test("authenticated workflow pages have no serious accessibility violations", as
   await page.request.post("/api/demo/reset");
   const id = await seedJourney(page);
   await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "axe-registration" } });
-  for (const route of ["/", "/intake", `/journeys/${id}`, `/journeys/${id}/birth-registration`, `/journeys/${id}/success`, `/journeys/${id}/services/child_health_record`]) {
+  for (const route of ["/", "/journeys", "/documents", "/activity", "/intake", `/journeys/${id}`, `/journeys/${id}/birth-registration`, `/journeys/${id}/success`, `/journeys/${id}/services/child_health_record`]) {
     await page.goto(route);
     await page.waitForLoadState("networkidle");
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
@@ -314,4 +359,10 @@ test("login, home, and a completed service reflow at mobile width", async ({ pag
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
   sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client);
+  for (const route of ["/documents", "/activity", "/journeys"]) {
+    await page.goto(route);
+    await page.waitForLoadState("networkidle");
+    sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(sizes.scroll, route).toBeLessThanOrEqual(sizes.client);
+  }
 });

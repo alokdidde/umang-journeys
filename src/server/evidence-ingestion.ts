@@ -24,9 +24,18 @@ function extractedFields(type: EvidenceType, facts: Record<string, string>): Rec
     administeredOn: facts["child.dateOfBirth"] ?? "2026-08-24",
     provider: facts["birth.hospital"] ?? facts["hospital.name"] ?? "Apollo Hospital",
   };
+  if (type === "hospital_discharge_summary") return {
+    childName: facts["child.name"] ?? "Mira Sharma",
+    dateOfBirth: facts["child.dateOfBirth"] ?? "2026-08-25",
+    provider: facts["birth.hospital"] ?? facts["hospital.name"] ?? "Apollo Hospital",
+    city: facts["birth.city"] ?? "Hyderabad",
+    state: facts["birth.state"] ?? "Telangana",
+    dischargeReference: facts["birth.dischargeReference"] ?? "DS-SBX-2048",
+  };
   return {
     policyNumber: "MTR-SBX-884210",
     registrationNumber: facts["vehicle.registrationNumber"] ?? "TS09EV4321",
+    insurer: "New India Assurance",
     validUntil: "2027-07-31",
   };
 }
@@ -35,6 +44,7 @@ function titleFor(type: EvidenceType) {
   if (type === "vehicle_rc") return "SYNTHETIC REGISTRATION CERTIFICATE";
   if (type === "sale_agreement") return "SYNTHETIC VEHICLE SALE AGREEMENT";
   if (type === "vaccination_receipt") return "SYNTHETIC VACCINATION RECEIPT";
+  if (type === "hospital_discharge_summary") return "SYNTHETIC HOSPITAL DISCHARGE SUMMARY";
   return "SYNTHETIC MOTOR INSURANCE POLICY";
 }
 

@@ -6,7 +6,7 @@ const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 const acceptedMimeTypes = new Set(["application/pdf", "image/png", "image/jpeg"]);
 
 const analysisSchema = z.object({
-  kind: z.enum(["vehicle_rc", "vaccination_receipt", "unknown"]),
+  kind: z.enum(["vehicle_rc", "vaccination_receipt", "insurance_policy", "hospital_discharge_summary", "unknown"]),
   confidence: z.number().min(0).max(1),
   fields: z.object({
     registrationNumber: z.string().optional(),
@@ -21,6 +21,11 @@ const analysisSchema = z.object({
     administeredOn: z.string().optional(),
     provider: z.string().optional(),
     batchNumber: z.string().optional(),
+    policyNumber: z.string().optional(),
+    insurer: z.string().optional(),
+    validFrom: z.string().optional(),
+    validUntil: z.string().optional(),
+    dischargeReference: z.string().optional(),
   }),
 });
 
@@ -37,7 +42,11 @@ export function validateDocumentFile(file: { mimeType: string; bytes: Uint8Array
 
 function filenameFallback(fileName: string): DocumentAnalysis {
   const normalized = fileName.toLowerCase();
-  const kind: DocumentKind = /vacc|immun|bcg|dose/.test(normalized)
+  const kind: DocumentKind = /discharge|hospital-summary|birth-summary/.test(normalized)
+    ? "hospital_discharge_summary"
+    : /insurance|policy|motor-cover/.test(normalized)
+      ? "insurance_policy"
+      : /vacc|immun|bcg|dose/.test(normalized)
     ? "vaccination_receipt"
     : /(^|[-_ ])rc($|[-_. ])|registration/.test(normalized)
       ? "vehicle_rc"
@@ -62,7 +71,7 @@ export async function analyzeUploadedDocument(file: {
         content: [
           {
             type: "text",
-            text: "Classify this Indian citizen-service document. Extract only visibly supported fields. Return vehicle_rc, vaccination_receipt, or unknown. Dates must use YYYY-MM-DD. Never invent an identifier, person, vaccine, date, provider, or confidence.",
+            text: "Classify this Indian citizen-service document. Extract only visibly supported fields. Return vehicle_rc, vaccination_receipt, insurance_policy, hospital_discharge_summary, or unknown. Dates must use YYYY-MM-DD. Never invent an identifier, person, vaccine, policy, date, provider, or confidence.",
           },
           { type: "file", mediaType: file.mimeType, data: file.bytes, filename: file.fileName },
         ],

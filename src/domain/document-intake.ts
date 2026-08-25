@@ -1,4 +1,4 @@
-export type DocumentKind = "vehicle_rc" | "vaccination_receipt" | "unknown";
+export type DocumentKind = "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "hospital_discharge_summary" | "unknown";
 
 export type DocumentAnalysis = {
   kind: DocumentKind;
@@ -13,12 +13,12 @@ export type JourneyMatchCandidate = {
 };
 
 export type DocumentProposal = {
-  action: "create_vehicle_journey" | "update_vehicle_journey" | "record_vaccination" | "needs_review";
+  action: "create_vehicle_journey" | "update_vehicle_journey" | "record_vaccination" | "record_vehicle_insurance" | "create_child_journey" | "update_child_journey" | "needs_review";
   canApply: boolean;
   targetJourneyId: string | null;
   title: string;
   description: string;
-  toolName: "createVehicleJourneyFromRC" | "updateVehicleFromRC" | "recordVaccination" | null;
+  toolName: "createVehicleJourneyFromRC" | "updateVehicleFromRC" | "recordVaccination" | "recordVehicleInsurance" | "createChildJourneyFromDischargeSummary" | "updateChildFromDischargeSummary" | null;
   changes: Array<{ label: string; value: string }>;
 };
 
@@ -70,6 +70,57 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
         { label: "Vaccine", value: analysis.fields.vaccine },
         { label: "Administered on", value: analysis.fields.administeredOn },
         { label: "Provider", value: analysis.fields.provider },
+      ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
+    };
+  }
+
+  if (analysis.kind === "insurance_policy") {
+    const registration = analysis.fields.registrationNumber?.toUpperCase();
+    const match = journeys.find((journey) =>
+      journey.subject.type === "vehicle" && journey.facts["vehicle.registrationNumber"]?.toUpperCase() === registration,
+    );
+    const complete = Boolean(match && registration && analysis.fields.policyNumber && analysis.fields.validUntil);
+    return {
+      action: match ? "record_vehicle_insurance" : "needs_review",
+      canApply: analysis.confidence >= 0.8 && complete,
+      targetJourneyId: match?.id ?? null,
+      title: match ? `Add insurance for ${match.subject.displayName}` : "Choose the vehicle for this policy",
+      description: match
+        ? "Attach the policy, record its validity, and make it available to the insurance step."
+        : "We could not match the registration number to exactly one vehicle journey.",
+      toolName: match ? "recordVehicleInsurance" : null,
+      changes: [
+        { label: "Registration number", value: analysis.fields.registrationNumber },
+        { label: "Policy number", value: analysis.fields.policyNumber },
+        { label: "Insurer", value: analysis.fields.insurer },
+        { label: "Valid until", value: analysis.fields.validUntil },
+      ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
+    };
+  }
+
+  if (analysis.kind === "hospital_discharge_summary") {
+    const childName = analysis.fields.childName?.trim();
+    const dateOfBirth = analysis.fields.dateOfBirth;
+    const matches = journeys.filter((journey) => journey.subject.type === "child" && (
+      Boolean(childName && journey.subject.displayName.trim().toLocaleLowerCase("en-IN") === childName.toLocaleLowerCase("en-IN")) ||
+      Boolean(dateOfBirth && journey.facts["child.dateOfBirth"] === dateOfBirth)
+    ));
+    const match = matches.length === 1 ? matches[0] : null;
+    const complete = Boolean(childName && dateOfBirth && analysis.fields.provider);
+    return {
+      action: match ? "update_child_journey" : "create_child_journey",
+      canApply: analysis.confidence >= 0.8 && complete && matches.length <= 1,
+      targetJourneyId: match?.id ?? null,
+      title: match ? `Update ${match.subject.displayName} from the hospital record` : `Start a journey for ${childName || "this child"}`,
+      description: match
+        ? "Attach the discharge summary and update supported birth and hospital details."
+        : "Create a child journey with the supported birth and hospital details ready for review.",
+      toolName: match ? "updateChildFromDischargeSummary" : "createChildJourneyFromDischargeSummary",
+      changes: [
+        { label: "Child", value: childName },
+        { label: "Date of birth", value: dateOfBirth },
+        { label: "Hospital", value: analysis.fields.provider },
+        { label: "Place", value: [analysis.fields.city, analysis.fields.state].filter(Boolean).join(", ") },
       ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
     };
   }

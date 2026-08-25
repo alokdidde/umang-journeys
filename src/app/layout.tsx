@@ -16,7 +16,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={inter.variable}>
-        <TooltipProvider><JourneyProvider><AppHeader />{children}</JourneyProvider></TooltipProvider>
+        <a className="skip-link" href="#main-content">Skip to main content</a>
+        <TooltipProvider><JourneyProvider><AppHeader /><div id="main-content" tabIndex={-1}>{children}</div></JourneyProvider></TooltipProvider>
       </body>
     </html>
   );

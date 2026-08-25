@@ -94,4 +94,61 @@ describe("document assistant", () => {
     expect(replay.status).toBe("rejected");
     expect(await journeys.list("session-rejected")).toHaveLength(0);
   });
+
+  it("attaches an approved insurance policy to its matching vehicle", async () => {
+    const journeys = new MemoryJourneyRepository();
+    const documents = new MemoryDocumentIntakeRepository();
+    const service = new DocumentAssistantService(journeys, documents);
+    const vehicle = await journeys.create("session-policy", {
+      "vehicle.registrationNumber": "TS09EV4321",
+      "vehicle.makeModel": "Tata Nexon EV",
+    }, "vehicle-purchase.india.v1");
+    const intake = await service.propose("session-policy", {
+      fileName: "motor-policy.pdf",
+      mimeType: "application/pdf",
+      bytes: new Uint8Array(Buffer.from("%PDF synthetic policy")),
+      source: "sample",
+      analysis: {
+        kind: "insurance_policy",
+        confidence: 0.94,
+        fields: { registrationNumber: "TS09EV4321", policyNumber: "MTR-SBX-884210", insurer: "New India Assurance", validUntil: "2027-07-31" },
+      },
+    });
+
+    const result = await service.apply("session-policy", intake.id, true);
+    const saved = await journeys.get("session-policy", vehicle.id);
+
+    expect(result.journeyId).toBe(vehicle.id);
+    expect(saved?.facts).toMatchObject({
+      "insurance.policyNumber": "MTR-SBX-884210",
+      "insurance.validUntil": "2027-07-31",
+    });
+    expect(saved?.evidence).toContainEqual(expect.objectContaining({ type: "insurance_policy" }));
+  });
+
+  it("creates a pre-filled child journey from an approved discharge summary", async () => {
+    const journeys = new MemoryJourneyRepository();
+    const documents = new MemoryDocumentIntakeRepository();
+    const service = new DocumentAssistantService(journeys, documents);
+    const intake = await service.propose("session-discharge", {
+      fileName: "hospital-discharge-summary.pdf",
+      mimeType: "application/pdf",
+      bytes: new Uint8Array(Buffer.from("%PDF synthetic discharge summary")),
+      source: "sample",
+      analysis: {
+        kind: "hospital_discharge_summary",
+        confidence: 0.95,
+        fields: { childName: "Mira Sharma", dateOfBirth: "2026-08-25", provider: "Apollo Hospital", city: "Hyderabad", state: "Telangana", dischargeReference: "DS-SBX-2048" },
+      },
+    });
+
+    const result = await service.apply("session-discharge", intake.id, true);
+    const saved = result.journeyId ? await journeys.get("session-discharge", result.journeyId) : null;
+
+    expect(saved).toMatchObject({
+      subject: { type: "child", displayName: "Mira Sharma" },
+      facts: { "birth.hospital": "Apollo Hospital", "birth.city": "Hyderabad" },
+      evidence: [expect.objectContaining({ type: "hospital_discharge_summary" })],
+    });
+  });
 });

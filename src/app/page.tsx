@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Baby, Car, Check, Clock3, CreditCard, FileText, Gift, HeartPulse, IdCard, LoaderCircle, Mic, Plus, Search, ShieldCheck, Sparkles, Syringe } from "lucide-react";
+import { Activity, ArrowRight, Baby, Check, Files, LoaderCircle, Mic, Plus, Route, Search, Sparkles } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { lifeEvents } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
 import type { JourneySummary } from "@/domain/journey-summary";
 import { DocumentDesk } from "@/components/document-desk";
+import { JourneyCard } from "@/components/journey-card";
+import { useCitizenHub } from "@/components/use-citizen-hub";
 
 type JourneyListResponse = { journeys: JourneySummary[] };
 
@@ -61,6 +63,8 @@ export default function HomePage() {
 }
 
 function ReturningHome({ journeys, start, loadError, refreshJourneys }: { journeys: JourneySummary[]; start: (statement?: string) => void; loadError: string | null; refreshJourneys: () => Promise<void> }) {
+  const { snapshot, refresh: refreshHub } = useCitizenHub();
+  async function refreshAccount() { await Promise.all([refreshJourneys(), refreshHub()]); }
   return (
     <main className="page returning-home">
       <ScenicBackdrop />
@@ -70,11 +74,17 @@ function ReturningHome({ journeys, start, loadError, refreshJourneys }: { journe
       </section>
       {loadError && <p className="workflow-error content-layer" role="alert">{loadError}</p>}
 
-      <DocumentDesk onJourneyChanged={refreshJourneys} />
+      <section className="account-overview content-layer" aria-label="Account overview">
+        <Link href="/journeys"><span><Route /></span><strong>{journeys.length}</strong><small>{journeys.length === 1 ? "Active journey" : "Journeys"}</small><ArrowRight /></Link>
+        <Link href="/documents"><span><Files /></span><strong>{snapshot.documents.length}</strong><small>Documents and records</small><ArrowRight /></Link>
+        <Link href="/activity"><span><Activity /></span><strong>{snapshot.summary.activity}</strong><small>Activity entries</small><ArrowRight /></Link>
+      </section>
+
+      <DocumentDesk onJourneyChanged={refreshAccount} />
 
       <section className="active-journeys content-layer" aria-labelledby="active-journeys-heading">
-        <div className="dashboard-section-heading"><div><span>Continue where you left off</span><h2 id="active-journeys-heading">Your {journeys.length === 1 ? "active journey" : "journeys"}</h2></div><small>{journeys.length} {journeys.length === 1 ? "journey" : "journeys"}</small></div>
-        <div className="journey-card-grid">{journeys.map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>
+        <div className="dashboard-section-heading"><div><span>Continue where you left off</span><h2 id="active-journeys-heading">Next up</h2></div><Link href="/journeys">View all journeys<ArrowRight /></Link></div>
+        <div className="journey-card-grid">{journeys.slice(0, 2).map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>
       </section>
 
       <section className="explore-journeys content-layer" aria-labelledby="explore-heading">
@@ -83,28 +93,6 @@ function ReturningHome({ journeys, start, loadError, refreshJourneys }: { journe
       </section>
       <TrustNote>Your journeys are saved to this evaluation account using synthetic data.</TrustNote>
     </main>
-  );
-}
-
-function JourneyCard({ journey }: { journey: JourneySummary }) {
-  const action = journey.nextAction;
-  return (
-    <article className="home-journey-card panel">
-      <header>
-        <span className={`journey-avatar ${journey.subject.type}`}>
-          {journey.subject.type === "vehicle" ? <Car /> : <Baby />}
-        </span>
-        <div><p>{journey.title}</p><h3>{journey.subject.displayName}</h3><span><Clock3 />Updated {formatUpdatedAt(journey.updatedAt)}</span></div>
-        <em className={`status ${journey.status === "completed" ? "completed" : "in_progress"}`}>{journey.status === "completed" ? "Journey complete" : "Active journey"}</em>
-      </header>
-      <div className="home-progress-copy"><span>{journey.progress.completed} of {journey.progress.total} services complete</span><strong>{journey.progress.percent}%</strong></div>
-      <div className="home-progress-track" role="progressbar" aria-label={`${journey.subject.displayName} journey progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={journey.progress.percent}><span style={{ width: `${journey.progress.percent}%` }} /></div>
-      {action ? <div className="next-action-block">
-        <span className={`next-action-icon ${action.status}`}><ActionIcon nodeKey={action.nodeKey} /></span>
-        <div><small>Next for {journey.subject.displayName}</small><h4>{action.title}</h4><p>{action.description}</p><span className="action-timing"><Clock3 />{action.timingLabel}</span><em className={`status ${action.status}`}>{action.stateLabel}</em></div>
-        <Link className="primary-cta" href={action.href}>{action.status === "available" ? "Start next step" : "Continue"}<ArrowRight /></Link>
-      </div> : <div className="next-action-block complete"><span className="next-action-icon completed"><Check /></span><div><small>All caught up</small><h4>This journey is complete</h4><p>Your records remain available whenever you need them.</p></div><Link className="secondary-button" href={`/journeys/${journey.id}`}>View journey<ArrowRight /></Link></div>}
-    </article>
   );
 }
 
@@ -147,24 +135,4 @@ function LifeEventGrid({ start, returning = false }: { start: (statement?: strin
       </button>
     ))}
   </section>;
-}
-
-function ActionIcon({ nodeKey }: { nodeKey: string }) {
-  if (nodeKey === "birth_certificate") return <FileText />;
-  if (nodeKey === "child_health_record") return <HeartPulse />;
-  if (nodeKey === "vaccination_timeline") return <Syringe />;
-  if (nodeKey === "child_identity") return <IdCard />;
-  if (nodeKey === "eligible_benefits") return <Gift />;
-  if (nodeKey === "ownership_transfer") return <FileText />;
-  if (nodeKey === "insurance_cover") return <ShieldCheck />;
-  if (nodeKey === "fastag_setup") return <CreditCard />;
-  if (nodeKey === "compliance_calendar") return <Clock3 />;
-  if (nodeKey === "vehicle_details") return <Car />;
-  return <Baby />;
-}
-
-function formatUpdatedAt(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) return "recently";
-  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(date);
 }

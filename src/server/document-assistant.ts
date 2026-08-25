@@ -29,13 +29,30 @@ function documentFacts(analysis: DocumentAnalysis) {
     "vehicle.state": analysis.fields.state || "Telangana",
     "intake.source": "registration_certificate",
   };
-  return {
+  if (analysis.kind === "vaccination_receipt") return {
     "vaccination.last.vaccine": analysis.fields.vaccine,
     "vaccination.last.administeredOn": analysis.fields.administeredOn,
     "vaccination.last.provider": analysis.fields.provider,
     "vaccination.last.batchNumber": analysis.fields.batchNumber,
     "vaccination.status": "provider_receipt_recorded",
   };
+  if (analysis.kind === "insurance_policy") return {
+    "insurance.policyNumber": analysis.fields.policyNumber,
+    "insurance.insurer": analysis.fields.insurer,
+    "insurance.validUntil": analysis.fields.validUntil,
+    "insurance.registrationNumber": analysis.fields.registrationNumber,
+    "insurance.status": "policy_document_recorded",
+  };
+  if (analysis.kind === "hospital_discharge_summary") return {
+    "child.name": analysis.fields.childName,
+    "child.dateOfBirth": analysis.fields.dateOfBirth,
+    "birth.hospital": analysis.fields.provider,
+    "birth.city": analysis.fields.city,
+    "birth.state": analysis.fields.state,
+    "birth.dischargeReference": analysis.fields.dischargeReference,
+    "intake.source": "hospital_discharge_summary",
+  };
+  return {};
 }
 
 function compactFacts(facts: Record<string, string | undefined>) {
@@ -92,6 +109,9 @@ export class DocumentAssistantService {
     if (intake.proposal.toolName === "createVehicleJourneyFromRC") {
       const journey = await this.journeys.create(sessionId, facts, "vehicle-purchase.india.v1");
       journeyId = journey.id;
+    } else if (intake.proposal.toolName === "createChildJourneyFromDischargeSummary") {
+      const journey = await this.journeys.create(sessionId, facts, "new-baby.india.v1");
+      journeyId = journey.id;
     } else if (journeyId) {
       await this.journeys.updateFacts(sessionId, journeyId, facts);
     }
@@ -125,6 +145,10 @@ export class DocumentAssistantService {
       journeyId,
       message: intake.proposal.toolName === "recordVaccination"
         ? "The vaccination receipt was added and the child’s timeline was refreshed."
+        : intake.proposal.toolName === "recordVehicleInsurance"
+          ? "The policy was added to the matching vehicle journey."
+          : intake.proposal.toolName === "createChildJourneyFromDischargeSummary" || intake.proposal.toolName === "updateChildFromDischargeSummary"
+            ? "The hospital record was added and the child journey was pre-filled for review."
         : "The RC was attached and the vehicle journey is ready for review.",
     };
   }

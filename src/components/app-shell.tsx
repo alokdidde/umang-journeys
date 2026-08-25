@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CircleHelp, LogOut, RotateCcw, ShieldCheck } from "lucide-react";
+import { Activity, CircleHelp, Files, House, LogOut, RotateCcw, Route, ShieldCheck } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useJourney } from "./journey-provider";
 
@@ -30,16 +30,26 @@ export function AppHeader() {
   return (
     <header className="app-header">
       <Brand />
+      {pathname !== "/login" ? <nav className="primary-navigation" aria-label="Primary navigation">
+        <NavLink href="/" label="Home" icon={<House />} active={pathname === "/"} />
+        <NavLink href="/journeys" label="Journeys" icon={<Route />} active={pathname.startsWith("/journeys")} />
+        <NavLink href="/documents" label="Documents" icon={<Files />} active={pathname.startsWith("/documents")} />
+        <NavLink href="/activity" label="Activity" icon={<Activity />} active={pathname.startsWith("/activity")} />
+      </nav> : null}
       <div className="header-actions">
         {pathname === "/login" ? <span className="prototype-pill"><ShieldCheck size={15} /> Evaluation access</span> : <>
           <span className="prototype-pill"><ShieldCheck size={15} /> Sandbox</span>
           <button className="header-button" type="button" onClick={reset}><RotateCcw size={17} /> Reset journey</button>
-          <button className="header-button" type="button"><CircleHelp size={18} /> Help</button>
+          <a className="header-button" href="https://web.umang.gov.in/landing/faq" target="_blank" rel="noreferrer"><CircleHelp size={18} /> Help</a>
           <button className="avatar avatar-button" type="button" onClick={logout} aria-label="Sign out Ananya Sharma"><span>AS</span><LogOut /></button>
         </>}
       </div>
     </header>
   );
+}
+
+function NavLink({ href, label, icon, active }: { href: string; label: string; icon: React.ReactNode; active: boolean }) {
+  return <Link href={href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>{icon}<span>{label}</span></Link>;
 }
 
 export function ScenicBackdrop() {

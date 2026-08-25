@@ -24,7 +24,7 @@ export default function JourneyRevealPage() {
   return (
     <main className="page journey-page">
       <ScenicBackdrop />
-      <Link href="/intake" className="floating-back content-layer"><ArrowLeft />Back to intake</Link>
+      <Link href="/journeys" className="floating-back content-layer"><ArrowLeft />All journeys</Link>
       <section className="journey-heading content-layer"><h1>Your family journey is ready.</h1><p>We’ve assembled the right services around your child’s birth. Follow the journey below—we’ll guide you every step.</p></section>
       <section className="context-strip content-layer">
         <article><span className="mini-icon green"><Building2 /></span><div><small>Hospital</small><strong>Apollo Hospital</strong><em>Hyderabad</em></div></article>

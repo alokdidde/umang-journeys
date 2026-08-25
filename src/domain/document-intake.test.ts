@@ -48,4 +48,51 @@ describe("document intake proposals", () => {
       toolName: "recordVaccination",
     });
   });
+
+  it("matches a motor insurance policy to the registered vehicle", () => {
+    const proposal = proposeDocumentAction({
+      kind: "insurance_policy",
+      confidence: 0.94,
+      fields: {
+        registrationNumber: "TS09EV4321",
+        policyNumber: "MTR-SBX-884210",
+        insurer: "New India Assurance",
+        validUntil: "2027-07-31",
+      },
+    }, [{
+      id: "journey-vehicle",
+      subject: { type: "vehicle", displayName: "Tata Nexon EV" },
+      facts: { "vehicle.registrationNumber": "TS09EV4321" },
+    }]);
+
+    expect(proposal).toMatchObject({
+      action: "record_vehicle_insurance",
+      canApply: true,
+      targetJourneyId: "journey-vehicle",
+      title: "Add insurance for Tata Nexon EV",
+      toolName: "recordVehicleInsurance",
+    });
+  });
+
+  it("proposes a pre-filled child journey from a hospital discharge summary", () => {
+    const proposal = proposeDocumentAction({
+      kind: "hospital_discharge_summary",
+      confidence: 0.95,
+      fields: {
+        childName: "Mira Sharma",
+        dateOfBirth: "2026-08-25",
+        provider: "Apollo Hospital",
+        city: "Hyderabad",
+        state: "Telangana",
+      },
+    }, []);
+
+    expect(proposal).toMatchObject({
+      action: "create_child_journey",
+      canApply: true,
+      targetJourneyId: null,
+      title: "Start a journey for Mira Sharma",
+      toolName: "createChildJourneyFromDischargeSummary",
+    });
+  });
 });

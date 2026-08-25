@@ -25,5 +25,7 @@ describe("document intake repository", () => {
     expect(created.status).toBe("proposed");
     expect(await repository.get("session-a", created.id)).toMatchObject({ id: created.id, status: "proposed" });
     expect(await repository.get("session-b", created.id)).toBeNull();
+    expect(await repository.list("session-a")).toEqual([expect.objectContaining({ id: created.id })]);
+    expect(await repository.list("session-b")).toEqual([]);
   });
 });

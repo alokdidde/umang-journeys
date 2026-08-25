@@ -9,6 +9,7 @@ import {
   Check,
   FileSearch,
   FileText,
+  Hospital,
   LoaderCircle,
   Paperclip,
   RotateCw,
@@ -83,7 +84,7 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
     await analyseForm(form);
   }
 
-  async function analyseSample(sampleType: "vehicle_rc" | "vaccination_receipt") {
+  async function analyseSample(sampleType: "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "hospital_discharge_summary") {
     const form = new FormData();
     form.set("sampleType", sampleType);
     await analyseForm(form);
@@ -127,7 +128,7 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
         <PromptInput accept="application/pdf,image/png,image/jpeg" maxFiles={1} maxFileSize={5 * 1024 * 1024} onSubmit={analyseUpload} onError={(error) => dispatch({ type: "failed", message: error.message })}>
           <PromptInputAttachments />
           <PromptInputBody>
-            <PromptInputTextarea aria-label="Optional document context" placeholder="Attach an RC, vaccination receipt, policy, or hospital record…" />
+            <PromptInputTextarea aria-label="Optional document context" placeholder="Attach an RC, policy, vaccination receipt, or hospital record…" />
           </PromptInputBody>
           <PromptInputFooter>
             <PromptInputTools>
@@ -144,6 +145,8 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
           <span>Try a synthetic sample</span>
           <button type="button" onClick={() => void analyseSample("vehicle_rc")}><Car />Registration certificate</button>
           <button type="button" onClick={() => void analyseSample("vaccination_receipt")}><Syringe />Vaccination receipt</button>
+          <button type="button" onClick={() => void analyseSample("insurance_policy")}><ShieldCheck />Insurance policy</button>
+          <button type="button" onClick={() => void analyseSample("hospital_discharge_summary")}><Hospital />Discharge summary</button>
         </div>
       </div> : null}
 
@@ -187,10 +190,18 @@ function DocumentProcessing({ mode }: { mode: "analyse" | "apply" }) {
 
 function ProposalReview({ document, decide }: { document: DocumentDeskRecord; decide: (approved: boolean) => Promise<void> }) {
   const proposal = document.proposal;
-  const kindLabel = document.analysis.kind === "vehicle_rc" ? "Registration certificate" : document.analysis.kind === "vaccination_receipt" ? "Vaccination receipt" : "Unrecognised document";
+  const kindLabel = document.analysis.kind === "vehicle_rc"
+    ? "Registration certificate"
+    : document.analysis.kind === "vaccination_receipt"
+      ? "Vaccination receipt"
+      : document.analysis.kind === "insurance_policy"
+        ? "Motor insurance policy"
+        : document.analysis.kind === "hospital_discharge_summary"
+          ? "Hospital discharge summary"
+          : "Unrecognised document";
   return <div className="document-proposal">
     <header>
-      <span>{document.analysis.kind === "vaccination_receipt" ? <Syringe /> : <FileText />}</span>
+      <span>{document.analysis.kind === "vaccination_receipt" ? <Syringe /> : document.analysis.kind === "hospital_discharge_summary" ? <Hospital /> : document.analysis.kind === "insurance_policy" ? <ShieldCheck /> : <FileText />}</span>
       <div><p>{kindLabel} · {Math.round(document.analysis.confidence * 100)}% confidence</p><h3>{proposal.title}</h3><small>{document.fileName} · {formatFileSize(document.size)}</small></div>
       <em><Check />Analysis complete</em>
     </header>

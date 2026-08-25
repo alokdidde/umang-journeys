@@ -13,9 +13,9 @@ Established: 2026-08-26. Source: existing application UI and user-approved compa
 - Dark mode: not needed; this evaluation app ships in light mode.
 
 ## Color contract
-- Text-safe: text/bg, text/on-primary, text/surface, text/border, bg/primary, primary/on-primary, surface/primary, bg/accent, accent/on-primary, surface/accent, primary/border, accent/border.
-- UI-safe only: none in the core 7-role matrix.
-- Decorative only: text/accent, text/primary, bg/border, border/on-primary, surface/border, primary/accent, bg/surface, surface/on-primary, bg/on-primary.
+- Text-safe: background/text, text/surface, text/border, background/primary, primary/surface, background/accent, accent/surface, background/muted, primary/border, muted/surface, accent/border.
+- UI-safe only: muted/border.
+- Decorative only: text/muted, text/accent, text/primary, background/border, primary/muted, surface/border, accent/muted, primary/accent, background/surface.
 - Decorative pairings must not be the only carrier of state.
 
 ## Typography
@@ -35,20 +35,27 @@ Established: 2026-08-26. Source: existing application UI and user-approved compa
 
 ## Reference intelligence
 - Design read: citizen-services app shell for a guided evaluation, mode Operate, warm institutional visual lane.
-- Dials: variance 3/10, motion 3/10, density 7/10, art direction 5/10.
+- Dials: variance 4/10, motion 3/10, density 8/10, art direction 6/10.
 - Foundation: existing React 19, Next.js 16, Tailwind 4 stack; AI Elements source components adopted selectively.
-- Direction contract: one compact document desk above journey summaries; expand only while work or approval is active; preserve the existing UMANG identity.
+- Direction contract: a returning-user citizen account shell with persistent Home, Journeys, Documents, and Activity destinations; dense collection rows; one compact document desk that expands only while work or approval is active; preserve the existing UMANG identity.
 - Anti-references: full-screen chatbot, giant empty upload card, model picker, raw reasoning transcript, or purple-gradient SaaS dashboard.
 
 ## Taste memory
 - Profile priors used: none.
 - Decision log: `.tastemaker/decisions.log`.
-- Pending review: compact expandable document desk above journeys.
+- Pending review: persistent four-destination account navigation, compact expandable document desk, and ledger-style document/activity collections.
 - Profile promotion: none.
 
 ## Navigation chrome
-- Existing UMANG top bar is preserved.
+- Existing UMANG top bar is preserved and now carries a persistent service navigation rail.
+- Mobile navigation moves to a full-width second row with four equal, labeled touch targets.
 - Shell density: compact cards and 9–13px operational labels; large type is reserved for page-level headings.
+
+## Collection structure
+- Home is a task-first overview: compact account totals, document intake, at most two next-action journey cards, then new life events.
+- Journeys, Documents, and Activity are dedicated account surfaces rather than oversized homepage sections.
+- Document rows always expose provenance, journey link, state, and an original-file or service-record action.
+- Activity is an append-only derived ledger grouped by local calendar day and filterable by journeys, documents, and service events.
 
 ## Mood descriptors
 Warm, trustworthy, operational.
@@ -64,7 +71,7 @@ Warm, trustworthy, operational.
 - Durations: press 120ms, hover 140ms, panel/state 180–240ms.
 - App-shell track: animate only the state that changed; progress spinners communicate active work.
 - Reduced motion: spatial motion and spinners are disabled while state feedback remains visible.
-- Verified by: pending final static motion scan and browser feel pass.
+- Verified by: static motion scan and desktop/mobile browser feel pass. The 1.1–1.2s findings are intentional, continuously rotating progress indicators; component-library findings inherit the global reduced-motion branch in `globals.css`.
 
 ## Do not
 - Do not turn the homepage into a chat transcript.
