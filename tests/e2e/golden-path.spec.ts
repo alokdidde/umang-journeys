@@ -9,7 +9,7 @@ async function login(page: Page) {
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Open the guided demo" }).click();
-  await expect(page.getByRole("heading", { name: /Life happens\. We guide you\.|One thing at a time\./ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Continue where you left off|What do you need help with\?|Your journeys are up to date/ })).toBeVisible();
 }
 
 async function seedJourney(page: Page) {
@@ -33,7 +33,7 @@ test.describe.configure({ mode: "serial" });
 test("authentication protects the app, logs out completely, and supports signing in again", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login\?returnTo=%2F$/);
-  await expect(page.getByRole("heading", { name: "Life changes. Your next step stays clear." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Find the government services you need" })).toBeVisible();
   await expect(page.getByText("The demo details are already filled in.")).toBeVisible();
   await expect(page.getByLabel("Email address")).toHaveValue(email);
   const passwordInput = page.getByLabel("Password", { exact: true });
@@ -147,6 +147,7 @@ test("newborn journey persists, completes every sandbox integration, downloads a
   await expect(page.getByText("Done", { exact: true })).toHaveCount(6);
 
   await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Your journeys are up to date" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Nothing needs your attention." })).toBeVisible();
   await page.getByRole("link", { name: "View completed journeys" }).click();
   await expect(page).toHaveURL(/\/journeys#completed-journeys$/);
@@ -167,7 +168,7 @@ test("home prioritises the saved child journey and keeps starting another one av
   });
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "One thing at a time." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Continue where you left off" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "Aarav Sharma journey progress" })).toHaveAttribute("aria-valuenow", "17");

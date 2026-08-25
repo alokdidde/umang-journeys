@@ -59,7 +59,7 @@ function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummar
     <main className="page returning-home">
       <ScenicBackdrop />
       <section className="dashboard-intro content-layer">
-        <div><p className="eyebrow"><Sparkles size={15} />Welcome back</p><h1>One thing at a time.</h1><p>We’ll show you the most useful next step first.</p></div>
+        <div><p className="eyebrow"><Sparkles size={15} />Welcome back</p><h1>{activeJourney ? "Continue where you left off" : "Your journeys are up to date"}</h1><p>{activeJourney ? "Your next unfinished step is ready below." : "Start another journey or review your completed records."}</p></div>
       </section>
       {loadError && <p className="workflow-error content-layer" role="alert">{loadError}</p>}
 
@@ -95,8 +95,8 @@ function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; 
       <ScenicBackdrop />
       <section className="hero content-layer">
         <div className="eyebrow"><Sparkles size={16} /> Citizen services, reorganised around you</div>
-        <h1>Life happens. We guide you.</h1>
-        <p>Tell us what happened in your life. We’ll assemble the right government journey around you.</p>
+        <h1>What do you need help with?</h1>
+        <p>Describe a life event, and we’ll show the government services and steps that apply.</p>
         <form className="life-search" onSubmit={(event) => { event.preventDefault(); start(); }}>
           <Search aria-hidden="true" />
           <input aria-label="Describe your life event" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="I had a baby, we moved home, I bought a vehicle…" />

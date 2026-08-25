@@ -46,8 +46,8 @@ function LoginForm() {
       <section className="signed-out-gateway" aria-labelledby="signed-out-heading">
         <header className="login-promise">
           <p>Public services, organised around your life</p>
-          <h1 id="signed-out-heading">Life changes. Your next step stays clear.</h1>
-          <p>Having a baby, moving home, buying a vehicle, planning healthcare or retiring—UMANG Journeys keeps each path simple.</p>
+          <h1 id="signed-out-heading">Find the government services you need</h1>
+          <p>Organise the steps for a new baby, a move, a vehicle, healthcare or retirement in one place.</p>
         </header>
         <section className="login-card panel" aria-labelledby="login-heading">
           <header className="login-card-heading">

@@ -90,6 +90,7 @@ Calm, trustworthy, guided, humane.
 
 ## Do not
 - Do not turn the homepage into a dashboard, workbench, or chat transcript.
+- Do not expose internal positioning or team mantras as page titles; headings must tell citizens what they can do or what state their work is in.
 - Do not use a permanent desktop sidebar for four destinations.
 - Do not show account totals, provider internals, or all journey facts by default.
 - Do not expose chain-of-thought.
