@@ -11,7 +11,7 @@ export type ServiceNodeDefinition = {
   key: string;
   title: string;
   description: string;
-  icon: "baby" | "certificate" | "health" | "vaccine" | "identity" | "benefits" | "vehicle" | "transfer" | "insurance" | "fastag" | "calendar" | "person" | "coverage" | "scheme" | "records" | "care";
+  icon: "baby" | "certificate" | "health" | "vaccine" | "identity" | "benefits" | "vehicle" | "transfer" | "insurance" | "fastag" | "calendar" | "person" | "coverage" | "scheme" | "records" | "care" | "home" | "address" | "voter" | "mail" | "business" | "store" | "tax" | "launch" | "retirement" | "pension" | "life_certificate" | "folder";
   timing: string;
   dependsOn?: string[];
 };
@@ -19,7 +19,7 @@ export type ServiceNodeDefinition = {
 export type JourneyTemplate = {
   id: string;
   version: number;
-  lifeEvent: "having_a_baby" | "buying_a_vehicle" | "managing_health_cover";
+  lifeEvent: "having_a_baby" | "buying_a_vehicle" | "managing_health_cover" | "moving_home" | "starting_a_business" | "retirement";
   title: string;
   nodes: ServiceNodeDefinition[];
 };
@@ -78,7 +78,49 @@ export const healthInsuranceTemplate: JourneyTemplate = {
   ],
 };
 
-export const journeyTemplates = [newBabyTemplate, vehiclePurchaseTemplate, healthInsuranceTemplate] as const;
+export const movingHomeTemplate: JourneyTemplate = {
+  id: "moving-home.india.v1",
+  version: 1,
+  lifeEvent: "moving_home",
+  title: "Moving Home",
+  nodes: [
+    { key: "move_profile", title: "Confirm your move", description: "Check the new address, move date, and who is moving.", icon: "home", timing: "Start with the new address" },
+    { key: "residence_evidence", title: "Check address evidence", description: "Read one document that supports the new address.", icon: "address", timing: "Before preparing requests", dependsOn: ["move_profile"] },
+    { key: "aadhaar_address", title: "Prepare Aadhaar address update", description: "Prepare a UIDAI address-update checklist and trackable request draft.", icon: "identity", timing: "Each resident updates separately", dependsOn: ["residence_evidence"] },
+    { key: "voter_address", title: "Prepare voter address update", description: "Prepare Form 8 details for shifting the electoral-roll entry.", icon: "voter", timing: "After you ordinarily reside there", dependsOn: ["aadhaar_address"] },
+    { key: "move_completion_pack", title: "Finish your move checklist", description: "Organise postal, vehicle, bank, and household-service address actions.", icon: "mail", timing: "Complete after moving", dependsOn: ["voter_address"] },
+  ],
+};
+
+export const businessSetupTemplate: JourneyTemplate = {
+  id: "business-setup.india.v1",
+  version: 1,
+  lifeEvent: "starting_a_business",
+  title: "Starting a Business",
+  nodes: [
+    { key: "business_profile", title: "Confirm the business", description: "Choose the activity, structure, premises, and expected start date.", icon: "business", timing: "Start with the business basics" },
+    { key: "business_premises", title: "Check premises evidence", description: "Read the document supporting the principal place of business.", icon: "store", timing: "Before tax or local registrations", dependsOn: ["business_profile"] },
+    { key: "udyam_readiness", title: "Prepare Udyam registration", description: "Check the self-declaration details for the official free MSME service.", icon: "certificate", timing: "When the enterprise is ready to register", dependsOn: ["business_premises"] },
+    { key: "gst_readiness", title: "Check GST registration path", description: "Review turnover, supplies, and evidence without deciding tax liability.", icon: "tax", timing: "Verify before taxable supplies begin", dependsOn: ["udyam_readiness"] },
+    { key: "business_launch_pack", title: "Build the launch checklist", description: "Organise bank, invoice, local licence, and recurring compliance actions.", icon: "launch", timing: "Before the first invoice", dependsOn: ["gst_readiness"] },
+  ],
+};
+
+export const retirementTemplate: JourneyTemplate = {
+  id: "retirement.india.v1",
+  version: 1,
+  lifeEvent: "retirement",
+  title: "Retirement",
+  nodes: [
+    { key: "retirement_profile", title: "Confirm your retirement", description: "Check the retirement date, employment route, and pension records you hold.", icon: "retirement", timing: "Start 6 months before retirement" },
+    { key: "retirement_record_review", title: "Review retirement records", description: "Read a provident-fund or pension statement and identify record gaps.", icon: "folder", timing: "Before making any claim", dependsOn: ["retirement_profile"] },
+    { key: "pension_pathway", title: "Prepare pension pathways", description: "Separate EPFO, EPS, NPS, and employer actions that may apply.", icon: "pension", timing: "Official eligibility must be verified", dependsOn: ["retirement_record_review"] },
+    { key: "life_certificate_readiness", title: "Plan life-certificate duties", description: "Prepare the future Jeevan Pramaan checklist only if pension begins.", icon: "life_certificate", timing: "After the pension authority requires it", dependsOn: ["pension_pathway"] },
+    { key: "retirement_pack", title: "Build your retirement pack", description: "Keep claim records, contacts, dates, and verification gaps together.", icon: "folder", timing: "Review yearly", dependsOn: ["life_certificate_readiness"] },
+  ],
+};
+
+export const journeyTemplates = [newBabyTemplate, vehiclePurchaseTemplate, healthInsuranceTemplate, movingHomeTemplate, businessSetupTemplate, retirementTemplate] as const;
 
 export function getJourneyTemplate(templateId: string) {
   return journeyTemplates.find((template) => template.id === templateId);

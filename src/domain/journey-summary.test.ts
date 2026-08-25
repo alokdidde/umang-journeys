@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compileJourney, completeNode, healthInsuranceTemplate, newBabyTemplate, vehiclePurchaseTemplate } from "./journey-engine";
+import { businessSetupTemplate, compileJourney, completeNode, healthInsuranceTemplate, movingHomeTemplate, newBabyTemplate, retirementTemplate, vehiclePurchaseTemplate } from "./journey-engine";
 import { buildJourneySummary } from "./journey-summary";
 
 describe("journey summary", () => {
@@ -57,6 +57,26 @@ describe("journey summary", () => {
 
     expect(summary.title).toBe("Health & Insurance");
     expect(summary.nextAction?.href).toBe("/journeys/journey-health/health-profile");
+  });
+
+  it.each([
+    [movingHomeTemplate, "residence" as const, "New home in Hyderabad", "/journeys/journey-new/move-profile"],
+    [businessSetupTemplate, "business" as const, "Ananya Studio", "/journeys/journey-new/business-profile"],
+    [retirementTemplate, "person" as const, "Ananya Sharma", "/journeys/journey-new/retirement-profile"],
+  ])("routes a remaining journey to its real first step", (template, type, displayName, href) => {
+    const summary = buildJourneySummary({
+      id: "journey-new",
+      status: "active",
+      subject: { id: "subject-1", type, displayName },
+      projection: compileJourney(template),
+      facts: {},
+      serviceRuns: {},
+      createdAt: "2026-08-26T10:00:00.000Z",
+      updatedAt: "2026-08-26T10:00:00.000Z",
+    });
+
+    expect(summary.title).toBe(template.title);
+    expect(summary.nextAction?.href).toBe(href);
   });
 
   it("prioritises resumable provider work and includes its partial progress", () => {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Baby, Car, Check, Clock3, CreditCard, FileHeart, FileText, Gift, HeartPulse, IdCard, Landmark, ShieldCheck, ShieldPlus, Syringe, UserRound } from "lucide-react";
+import { Armchair, ArrowRight, Baby, BriefcaseBusiness, Car, Check, Clock3, CreditCard, FileHeart, FileText, FolderClock, Gift, HeartPulse, House, IdCard, Landmark, MapPinned, Rocket, ShieldCheck, ShieldPlus, Syringe, UserRound } from "lucide-react";
 import type { JourneySummary } from "@/domain/journey-summary";
 
 export function JourneyCard({ journey }: { journey: JourneySummary }) {
@@ -8,7 +8,7 @@ export function JourneyCard({ journey }: { journey: JourneySummary }) {
     <article className="home-journey-card panel">
       <header>
         <span className={`journey-avatar ${journey.subject.type}`}>
-          {journey.subject.type === "vehicle" ? <Car /> : journey.subject.type === "person" ? <UserRound /> : <Baby />}
+          {journey.subject.type === "vehicle" ? <Car /> : journey.subject.type === "person" ? <UserRound /> : journey.subject.type === "residence" ? <House /> : journey.subject.type === "business" ? <BriefcaseBusiness /> : <Baby />}
         </span>
         <div><p>{journey.title}</p><h3>{journey.subject.displayName}</h3></div>
       </header>
@@ -38,5 +38,11 @@ function ActionIcon({ nodeKey }: { nodeKey: string }) {
   if (nodeKey === "public_scheme_check") return <Landmark />;
   if (nodeKey === "abha_records") return <FileHeart />;
   if (nodeKey === "cashless_readiness") return <HeartPulse />;
+  if (nodeKey === "move_profile" || nodeKey === "residence_evidence" || nodeKey === "aadhaar_address" || nodeKey === "voter_address") return <MapPinned />;
+  if (nodeKey === "move_completion_pack") return <House />;
+  if (nodeKey === "business_profile" || nodeKey === "business_premises" || nodeKey === "udyam_readiness" || nodeKey === "gst_readiness") return <BriefcaseBusiness />;
+  if (nodeKey === "business_launch_pack") return <Rocket />;
+  if (nodeKey === "retirement_profile" || nodeKey === "pension_pathway" || nodeKey === "life_certificate_readiness") return <Armchair />;
+  if (nodeKey === "retirement_record_review" || nodeKey === "retirement_pack") return <FolderClock />;
   return <Baby />;
 }

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { buildJourneySummary } from "@/domain/journey-summary";
 
 const bodySchema = z.object({
-  templateId: z.enum(["new-baby.india.v1", "vehicle-purchase.india.v1", "health-insurance.india.v1"]).default("new-baby.india.v1"),
+  templateId: z.enum(["new-baby.india.v1", "vehicle-purchase.india.v1", "health-insurance.india.v1", "moving-home.india.v1", "business-setup.india.v1", "retirement.india.v1"]).default("new-baby.india.v1"),
   facts: z.record(z.string(), z.string().max(500)).default({}),
 });
 

@@ -9,6 +9,9 @@ import {
   Check,
   FileSearch,
   FileText,
+  House,
+  BriefcaseBusiness,
+  Armchair,
   Hospital,
   LoaderCircle,
   Paperclip,
@@ -84,7 +87,7 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
     await analyseForm(form);
   }
 
-  async function analyseSample(sampleType: "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "health_insurance_policy" | "hospital_discharge_summary") {
+  async function analyseSample(sampleType: "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "health_insurance_policy" | "hospital_discharge_summary" | "residence_proof" | "business_premises_proof" | "retirement_account_statement") {
     const form = new FormData();
     form.set("sampleType", sampleType);
     await analyseForm(form);
@@ -128,7 +131,7 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
         <PromptInput accept="application/pdf,image/png,image/jpeg" maxFiles={1} maxFileSize={5 * 1024 * 1024} onSubmit={analyseUpload} onError={(error) => dispatch({ type: "failed", message: error.message })}>
           <PromptInputAttachments />
           <PromptInputBody>
-            <PromptInputTextarea aria-label="Optional document context" placeholder="Attach an RC, policy, vaccination receipt, or hospital record…" />
+            <PromptInputTextarea aria-label="Optional document context" placeholder="Attach a document such as a policy, receipt, address proof, or account statement…" />
           </PromptInputBody>
           <PromptInputFooter>
             <PromptInputTools>
@@ -148,6 +151,9 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
           <button type="button" onClick={() => void analyseSample("insurance_policy")}><ShieldCheck />Insurance policy</button>
           <button type="button" onClick={() => void analyseSample("health_insurance_policy")}><ShieldCheck />Health policy</button>
           <button type="button" onClick={() => void analyseSample("hospital_discharge_summary")}><Hospital />Discharge summary</button>
+          <button type="button" onClick={() => void analyseSample("residence_proof")}><House />Address proof</button>
+          <button type="button" onClick={() => void analyseSample("business_premises_proof")}><BriefcaseBusiness />Business premises</button>
+          <button type="button" onClick={() => void analyseSample("retirement_account_statement")}><Armchair />Retirement statement</button>
         </div>
       </div> : null}
 
@@ -201,10 +207,16 @@ function ProposalReview({ document, decide }: { document: DocumentDeskRecord; de
           ? "Health insurance policy"
         : document.analysis.kind === "hospital_discharge_summary"
           ? "Hospital discharge summary"
+        : document.analysis.kind === "residence_proof"
+          ? "Residence evidence"
+        : document.analysis.kind === "business_premises_proof"
+          ? "Business premises evidence"
+        : document.analysis.kind === "retirement_account_statement"
+          ? "Retirement account statement"
           : "Unrecognised document";
   return <div className="document-proposal">
     <header>
-      <span>{document.analysis.kind === "vaccination_receipt" ? <Syringe /> : document.analysis.kind === "hospital_discharge_summary" ? <Hospital /> : document.analysis.kind === "insurance_policy" || document.analysis.kind === "health_insurance_policy" ? <ShieldCheck /> : <FileText />}</span>
+      <span>{document.analysis.kind === "vaccination_receipt" ? <Syringe /> : document.analysis.kind === "hospital_discharge_summary" ? <Hospital /> : document.analysis.kind === "insurance_policy" || document.analysis.kind === "health_insurance_policy" ? <ShieldCheck /> : document.analysis.kind === "residence_proof" ? <House /> : document.analysis.kind === "business_premises_proof" ? <BriefcaseBusiness /> : document.analysis.kind === "retirement_account_statement" ? <Armchair /> : <FileText />}</span>
       <div><p>{kindLabel} · {Math.round(document.analysis.confidence * 100)}% confidence</p><h3>{proposal.title}</h3><small>{document.fileName} · {formatFileSize(document.size)}</small></div>
       <em><Check />Analysis complete</em>
     </header>

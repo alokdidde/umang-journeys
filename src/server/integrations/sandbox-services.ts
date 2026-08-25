@@ -81,6 +81,18 @@ const services: Record<SandboxServiceKey, Omit<SandboxServiceResult, "receipt">>
     actionType: "prepare_cashless_care_pack",
     summary: "A synthetic cashless-care pack was prepared; no hospital or insurer authorization was requested.",
   },
+  residence_evidence: { adapterKey: "sandbox-address-evidence", actionType: "verify_residence_evidence", summary: "A synthetic residence-evidence summary was prepared for authority-specific use." },
+  aadhaar_address: { adapterKey: "sandbox-uidai-address", actionType: "prepare_aadhaar_address_update", summary: "A synthetic Aadhaar address-update checklist was prepared; no request was submitted." },
+  voter_address: { adapterKey: "sandbox-eci-form8", actionType: "prepare_voter_address_update", summary: "A synthetic Form 8 checklist was prepared; the electoral roll was not changed." },
+  move_completion_pack: { adapterKey: "sandbox-move-coordination", actionType: "build_move_completion_pack", summary: "A synthetic multi-provider move checklist was prepared." },
+  business_premises: { adapterKey: "sandbox-business-premises", actionType: "verify_business_premises", summary: "A synthetic principal-place evidence summary was prepared." },
+  udyam_readiness: { adapterKey: "sandbox-udyam", actionType: "prepare_udyam_registration", summary: "A synthetic Udyam readiness checklist was prepared; no registration was filed." },
+  gst_readiness: { adapterKey: "sandbox-gst-readiness", actionType: "screen_gst_registration", summary: "A synthetic GST readiness result was prepared without deciding tax liability." },
+  business_launch_pack: { adapterKey: "sandbox-business-launch", actionType: "build_business_launch_pack", summary: "A synthetic first-90-days business launch pack was prepared." },
+  retirement_record_review: { adapterKey: "sandbox-retirement-records", actionType: "review_retirement_records", summary: "A synthetic retirement-record reconciliation was prepared." },
+  pension_pathway: { adapterKey: "sandbox-pension-pathway", actionType: "prepare_pension_pathways", summary: "Potential pension pathways were prepared for official verification." },
+  life_certificate_readiness: { adapterKey: "sandbox-jeevan-pramaan", actionType: "prepare_life_certificate_plan", summary: "A synthetic future life-certificate checklist was prepared." },
+  retirement_pack: { adapterKey: "sandbox-retirement-pack", actionType: "build_retirement_pack", summary: "A synthetic retirement transition pack was prepared without financial advice." },
 };
 
 export function simulateExternalService(
@@ -367,6 +379,230 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
           { title: "Insurer or scheme escalation", meta: "Use the official helpline if authorization is delayed or denied", status: "information" },
         ] }],
         notice: "Cashless readiness is not cashless approval. A network provider and the insurer or scheme must complete pre-authorisation for the actual admission.",
+      };
+    case "residence_evidence":
+      return {
+        title: "Residence evidence summary",
+        subtitle: "The new-address document was matched for authority-specific review",
+        referenceLabel: "Evidence review reference",
+        referenceValue: `ADDR-EVD-${reference.slice(-8)}`,
+        facts: [
+          { label: "New address", value: facts["move.newAddress"] ?? "12 Lake View Road, Hyderabad 500081", status: "verified" },
+          { label: "Document", value: "Synthetic rent agreement", status: "verified" },
+          { label: "Universal acceptance", value: "Not assumed", status: "information" },
+        ],
+        groups: [{ title: "Authority fit", items: [
+          { title: "UIDAI address route", meta: "Compare with the current supporting-document list", status: "review" },
+          { title: "Election Commission Form 8", meta: "Registered rent deed is listed as one evidence option", status: "ready" },
+          { title: "Vehicle registration record", meta: "Form 33 has its own evidence and timing requirements", status: "information" },
+        ] }],
+        notice: "A document accepted by one authority may be rejected by another. This result is an evaluation summary, not official verification.",
+      };
+    case "aadhaar_address":
+      return {
+        title: "Aadhaar address-update checklist",
+        subtitle: "Request details prepared for review on the official UIDAI service",
+        referenceLabel: "Draft reference",
+        referenceValue: `UIDAI-DRAFT-${reference.slice(-7)}`,
+        facts: [
+          { label: "Address", value: facts["move.newAddress"] ?? "12 Lake View Road, Hyderabad 500081", status: "verified" },
+          { label: "Authentication", value: "OTP, face, or centre step still required", status: "due" },
+          { label: "Submission", value: "Not submitted", status: "information" },
+        ],
+        groups: [{ title: "Official steps left", items: [
+          { title: "Review the proof-of-address image", meta: "Clear colour scan and matching address", status: "review" },
+          { title: "Confirm English and local-language address", meta: "Check transliteration before submission", status: "due" },
+          { title: "Save the official SRN", meta: "Generated only after a real request is submitted", status: "upcoming" },
+        ] }],
+        notice: "No Aadhaar number was authenticated and no UIDAI update request was made. Only UIDAI can issue an SRN or approve the change.",
+      };
+    case "voter_address":
+      return {
+        title: "Voter Form 8 preparation",
+        subtitle: "Shifting-of-residence fields and evidence organised for official submission",
+        referenceLabel: "Preparation reference",
+        referenceValue: `ECI-F8-${reference.slice(-8)}`,
+        facts: [
+          { label: "Present residence", value: facts["move.newAddress"] ?? "12 Lake View Road, Hyderabad 500081", status: "verified" },
+          { label: "EPIC", value: facts["move.hasEpic"] === "yes" ? "User says available" : "Confirm before submission", status: "review" },
+          { label: "Electoral-roll change", value: "Not performed", status: "information" },
+        ],
+        groups: [{ title: "Form 8 checklist", items: [
+          { title: "Submit to the ERO for the new residence", meta: "Online, app, or offline channel", status: "due" },
+          { title: "Attach self-attested address evidence", meta: "Use an accepted document or name another supporting document", status: "ready" },
+          { title: "Track the official application", meta: "Use the Voter Service Portal after submission", status: "upcoming" },
+        ] }],
+        notice: "This preparation does not delete, shift, correct, or replace an electoral-roll entry or EPIC.",
+      };
+    case "move_completion_pack":
+      return {
+        title: "Move completion pack",
+        subtitle: "A provider-by-provider address checklist for the new home",
+        referenceLabel: "Move pack reference",
+        referenceValue: `MOVE-SBX-${reference.slice(-8)}`,
+        facts: [
+          { label: "Move date", value: formatShortDate(facts["move.date"]), status: "verified" },
+          { label: "Identity requests", value: "Prepared, not submitted", status: "review" },
+          { label: "Global address status", value: "No such single update", status: "information" },
+        ],
+        groups: [{ title: "Remaining address actions", items: [
+          { title: "India Post redirection", meta: "Written intimation may remain valid for up to 3 months", status: "due" },
+          { title: "Vehicle RC address", meta: "Form 33 may be due within 14 days for a registered owner", status: "review" },
+          { title: "Bank, insurer, employer, and utilities", meta: "Update each provider and keep acknowledgements", status: "due" },
+          { title: "Review saved records", meta: "Confirm that official services show the new address", status: "upcoming" },
+        ] }],
+        notice: "This pack tracks separate requests. It does not prove that any authority or provider has changed its record.",
+      };
+    case "business_premises":
+      return {
+        title: "Business premises evidence summary",
+        subtitle: "Principal-place documents matched to the confirmed business address",
+        referenceLabel: "Premises review reference",
+        referenceValue: `BIZ-ADDR-${reference.slice(-8)}`,
+        facts: [
+          { label: "Business", value: facts["business.name"] ?? "Ananya Design Studio", status: "verified" },
+          { label: "Principal place", value: facts["business.address"] ?? "4 Creative Lane, Hyderabad 500033", status: "verified" },
+          { label: "Possession", value: facts["business.occupancy"] ?? "Rented", status: "review" },
+        ],
+        groups: [{ title: "Evidence combinations", items: [
+          { title: "Rent or lease agreement", meta: "Synthetic sample attached", status: "verified" },
+          { title: "Owner evidence or utility record", meta: "May be required with rented or consent premises", status: "review" },
+          { title: "Local registration evidence", meta: "Check Telangana and municipal requirements separately", status: "information" },
+        ] }],
+        notice: "This result does not establish title, tenancy, possession, or acceptance by GST or any local authority.",
+      };
+    case "udyam_readiness":
+      return {
+        title: "Udyam registration readiness",
+        subtitle: "Free official self-declaration fields organised for review",
+        referenceLabel: "Readiness reference",
+        referenceValue: `UDYAM-GUIDE-${reference.slice(-7)}`,
+        facts: [
+          { label: "Enterprise", value: facts["business.name"] ?? "Ananya Design Studio", status: "verified" },
+          { label: "Structure", value: facts["business.structure"]?.replaceAll("_", " ") ?? "Sole proprietorship", status: "verified" },
+          { label: "Official registration", value: "Not filed", status: "information" },
+        ],
+        groups: [{ title: "Official flow", items: [
+          { title: "Use only the official free portal", meta: "Udyam registration charges no filing fee", status: "information" },
+          { title: "Authenticate the correct Aadhaar holder", meta: "The required person depends on the organisation type", status: "due" },
+          { title: "Review PAN and applicable GST-linked details", meta: "Official databases perform these checks", status: "review" },
+          { title: "Save the official certificate and QR", meta: "Available only after successful registration", status: "upcoming" },
+        ] }],
+        notice: "No Aadhaar OTP, PAN validation, government database lookup, registration number, or certificate was generated.",
+      };
+    case "gst_readiness":
+      return {
+        title: "GST registration readiness result",
+        subtitle: "Known facts screened without making a tax-liability decision",
+        referenceLabel: "GST screening reference",
+        referenceValue: `GST-GUIDE-${reference.slice(-8)}`,
+        facts: [
+          { label: "Expected annual turnover", value: facts["business.expectedTurnover"] ?? "₹8,00,000", status: "verified" },
+          { label: "Interstate supplies", value: facts["business.interstateSupplies"] === "yes" ? "Planned" : "Not currently planned", status: "review" },
+          { label: "Registration decision", value: "Professional or official check required", status: "review" },
+        ],
+        groups: [{ title: "What to verify", items: [
+          { title: "Aggregate PAN-based turnover", meta: "Thresholds and exceptions can change", status: "due" },
+          { title: "Compulsory-registration cases", meta: "Supply type and channel can matter even below a threshold", status: "due" },
+          { title: "Principal-place evidence", meta: "Premises pack prepared", status: "ready" },
+          { title: "Tax professional or GST helpdesk", meta: "Confirm the current path before applying", status: "information" },
+        ] }],
+        notice: "This is not tax advice and does not decide whether registration, tax, composition, invoicing, or filing is required.",
+      };
+    case "business_launch_pack":
+      return {
+        title: "Business launch pack",
+        subtitle: "A first-90-days checklist built from the confirmed setup",
+        referenceLabel: "Launch pack reference",
+        referenceValue: `BIZ-LAUNCH-${reference.slice(-7)}`,
+        facts: [
+          { label: "Business", value: facts["business.name"] ?? "Ananya Design Studio", status: "verified" },
+          { label: "Start date", value: formatShortDate(facts["business.startDate"]), status: "verified" },
+          { label: "Compliance status", value: "Not declared", status: "information" },
+        ],
+        groups: [{ title: "Before the first invoice", items: [
+          { title: "Confirm registrations and invoice fields", meta: "Use official outcomes, not readiness drafts", status: "due" },
+          { title: "Open the appropriate business banking route", meta: "Bank decides account evidence and approval", status: "review" },
+          { title: "Check Telangana and municipal requirements", meta: "Shop, establishment, trade, or professional rules may apply", status: "due" },
+          { title: "Create a recurring compliance calendar", meta: "Tax, payroll, licence, and record dates", status: "upcoming" },
+        ] }],
+        notice: "This planning pack is not incorporation, registration, a licence, tax advice, or a finding that the business may legally operate.",
+      };
+    case "retirement_record_review":
+      return {
+        title: "Retirement record review",
+        subtitle: "Member and service records reconciled from synthetic evidence",
+        referenceLabel: "Record review reference",
+        referenceValue: `RET-REC-${reference.slice(-8)}`,
+        facts: [
+          { label: "Member", value: facts["person.name"] ?? "Ananya Sharma", status: "verified" },
+          { label: "Primary record", value: facts["retirement.accountType"] === "nps" ? "NPS" : "EPFO / EPS", status: "verified" },
+          { label: "Official balance", value: "Not queried", status: "information" },
+        ],
+        groups: [{ title: "Record gaps to check", items: [
+          { title: "Name, birth date, and bank details", meta: "Must match the responsible authority’s record", status: "review" },
+          { title: "Employment and eligible service", meta: `${facts["retirement.serviceYears"] ?? "14"} years stated in this evaluation`, status: "review" },
+          { title: "Nominee and family details", meta: "Verify before a claim is needed", status: "due" },
+          { title: "Tax and contact details", meta: "Confirm with the appropriate provider", status: "information" },
+        ] }],
+        notice: "No EPFO, NPS, employer, bank, or pension-authority record was accessed or changed.",
+      };
+    case "pension_pathway":
+      return {
+        title: "Pension pathway indications",
+        subtitle: "Possible claim routes separated for official verification",
+        referenceLabel: "Pathway reference",
+        referenceValue: `PENSION-GUIDE-${reference.slice(-7)}`,
+        facts: [
+          { label: "Retirement date", value: formatShortDate(facts["retirement.date"]), status: "verified" },
+          { label: "Employment route", value: facts["retirement.employmentSector"] ?? "Private employment", status: "verified" },
+          { label: "Entitlement", value: "Not decided", status: "information" },
+        ],
+        groups: [{ title: "Potential routes", items: [
+          { title: "EPF final settlement", meta: "Check the current composite-claim route and service record", status: "review" },
+          { title: "EPS monthly pension or withdrawal benefit", meta: "Age and eligible service affect the official route", status: "due" },
+          { title: "NPS exit options", meta: "Use current PFRDA rules for the subscriber category and corpus", status: "review" },
+          { title: "Employer retirement dues", meta: "Gratuity, leave, tax, and certificates remain separate", status: "information" },
+        ] }],
+        notice: "These are Benefit Indications, not pension entitlement, financial advice, a claim, or a sanction order.",
+      };
+    case "life_certificate_readiness":
+      return {
+        title: "Life-certificate readiness plan",
+        subtitle: "A future Jeevan Pramaan checklist for when a pension authority requires it",
+        referenceLabel: "Readiness reference",
+        referenceValue: `JP-GUIDE-${reference.slice(-8)}`,
+        facts: [
+          { label: "Pension started", value: facts["retirement.pensionStarted"] === "yes" ? "User says yes" : "Not yet or not confirmed", status: "review" },
+          { label: "Biometric authentication", value: "Not performed", status: "information" },
+          { label: "Validity", value: "Set by the pension authority", status: "information" },
+        ],
+        groups: [{ title: "When it applies", items: [
+          { title: "Confirm the authority is onboarded", meta: "Jeevan Pramaan availability depends on the pension authority", status: "due" },
+          { title: "Keep Aadhaar, mobile, PPO, and bank details ready", meta: "Use the accepted official records", status: "review" },
+          { title: "Choose face, biometric, CSC, bank, or post-office route", meta: "Available channels depend on device and authority", status: "information" },
+          { title: "Renew when the authority requires", meta: "A Pramaan ID is not valid for life", status: "upcoming" },
+        ] }],
+        notice: "No Digital Life Certificate or Pramaan ID was generated. Authentication and validity come only from the official service and pension authority.",
+      };
+    case "retirement_pack":
+      return {
+        title: "Retirement transition pack",
+        subtitle: "Records, potential claim paths, contacts, and future dates in one place",
+        referenceLabel: "Retirement pack reference",
+        referenceValue: `RET-PACK-${reference.slice(-8)}`,
+        facts: [
+          { label: "Person", value: facts["person.name"] ?? "Ananya Sharma", status: "verified" },
+          { label: "Retirement date", value: formatShortDate(facts["retirement.date"]), status: "verified" },
+          { label: "Pension sanction", value: "Not issued", status: "information" },
+        ],
+        groups: [{ title: "Keep this pack current", items: [
+          { title: "Official claim acknowledgements", meta: "Replace sandbox references after real submission", status: "due" },
+          { title: "Bank, nominee, and contact details", meta: "Review after every material change", status: "review" },
+          { title: "Pension and life-certificate dates", meta: "Use authority-issued dates", status: "upcoming" },
+          { title: "Independent tax and financial advice", meta: "Use a qualified professional for personal decisions", status: "information" },
+        ] }],
+        notice: "The Retirement Pack is synthetic planning material, not financial advice, pension approval, a payment order, or an official record.",
       };
   }
 }

@@ -121,7 +121,7 @@ function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; 
 function LifeEventGrid({ start, returning = false }: { start: (statement?: string) => void; returning?: boolean }) {
   return <section className={`event-grid content-layer ${returning ? "compact-event-grid" : ""}`} aria-label="Life events">
     {lifeEvents.map(({ key, label, Icon, active, tone }) => (
-      <button key={key} className={`event-card ${active ? "active" : ""}`} onClick={active ? () => start(key === "vehicle" ? "I bought a used Tata Nexon in Hyderabad." : key === "health" ? "I want to understand my health insurance and prepare for cashless care in Hyderabad." : "We had a baby yesterday at Apollo Hospital in Hyderabad.") : undefined} type="button" aria-disabled={!active}>
+      <button key={key} className={`event-card ${active ? "active" : ""}`} onClick={active ? () => start(key === "vehicle" ? "I bought a used Tata Nexon in Hyderabad." : key === "health" ? "I want to understand my health insurance and prepare for cashless care in Hyderabad." : key === "home" ? "We are moving to a rented home in Hyderabad next month." : key === "business" ? "I am starting a design business from a rented office in Hyderabad." : key === "retirement" ? "I retire from private employment next month and have an EPFO account." : "We had a baby yesterday at Apollo Hospital in Hyderabad.") : undefined} type="button" aria-disabled={!active}>
         {active && <span className="selected-badge">{returning ? <Plus size={15} /> : <Check size={15} />}</span>}
         {!active && <span className="preview-badge">Preview</span>}
         <span className={`event-icon ${tone}`}><Icon /></span><strong>{returning && active ? `Another: ${label}` : label}</strong>

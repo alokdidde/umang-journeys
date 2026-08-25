@@ -34,15 +34,29 @@ export async function POST(request: Request) {
     let source: "sample" | "user_upload";
     let analysis;
 
-    if (sampleType === "vehicle_rc" || sampleType === "vaccination_receipt" || sampleType === "insurance_policy" || sampleType === "health_insurance_policy" || sampleType === "hospital_discharge_summary") {
+    if (sampleType === "vehicle_rc" || sampleType === "vaccination_receipt" || sampleType === "insurance_policy" || sampleType === "health_insurance_policy" || sampleType === "hospital_discharge_summary" || sampleType === "residence_proof" || sampleType === "business_premises_proof" || sampleType === "retirement_account_statement") {
       const journeys = await journeyRepository.list(sessionId);
       const child = journeys.find((journey) => journey.subject.type === "child");
       const vehicle = journeys.find((journey) => journey.subject.type === "vehicle");
       const person = journeys.find((journey) => journey.subject.type === "person");
+      const residence = journeys.find((journey) => journey.subject.type === "residence");
+      const business = journeys.find((journey) => journey.subject.type === "business");
       const sampleFacts: Record<string, string> = sampleType === "health_insurance_policy" ? {
         "person.name": person?.subject.displayName ?? "Ananya Sharma",
         "person.dateOfBirth": person?.facts["person.dateOfBirth"] ?? "1992-04-18",
         "person.state": person?.facts["person.state"] ?? "Telangana",
+      } : sampleType === "residence_proof" ? {
+        "person.name": residence?.facts["person.name"] ?? "Ananya Sharma",
+        "move.newAddress": residence?.facts["move.newAddress"] ?? "12 Lake View Road, Madhapur, Hyderabad 500081",
+        "move.occupancy": residence?.facts["move.occupancy"] ?? "rented",
+      } : sampleType === "business_premises_proof" ? {
+        "business.name": business?.facts["business.name"] ?? "Ananya Design Studio",
+        "business.address": business?.facts["business.address"] ?? "4 Creative Lane, Jubilee Hills, Hyderabad 500033",
+        "business.occupancy": business?.facts["business.occupancy"] ?? "Rented premises",
+      } : sampleType === "retirement_account_statement" ? {
+        "person.name": person?.subject.displayName ?? "Ananya Sharma",
+        "retirement.accountType": person?.facts["retirement.accountType"] ?? "epfo_eps",
+        "retirement.serviceYears": person?.facts["retirement.serviceYears"] ?? "14 years",
       } : sampleType === "vehicle_rc" || sampleType === "insurance_policy" ? {
         "vehicle.registrationNumber": vehicle?.facts["vehicle.registrationNumber"] ?? "TS09EV4321",
         "vehicle.makeModel": vehicle?.facts["vehicle.makeModel"] ?? "Tata Nexon EV",

@@ -55,7 +55,9 @@ export type ExternalActionStatus = (typeof ExternalActionStatus)[keyof typeof Ex
 export const JourneySubjectType = {
   CHILD: 'CHILD',
   VEHICLE: 'VEHICLE',
-  PERSON: 'PERSON'
+  PERSON: 'PERSON',
+  RESIDENCE: 'RESIDENCE',
+  BUSINESS: 'BUSINESS'
 } as const
 
 export type JourneySubjectType = (typeof JourneySubjectType)[keyof typeof JourneySubjectType]

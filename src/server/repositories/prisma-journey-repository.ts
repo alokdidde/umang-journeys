@@ -4,8 +4,25 @@ import type { JourneyRepository, StoredJourney } from "@/server/repositories/jou
 import { advanceSimulatedService, isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
 import type { SandboxServiceKey, SandboxServiceRun } from "@/domain/service-workflows";
 import type { EvidenceRecord, EvidenceSource, EvidenceType, JourneyEvidence } from "@/domain/evidence";
+import type { JourneySubject } from "@/domain/journey-summary";
 
 type DatabaseJourney = Awaited<ReturnType<ReturnType<typeof getPrisma>["journeyInstance"]["findFirst"]>>;
+
+function subjectForJourney(lifeEvent: string, facts: Record<string, string>): { type: "CHILD" | "VEHICLE" | "PERSON" | "RESIDENCE" | "BUSINESS"; displayName: string } {
+  if (lifeEvent === "buying_a_vehicle") return { type: "VEHICLE", displayName: facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || "Your vehicle" };
+  if (lifeEvent === "moving_home") return { type: "RESIDENCE", displayName: facts["move.label"]?.trim() || `New home in ${facts["move.newCity"]?.trim() || "your new area"}` };
+  if (lifeEvent === "starting_a_business") return { type: "BUSINESS", displayName: facts["business.name"]?.trim() || "Your new business" };
+  if (lifeEvent === "managing_health_cover" || lifeEvent === "retirement") return { type: "PERSON", displayName: facts["person.name"]?.trim() || "Ananya Sharma" };
+  return { type: "CHILD", displayName: facts["child.name"]?.trim() || "Your baby" };
+}
+
+function toSubjectType(type: string): JourneySubject["type"] {
+  if (type === "VEHICLE") return "vehicle";
+  if (type === "PERSON") return "person";
+  if (type === "RESIDENCE") return "residence";
+  if (type === "BUSINESS") return "business";
+  return "child";
+}
 
 const toDatabaseStatus = (status: NodeStatus) => status.toUpperCase() as
   | "LOCKED"
@@ -85,7 +102,7 @@ function mapJourney(
     id: journey.id,
     sessionId,
     status: journey.status === "COMPLETED" ? "completed" : journey.status === "ABANDONED" ? "abandoned" : "active",
-    subject: { id: journey.subject.id, type: journey.subject.type === "VEHICLE" ? "vehicle" : journey.subject.type === "PERSON" ? "person" : "child", displayName: journey.subject.displayName },
+    subject: { id: journey.subject.id, type: toSubjectType(journey.subject.type), displayName: journey.subject.displayName },
     projection,
     facts,
     serviceRuns,
@@ -112,8 +129,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
   async create(sessionId: string, facts: Record<string, string> = {}, templateId = newBabyTemplate.id) {
     const template = getJourneyTemplate(templateId);
     if (!template) throw new Error(`Unknown journey template: ${templateId}`);
-    const isVehicle = template.lifeEvent === "buying_a_vehicle";
-    const isPerson = template.lifeEvent === "managing_health_cover";
+    const subject = subjectForJourney(template.lifeEvent, facts);
     const prisma = getPrisma();
     const profile = await prisma.userProfile.upsert({
       where: { sessionId },
@@ -139,9 +155,9 @@ export class PrismaJourneyRepository implements JourneyRepository {
         status: "ACTIVE",
         subject: {
           create: {
-            type: isVehicle ? "VEHICLE" as const : isPerson ? "PERSON" as const : "CHILD" as const,
-            displayName: isVehicle ? facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || "Your vehicle" : isPerson ? facts["person.name"]?.trim() || "Ananya Sharma" : facts["child.name"]?.trim() || "Your baby",
-            dateOfBirth: isVehicle ? undefined : validDate(isPerson ? facts["person.dateOfBirth"] : facts["child.dateOfBirth"]),
+            type: subject.type,
+            displayName: subject.displayName,
+            dateOfBirth: subject.type === "PERSON" ? validDate(facts["person.dateOfBirth"]) : subject.type === "CHILD" ? validDate(facts["child.dateOfBirth"]) : undefined,
             profile: { connect: { id: profile.id } },
           },
         },
@@ -194,8 +210,8 @@ export class PrismaJourneyRepository implements JourneyRepository {
           update: { valueJson, sourceType: "USER_CONFIRMED", confirmed: true },
           create: { journeyId: id, key, valueJson, sourceType: "USER_CONFIRMED", confirmed: true },
         })),
-        ...((facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || facts["person.name"]?.trim())
-          ? [prisma.journeySubject.update({ where: { id: journey.subject.id }, data: { displayName: facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || facts["person.name"]!.trim() } })]
+        ...((facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || facts["move.label"]?.trim() || facts["move.newCity"]?.trim() || facts["business.name"]?.trim() || facts["person.name"]?.trim())
+          ? [prisma.journeySubject.update({ where: { id: journey.subject.id }, data: { displayName: facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || facts["move.label"]?.trim() || (facts["move.newCity"]?.trim() ? `New home in ${facts["move.newCity"].trim()}` : undefined) || facts["business.name"]?.trim() || facts["person.name"]!.trim() } })]
           : []),
         prisma.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } }),
       ],

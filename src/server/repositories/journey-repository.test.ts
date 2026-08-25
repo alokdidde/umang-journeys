@@ -38,6 +38,17 @@ describe("journey repository", () => {
     expect(journey.projection.nodes[0]?.key).toBe("health_profile");
   });
 
+  it.each([
+    ["moving-home.india.v1", { "move.newCity": "Hyderabad" }, "residence", "New home in Hyderabad"],
+    ["business-setup.india.v1", { "business.name": "Ananya Design Studio" }, "business", "Ananya Design Studio"],
+    ["retirement.india.v1", { "person.name": "Ananya Sharma" }, "person", "Ananya Sharma"],
+  ])("creates a distinct subject for another journey", async (templateId, facts, type, displayName) => {
+    const repository = new MemoryJourneyRepository();
+    const journey = await repository.create("session-more", facts, templateId);
+
+    expect(journey.subject).toMatchObject({ type, displayName });
+  });
+
   it("completes vehicle details without changing the vehicle template", async () => {
     const repository = new MemoryJourneyRepository();
     const created = await repository.create("session-driver", {}, "vehicle-purchase.india.v1");

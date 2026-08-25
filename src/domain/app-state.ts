@@ -14,6 +14,9 @@ export type AppState = {
   hospitalRegistered: "yes" | "not_sure" | "no" | null;
   vehicleOwnershipTransferred: "yes" | "not_sure" | "no" | null;
   healthCoverageKnown: "yes" | "not_sure" | "no" | null;
+  moveAddressEvidenceKnown: "yes" | "not_sure" | "no" | null;
+  businessPremisesProofKnown: "yes" | "not_sure" | "no" | null;
+  retirementStatementKnown: "yes" | "not_sure" | "no" | null;
   projection: JourneyProjection;
   form: RegistrationForm;
   facts: Record<string, string>;
@@ -38,6 +41,9 @@ export type AppAction =
   | { type: "set_hospital_registered"; value: "yes" | "not_sure" | "no" }
   | { type: "set_vehicle_ownership_transferred"; value: "yes" | "not_sure" | "no" }
   | { type: "set_health_coverage_known"; value: "yes" | "not_sure" | "no" }
+  | { type: "set_move_address_evidence_known"; value: "yes" | "not_sure" | "no" }
+  | { type: "set_business_premises_proof_known"; value: "yes" | "not_sure" | "no" }
+  | { type: "set_retirement_statement_known"; value: "yes" | "not_sure" | "no" }
   | { type: "set_field"; field: keyof RegistrationForm; value: string }
   | { type: "submit_registration" }
   | { type: "server_journey_loaded"; journey: ServerJourney }
@@ -56,6 +62,9 @@ export const pristineState: AppState = {
   hospitalRegistered: null,
   vehicleOwnershipTransferred: null,
   healthCoverageKnown: null,
+  moveAddressEvidenceKnown: null,
+  businessPremisesProofKnown: null,
+  retirementStatementKnown: null,
   projection: compileJourney(newBabyTemplate),
   form: { childName: "", localWard: "" },
   facts: {},
@@ -77,6 +86,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, vehicleOwnershipTransferred: action.value };
     case "set_health_coverage_known":
       return { ...state, healthCoverageKnown: action.value };
+    case "set_move_address_evidence_known":
+      return { ...state, moveAddressEvidenceKnown: action.value };
+    case "set_business_premises_proof_known":
+      return { ...state, businessPremisesProofKnown: action.value };
+    case "set_retirement_statement_known":
+      return { ...state, retirementStatementKnown: action.value };
     case "set_field":
       return {
         ...state,

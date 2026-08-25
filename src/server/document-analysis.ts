@@ -6,7 +6,7 @@ const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 const acceptedMimeTypes = new Set(["application/pdf", "image/png", "image/jpeg"]);
 
 const analysisSchema = z.object({
-  kind: z.enum(["vehicle_rc", "vaccination_receipt", "insurance_policy", "health_insurance_policy", "hospital_discharge_summary", "unknown"]),
+  kind: z.enum(["vehicle_rc", "vaccination_receipt", "insurance_policy", "health_insurance_policy", "hospital_discharge_summary", "residence_proof", "business_premises_proof", "retirement_account_statement", "unknown"]),
   confidence: z.number().min(0).max(1),
   fields: z.object({
     registrationNumber: z.string().optional(),
@@ -28,6 +28,17 @@ const analysisSchema = z.object({
     validFrom: z.string().optional(),
     validUntil: z.string().optional(),
     dischargeReference: z.string().optional(),
+    residentName: z.string().optional(),
+    address: z.string().optional(),
+    documentType: z.string().optional(),
+    issuedOn: z.string().optional(),
+    businessName: z.string().optional(),
+    occupancy: z.string().optional(),
+    memberName: z.string().optional(),
+    accountType: z.string().optional(),
+    accountReference: z.string().optional(),
+    eligibleService: z.string().optional(),
+    statementDate: z.string().optional(),
   }),
 });
 
@@ -54,7 +65,13 @@ function filenameFallback(fileName: string): DocumentAnalysis {
     ? "vaccination_receipt"
     : /(^|[-_ ])rc($|[-_. ])|registration/.test(normalized)
       ? "vehicle_rc"
-      : "unknown";
+      : /residence|address[-_ ]?proof|rent[-_ ]?agreement|property[-_ ]?tax/.test(normalized)
+        ? "residence_proof"
+        : /business[-_ ]?premises|shop[-_ ]?lease|commercial[-_ ]?rent/.test(normalized)
+          ? "business_premises_proof"
+          : /retirement|epfo|eps|nps|pension[-_ ]?statement/.test(normalized)
+            ? "retirement_account_statement"
+            : "unknown";
   return { kind, confidence: kind === "unknown" ? 0.2 : 0.55, fields: {} };
 }
 
@@ -75,7 +92,7 @@ export async function analyzeUploadedDocument(file: {
         content: [
           {
             type: "text",
-            text: "Classify this Indian citizen-service document. Extract only visibly supported fields. Return vehicle_rc, vaccination_receipt, insurance_policy for motor cover, health_insurance_policy for personal health cover, hospital_discharge_summary, or unknown. Dates must use YYYY-MM-DD. Never invent an identifier, person, vaccine, policy, date, provider, diagnosis, eligibility, or confidence.",
+            text: "Classify this Indian citizen-service document. Extract only visibly supported fields. Return vehicle_rc, vaccination_receipt, insurance_policy for motor cover, health_insurance_policy for personal health cover, hospital_discharge_summary, residence_proof for address evidence, business_premises_proof for a commercial premises document, retirement_account_statement for EPFO/EPS/NPS records, or unknown. Dates must use YYYY-MM-DD. Never invent an identifier, person, vaccine, policy, date, provider, diagnosis, entitlement, eligibility, or confidence.",
           },
           { type: "file", mediaType: file.mimeType, data: file.bytes, filename: file.fileName },
         ],

@@ -41,6 +41,25 @@ function extractedFields(type: EvidenceType, facts: Record<string, string>): Rec
     validFrom: "2026-04-01",
     validUntil: "2027-03-31",
   };
+  if (type === "residence_proof") return {
+    residentName: facts["person.name"] ?? "Ananya Sharma",
+    address: facts["move.newAddress"] ?? "12 Lake View Road, Madhapur, Hyderabad 500081",
+    documentType: facts["move.occupancy"] === "owned" ? "Property tax receipt" : "Registered rent agreement",
+    issuedOn: "2026-08-20",
+  };
+  if (type === "business_premises_proof") return {
+    businessName: facts["business.name"] ?? "Ananya Design Studio",
+    address: facts["business.address"] ?? "4 Creative Lane, Jubilee Hills, Hyderabad 500033",
+    occupancy: facts["business.occupancy"] ?? "Rented premises",
+    documentType: "Rent agreement with electricity bill",
+  };
+  if (type === "retirement_account_statement") return {
+    memberName: facts["person.name"] ?? "Ananya Sharma",
+    accountType: facts["retirement.accountType"] === "nps" ? "NPS" : "EPFO / EPS",
+    accountReference: "Synthetic UAN ending 4821",
+    eligibleService: facts["retirement.serviceYears"] ?? "14 years",
+    statementDate: "2026-08-25",
+  };
   return {
     policyNumber: "MTR-SBX-884210",
     registrationNumber: facts["vehicle.registrationNumber"] ?? "TS09EV4321",
@@ -55,6 +74,9 @@ function titleFor(type: EvidenceType) {
   if (type === "vaccination_receipt") return "SYNTHETIC VACCINATION RECEIPT";
   if (type === "hospital_discharge_summary") return "SYNTHETIC HOSPITAL DISCHARGE SUMMARY";
   if (type === "health_insurance_policy") return "SYNTHETIC HEALTH INSURANCE POLICY";
+  if (type === "residence_proof") return "SYNTHETIC RESIDENCE EVIDENCE";
+  if (type === "business_premises_proof") return "SYNTHETIC BUSINESS PREMISES EVIDENCE";
+  if (type === "retirement_account_statement") return "SYNTHETIC RETIREMENT ACCOUNT STATEMENT";
   return "SYNTHETIC MOTOR INSURANCE POLICY";
 }
 

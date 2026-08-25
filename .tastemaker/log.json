@@ -38,5 +38,15 @@
     "footer": "none",
     "knobs": "low-density/sequential/evidence-first/safety-labelled",
     "brief": "UMANG Journeys · personal health cover, public-scheme screening, ABHA records, and cashless-care readiness"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "Moving Home, Starting a Business, and Retirement journeys",
+    "macrostructure": "Guided Citizen Lane",
+    "nav": "existing familiar top navigation and mobile bottom navigation",
+    "hero": "one current action per journey",
+    "footer": "none",
+    "knobs": "low-density/sequential/evidence-first/authority-separated/safety-labelled",
+    "brief": "UMANG Journeys · complete moving, business setup, and retirement workflows with evidence, sandbox services, artifacts, archive, documents, and activity"
   }
 ]

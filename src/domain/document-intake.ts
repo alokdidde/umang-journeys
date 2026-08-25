@@ -1,4 +1,4 @@
-export type DocumentKind = "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "health_insurance_policy" | "hospital_discharge_summary" | "unknown";
+export type DocumentKind = "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "health_insurance_policy" | "hospital_discharge_summary" | "residence_proof" | "business_premises_proof" | "retirement_account_statement" | "unknown";
 
 export type DocumentAnalysis = {
   kind: DocumentKind;
@@ -8,17 +8,17 @@ export type DocumentAnalysis = {
 
 export type JourneyMatchCandidate = {
   id: string;
-  subject: { type: "child" | "vehicle" | "person"; displayName: string };
+  subject: { type: "child" | "vehicle" | "person" | "residence" | "business"; displayName: string };
   facts: Record<string, string>;
 };
 
 export type DocumentProposal = {
-  action: "create_vehicle_journey" | "update_vehicle_journey" | "record_vaccination" | "record_vehicle_insurance" | "create_health_journey" | "record_health_insurance" | "create_child_journey" | "update_child_journey" | "needs_review";
+  action: "create_vehicle_journey" | "update_vehicle_journey" | "record_vaccination" | "record_vehicle_insurance" | "create_health_journey" | "record_health_insurance" | "create_child_journey" | "update_child_journey" | "create_move_journey" | "update_move_journey" | "create_business_journey" | "update_business_journey" | "create_retirement_journey" | "update_retirement_journey" | "needs_review";
   canApply: boolean;
   targetJourneyId: string | null;
   title: string;
   description: string;
-  toolName: "createVehicleJourneyFromRC" | "updateVehicleFromRC" | "recordVaccination" | "recordVehicleInsurance" | "createHealthJourneyFromPolicy" | "recordHealthInsurance" | "createChildJourneyFromDischargeSummary" | "updateChildFromDischargeSummary" | null;
+  toolName: "createVehicleJourneyFromRC" | "updateVehicleFromRC" | "recordVaccination" | "recordVehicleInsurance" | "createHealthJourneyFromPolicy" | "recordHealthInsurance" | "createChildJourneyFromDischargeSummary" | "updateChildFromDischargeSummary" | "createMoveJourneyFromResidenceProof" | "updateMoveFromResidenceProof" | "createBusinessJourneyFromPremisesProof" | "updateBusinessFromPremisesProof" | "createRetirementJourneyFromStatement" | "updateRetirementFromStatement" | null;
   changes: Array<{ label: string; value: string }>;
 };
 
@@ -147,6 +147,64 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
         { label: "Date of birth", value: dateOfBirth },
         { label: "Hospital", value: analysis.fields.provider },
         { label: "Place", value: [analysis.fields.city, analysis.fields.state].filter(Boolean).join(", ") },
+      ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
+    };
+  }
+
+  if (analysis.kind === "residence_proof") {
+    const address = analysis.fields.address?.trim();
+    const match = journeys.find((journey) => journey.subject.type === "residence" && (
+      Boolean(address && journey.facts["move.newAddress"]?.toLocaleLowerCase("en-IN") === address.toLocaleLowerCase("en-IN")) ||
+      Boolean(analysis.fields.city && journey.facts["move.newCity"]?.toLocaleLowerCase("en-IN") === analysis.fields.city.toLocaleLowerCase("en-IN"))
+    ));
+    return {
+      action: match ? "update_move_journey" : "create_move_journey",
+      canApply: analysis.confidence >= 0.8 && Boolean(address),
+      targetJourneyId: match?.id ?? null,
+      title: match ? `Add address evidence to ${match.subject.displayName}` : `Start a moving-home journey for ${analysis.fields.city || "this address"}`,
+      description: match ? "Attach this document and refresh the new-address details." : "Create a Moving Home journey and pre-fill the supported address details for review.",
+      toolName: match ? "updateMoveFromResidenceProof" : "createMoveJourneyFromResidenceProof",
+      changes: [
+        { label: "Resident", value: analysis.fields.residentName },
+        { label: "New address", value: address },
+        { label: "Document", value: analysis.fields.documentType },
+      ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
+    };
+  }
+
+  if (analysis.kind === "business_premises_proof") {
+    const businessName = analysis.fields.businessName?.trim();
+    const match = journeys.find((journey) => journey.subject.type === "business" && Boolean(businessName && journey.subject.displayName.toLocaleLowerCase("en-IN") === businessName.toLocaleLowerCase("en-IN")));
+    return {
+      action: match ? "update_business_journey" : "create_business_journey",
+      canApply: analysis.confidence >= 0.8 && Boolean(businessName && analysis.fields.address),
+      targetJourneyId: match?.id ?? null,
+      title: match ? `Add premises evidence to ${match.subject.displayName}` : `Start a business journey for ${businessName || "this business"}`,
+      description: match ? "Attach this document and refresh the principal-place details." : "Create a Starting a Business journey and pre-fill the supported premises details for review.",
+      toolName: match ? "updateBusinessFromPremisesProof" : "createBusinessJourneyFromPremisesProof",
+      changes: [
+        { label: "Business", value: businessName },
+        { label: "Principal place", value: analysis.fields.address },
+        { label: "Possession", value: analysis.fields.occupancy },
+      ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
+    };
+  }
+
+  if (analysis.kind === "retirement_account_statement") {
+    const memberName = analysis.fields.memberName?.trim();
+    const matches = journeys.filter((journey) => journey.subject.type === "person" && Boolean(journey.facts["retirement.accountType"]) && Boolean(memberName && journey.subject.displayName.toLocaleLowerCase("en-IN") === memberName.toLocaleLowerCase("en-IN")));
+    const match = matches.length === 1 ? matches[0] : null;
+    return {
+      action: match ? "update_retirement_journey" : "create_retirement_journey",
+      canApply: analysis.confidence >= 0.8 && Boolean(memberName && analysis.fields.accountType) && matches.length <= 1,
+      targetJourneyId: match?.id ?? null,
+      title: match ? `Add retirement records for ${match.subject.displayName}` : `Start a retirement journey for ${memberName || "this member"}`,
+      description: match ? "Attach this statement and refresh the retirement-record details." : "Create a Retirement journey and pre-fill the supported account details for review.",
+      toolName: match ? "updateRetirementFromStatement" : "createRetirementJourneyFromStatement",
+      changes: [
+        { label: "Member", value: memberName },
+        { label: "Account", value: analysis.fields.accountType },
+        { label: "Recorded service", value: analysis.fields.eligibleService },
       ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
     };
   }

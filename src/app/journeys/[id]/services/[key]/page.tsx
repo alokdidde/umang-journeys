@@ -46,6 +46,18 @@ const guidanceLinks: Record<string, { label: string; href: string }> = {
   public_scheme_check: { label: "Read official PM-JAY entitlement guidance", href: "https://nha.gov.in/img/resources/Adhikar-Patra.pdf" },
   abha_records: { label: "Read ABDM citizen guidance", href: "https://abdm.gov.in/citizens" },
   cashless_readiness: { label: "Read IRDAI cashless-service guidance", href: "https://irdai.gov.in/faqs-on-health-insurance-regulations" },
+  residence_evidence: { label: "Read UIDAI supporting-document guidance", href: "https://www.uidai.gov.in/en/921-faqs/aadhaar-online.html" },
+  aadhaar_address: { label: "Open official Aadhaar update guidance", href: "https://www.uidai.gov.in/en/my-aadhaar/update-aadhaar.html" },
+  voter_address: { label: "Open the official Form 8 service", href: "https://voters.eci.gov.in/home/forms" },
+  move_completion_pack: { label: "Read Parivahan address-change guidance", href: "https://mparivahan.parivahan.gov.in/mstatic/english/rc-info-address-change.html" },
+  business_premises: { label: "Read the GST document checklist", href: "https://tutorial.gst.gov.in/cbt/registration/gstregistration/course/story_content/external_files/GST_Registration_Document_Checklist.pdf" },
+  udyam_readiness: { label: "Open the official free Udyam service", href: "https://udyamregistration.gov.in/" },
+  gst_readiness: { label: "Read official GST registration FAQs", href: "https://cbic-gst.gov.in/faq.html" },
+  business_launch_pack: { label: "Find official business services", href: "https://services.india.gov.in/" },
+  retirement_record_review: { label: "Open official EPFO member services", href: "https://www.epfindia.gov.in/site_en/For_Employees.php" },
+  pension_pathway: { label: "Read the official EPFO claim guide", href: "https://www.epfindia.gov.in/site_en/WhichClaimForm.php" },
+  life_certificate_readiness: { label: "Read official Jeevan Pramaan guidance", href: "https://jeevanpramaan.gov.in/v2.0/misc/faq" },
+  retirement_pack: { label: "Find official pension services", href: "https://services.india.gov.in/service/listing?cat_id=36&ln=en" },
 };
 
 function formatTimestamp(value: string) {
@@ -123,7 +135,7 @@ export default function SandboxServicePage() {
 
         <div className="service-workspace-grid">
           <div className="service-main-column">
-            {!run && ["ownership_transfer", "insurance_cover", "fastag_setup", "compliance_calendar", "coverage_review", "public_scheme_check", "abha_records", "cashless_readiness"].includes(validKey) ? (
+            {!run && ["ownership_transfer", "insurance_cover", "fastag_setup", "compliance_calendar", "coverage_review", "public_scheme_check", "abha_records", "cashless_readiness", "residence_evidence", "aadhaar_address", "voter_address", "move_completion_pack", "business_premises", "udyam_readiness", "gst_readiness", "business_launch_pack", "retirement_record_review", "pension_pathway", "life_certificate_readiness", "retirement_pack"].includes(validKey) ? (
               <ServicePreparation
                 id={id}
                 nodeKey={validKey}

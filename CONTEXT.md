@@ -28,6 +28,38 @@ _Avoid_: Car form, transport application
 A Journey for one person that coordinates health-cover understanding, public-scheme screening, digital health records, and preparation for cashless care.
 _Avoid_: Patient application, insurance claim
 
+**Residence Move**:
+A Journey for one household’s change of primary residence. Each authority still receives its own Address Update Request.
+_Avoid_: Global address change, home registration
+
+**Residence Evidence**:
+A document that supports occupancy or use of the new address. Acceptance remains specific to the authority receiving it.
+_Avoid_: Universal address proof, verified residence
+
+**Address Update Request**:
+A prepared request to change one authority’s address record, such as Aadhaar, the electoral roll, or a vehicle registration record.
+_Avoid_: Address update, global update
+
+**Business Setup**:
+A Journey for one proposed enterprise and its chosen legal structure, registrations, and launch obligations.
+_Avoid_: Company registration, incorporated business
+
+**Registration Readiness**:
+A checked set of business facts, declarations, and evidence that may support an official registration. It is not a registration, licence, or finding of legal compliance.
+_Avoid_: Registered, approved, compliant
+
+**Retirement Transition**:
+A Journey for one person moving from active employment into retirement, including record review, pension pathways, and recurring pensioner obligations.
+_Avoid_: Retirement account, pension approval
+
+**Benefit Indication**:
+A sandbox result that identifies a retirement or pension pathway worth checking with the responsible authority. It is not financial advice or an eligibility decision.
+_Avoid_: Entitlement, recommendation, approval
+
+**Retirement Pack**:
+A synthetic summary of a person’s retirement records, potential claim paths, and future verification dates. It is not a pension sanction, investment recommendation, or payment order.
+_Avoid_: Pension certificate, retirement approval
+
 **Coverage**:
 The financial protection available through a commercial health policy or a public health scheme. A policy and a scheme entitlement remain distinct sources of Coverage.
 _Avoid_: Approval, guaranteed payment

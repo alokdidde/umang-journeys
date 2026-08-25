@@ -10,7 +10,7 @@ type HubServiceRun = {
 
 export type HubJourneyInput = {
   id: string;
-  subject: { type: "child" | "vehicle" | "person"; displayName: string };
+  subject: { type: "child" | "vehicle" | "person" | "residence" | "business"; displayName: string };
   title: string;
   createdAt: string;
   updatedAt: string;
@@ -35,7 +35,7 @@ export type HubDocumentInput = {
 export type DocumentLibraryItem = {
   id: string;
   origin: "uploaded" | "issued";
-  category: "family" | "vehicle" | "health" | "identity" | "benefits" | "other";
+  category: "family" | "vehicle" | "health" | "home" | "business" | "retirement" | "identity" | "benefits" | "other";
   title: string;
   fileName: string | null;
   mimeType: string | null;
@@ -72,6 +72,9 @@ const documentTitles: Record<DocumentKind, string> = {
   insurance_policy: "Motor insurance policy",
   health_insurance_policy: "Health insurance policy",
   hospital_discharge_summary: "Hospital discharge summary",
+  residence_proof: "Residence evidence",
+  business_premises_proof: "Business premises evidence",
+  retirement_account_statement: "Retirement account statement",
   unknown: "Uploaded document",
 };
 
@@ -79,6 +82,9 @@ function documentCategory(kind: DocumentKind): DocumentLibraryItem["category"] {
   if (kind === "vehicle_rc" || kind === "insurance_policy") return "vehicle";
   if (kind === "health_insurance_policy") return "health";
   if (kind === "vaccination_receipt" || kind === "hospital_discharge_summary") return "family";
+  if (kind === "residence_proof") return "home";
+  if (kind === "business_premises_proof") return "business";
+  if (kind === "retirement_account_statement") return "retirement";
   return "other";
 }
 
@@ -86,12 +92,18 @@ function evidenceCategory(type: string): DocumentLibraryItem["category"] {
   if (["vehicle_rc", "sale_agreement", "insurance_policy"].includes(type)) return "vehicle";
   if (["vaccination_receipt", "hospital_discharge_summary"].includes(type)) return "family";
   if (type === "health_insurance_policy") return "health";
+  if (type === "residence_proof") return "home";
+  if (type === "business_premises_proof") return "business";
+  if (type === "retirement_account_statement") return "retirement";
   return "other";
 }
 
 function serviceCategory(nodeKey: string): DocumentLibraryItem["category"] {
   if (["ownership_transfer", "insurance_cover", "fastag_setup", "compliance_calendar"].includes(nodeKey)) return "vehicle";
   if (["coverage_review", "public_scheme_check", "abha_records", "cashless_readiness"].includes(nodeKey)) return "health";
+  if (["residence_evidence", "aadhaar_address", "voter_address", "move_completion_pack"].includes(nodeKey)) return "home";
+  if (["business_premises", "udyam_readiness", "gst_readiness", "business_launch_pack"].includes(nodeKey)) return "business";
+  if (["retirement_record_review", "pension_pathway", "life_certificate_readiness", "retirement_pack"].includes(nodeKey)) return "retirement";
   if (nodeKey === "child_identity") return "identity";
   if (nodeKey === "eligible_benefits") return "benefits";
   return "family";

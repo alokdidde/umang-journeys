@@ -1,4 +1,4 @@
-import { Baby, BadgeCheck, CalendarDays, CreditCard, FileText, Gift, HeartPulse, House, IdCard, Syringe, Car, Store, Armchair, UserRound, ShieldPlus, Landmark, FileHeart, Hospital, type LucideIcon } from "lucide-react";
+import { Baby, BadgeCheck, Vote, Banknote, BriefcaseBusiness, CalendarDays, CreditCard, FileText, FolderClock, Gift, HeartPulse, House, IdCard, MailCheck, MapPinned, Rocket, ScrollText, Store, Syringe, Car, Armchair, UserRound, ShieldPlus, Landmark, FileHeart, Hospital, type LucideIcon } from "lucide-react";
 
 export const journeyIcons: Record<string, LucideIcon> = {
   baby: Baby,
@@ -17,15 +17,27 @@ export const journeyIcons: Record<string, LucideIcon> = {
   scheme: Landmark,
   records: FileHeart,
   care: Hospital,
+  home: House,
+  address: MapPinned,
+  voter: Vote,
+  mail: MailCheck,
+  business: BriefcaseBusiness,
+  store: Store,
+  tax: ScrollText,
+  launch: Rocket,
+  retirement: Armchair,
+  pension: Banknote,
+  life_certificate: BadgeCheck,
+  folder: FolderClock,
 };
 
 export const lifeEvents = [
   { key: "baby", label: "Having a Baby", Icon: Baby, active: true, tone: "rose" },
-  { key: "home", label: "Moving Home", Icon: House, active: false, tone: "green" },
+  { key: "home", label: "Moving Home", Icon: House, active: true, tone: "green" },
   { key: "vehicle", label: "Buying a Vehicle", Icon: Car, active: true, tone: "blue" },
   { key: "health", label: "Health & Insurance", Icon: ShieldPlus, active: true, tone: "green" },
-  { key: "business", label: "Starting a Business", Icon: Store, active: false, tone: "purple" },
-  { key: "retirement", label: "Retirement", Icon: Armchair, active: false, tone: "amber" },
+  { key: "business", label: "Starting a Business", Icon: Store, active: true, tone: "purple" },
+  { key: "retirement", label: "Retirement", Icon: Armchair, active: true, tone: "amber" },
 ] as const;
 
 export { BadgeCheck };

@@ -53,4 +53,15 @@ describe("vehicle evidence ingestion", () => {
       },
     });
   });
+
+  it.each([
+    ["residence_proof" as const, { "move.newAddress": "12 Lake View Road, Hyderabad 500081" }, { address: "12 Lake View Road, Hyderabad 500081" }],
+    ["business_premises_proof" as const, { "business.name": "Ananya Design Studio" }, { businessName: "Ananya Design Studio" }],
+    ["retirement_account_statement" as const, { "person.name": "Ananya Sharma" }, { memberName: "Ananya Sharma" }],
+  ])("generates useful sample evidence for another journey", async (type, facts, expectedFields) => {
+    const evidence = await createSampleEvidence(type, facts);
+
+    expect(Buffer.from(evidence.contentBase64, "base64").subarray(0, 4).toString()).toBe("%PDF");
+    expect(evidence).toMatchObject({ type, source: "sample", extractedFields: expectedFields });
+  });
 });

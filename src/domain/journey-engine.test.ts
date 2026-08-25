@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compileJourney, completeNode, healthInsuranceTemplate, newBabyTemplate, vehiclePurchaseTemplate } from "./journey-engine";
+import { businessSetupTemplate, compileJourney, completeNode, healthInsuranceTemplate, movingHomeTemplate, newBabyTemplate, retirementTemplate, vehiclePurchaseTemplate } from "./journey-engine";
 
 describe("journey compiler", () => {
   it("compiles the newborn template into one recommended node and locked dependants", () => {
@@ -55,5 +55,18 @@ describe("journey compiler", () => {
     ]);
     expect(profileConfirmed.nodes.find((node) => node.key === "coverage_review")?.status).toBe("available");
     expect(profileConfirmed.nodes.find((node) => node.key === "public_scheme_check")?.status).toBe("locked");
+  });
+
+  it.each([
+    [movingHomeTemplate, ["move_profile", "residence_evidence", "aadhaar_address", "voter_address", "move_completion_pack"]],
+    [businessSetupTemplate, ["business_profile", "business_premises", "udyam_readiness", "gst_readiness", "business_launch_pack"]],
+    [retirementTemplate, ["retirement_profile", "retirement_record_review", "pension_pathway", "life_certificate_readiness", "retirement_pack"]],
+  ])("keeps every remaining life-event journey sequential and resumable", (template, keys) => {
+    const started = compileJourney(template);
+    const profileConfirmed = completeNode(started, keys[0]);
+
+    expect(started.nodes.map((node) => node.key)).toEqual(keys);
+    expect(profileConfirmed.nodes.find((node) => node.key === keys[1])?.status).toBe("available");
+    expect(profileConfirmed.nodes.find((node) => node.key === keys[2])?.status).toBe("locked");
   });
 });

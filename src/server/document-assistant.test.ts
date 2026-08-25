@@ -177,4 +177,55 @@ describe("document assistant", () => {
       evidence: [expect.objectContaining({ type: "hospital_discharge_summary" })],
     });
   });
+
+  it.each([
+    {
+      sessionId: "session-move-document",
+      fileName: "residence-proof.pdf",
+      kind: "residence_proof" as const,
+      fields: { residentName: "Ananya Sharma", address: "12 Lake View Road, Hyderabad 500081", city: "Hyderabad", state: "Telangana", documentType: "Registered rent agreement" },
+      subject: { type: "residence", displayName: "New home in Hyderabad" },
+      factKey: "move.newAddress",
+      factValue: "12 Lake View Road, Hyderabad 500081",
+      evidenceType: "residence_proof",
+    },
+    {
+      sessionId: "session-business-document",
+      fileName: "business-premises.pdf",
+      kind: "business_premises_proof" as const,
+      fields: { businessName: "Ananya Design Studio", address: "4 Creative Lane, Hyderabad 500033", city: "Hyderabad", state: "Telangana", occupancy: "Rented premises" },
+      subject: { type: "business", displayName: "Ananya Design Studio" },
+      factKey: "business.address",
+      factValue: "4 Creative Lane, Hyderabad 500033",
+      evidenceType: "business_premises_proof",
+    },
+    {
+      sessionId: "session-retirement-document",
+      fileName: "retirement-statement.pdf",
+      kind: "retirement_account_statement" as const,
+      fields: { memberName: "Ananya Sharma", accountType: "EPFO / EPS", accountReference: "Synthetic UAN ending 4821", eligibleService: "14 years" },
+      subject: { type: "person", displayName: "Ananya Sharma" },
+      factKey: "retirement.accountType",
+      factValue: "epfo",
+      evidenceType: "retirement_account_statement",
+    },
+  ])("creates a pre-filled $kind journey from approved evidence", async ({ sessionId, fileName, kind, fields, subject, factKey, factValue, evidenceType }) => {
+    const journeys = new MemoryJourneyRepository();
+    const documents = new MemoryDocumentIntakeRepository();
+    const service = new DocumentAssistantService(journeys, documents);
+    const intake = await service.propose(sessionId, {
+      fileName,
+      mimeType: "application/pdf",
+      bytes: new Uint8Array(Buffer.from(`%PDF synthetic ${kind}`)),
+      source: "sample",
+      analysis: { kind, confidence: 0.97, fields: Object.fromEntries(Object.entries(fields).filter((entry): entry is [string, string] => Boolean(entry[1]))) },
+    });
+
+    const result = await service.apply(sessionId, intake.id, true);
+    const saved = result.journeyId ? await journeys.get(sessionId, result.journeyId) : null;
+
+    expect(saved?.subject).toEqual(expect.objectContaining(subject));
+    expect(saved?.facts[factKey]).toBe(factValue);
+    expect(saved?.evidence).toContainEqual(expect.objectContaining({ type: evidenceType }));
+  });
 });

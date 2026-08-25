@@ -63,6 +63,7 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Intake is one narrow column with a short progress label; extracted facts are optional detail.
 - Activity stays chronological, readable, and filterable without summary tiles.
 - Health & Insurance uses five sequential, plain-language tasks; policy findings, public-scheme indications, ABHA preparation, and cashless readiness must never look like approval or guaranteed cover.
+- Moving Home, Starting a Business, and Retirement each use five sequential steps: one short fact-confirmation form, one evidence review, two authority-specific preparations, and one completion pack. Synthetic readiness, registration, pension, and entitlement outputs must never look like official approval.
 
 ## Mood descriptors
 Calm, trustworthy, guided, humane.

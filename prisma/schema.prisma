@@ -42,6 +42,8 @@ enum JourneySubjectType {
   CHILD
   VEHICLE
   PERSON
+  RESIDENCE
+  BUSINESS
 }
 
 model UserProfile {

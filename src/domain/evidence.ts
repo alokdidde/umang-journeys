@@ -1,4 +1,4 @@
-export const evidenceTypes = ["vehicle_rc", "sale_agreement", "insurance_policy", "health_insurance_policy", "vaccination_receipt", "hospital_discharge_summary"] as const;
+export const evidenceTypes = ["vehicle_rc", "sale_agreement", "insurance_policy", "health_insurance_policy", "vaccination_receipt", "hospital_discharge_summary", "residence_proof", "business_premises_proof", "retirement_account_statement"] as const;
 
 export type EvidenceType = (typeof evidenceTypes)[number];
 export type EvidenceSource = "user_upload" | "sample";
@@ -28,12 +28,18 @@ export const evidenceLabels: Record<EvidenceType, { title: string; description: 
   health_insurance_policy: { title: "Health policy or scheme card", description: "The insured person, policy or scheme number, validity, and cover details must be readable." },
   vaccination_receipt: { title: "Vaccination receipt", description: "The child’s name, vaccine, date, and provider must be readable." },
   hospital_discharge_summary: { title: "Hospital discharge summary", description: "The child’s name, birth date, hospital, and discharge reference must be readable." },
+  residence_proof: { title: "New-address document", description: "The resident, complete new address, and document date must be readable." },
+  business_premises_proof: { title: "Principal-place document", description: "The business or occupier, premises address, and ownership or rental basis must be readable." },
+  retirement_account_statement: { title: "Retirement account statement", description: "The member name, account type, service record, and statement date must be readable." },
 };
 
 export const serviceEvidenceRequirements: Partial<Record<string, EvidenceType[]>> = {
   ownership_transfer: ["vehicle_rc", "sale_agreement"],
   insurance_cover: ["insurance_policy"],
   coverage_review: ["health_insurance_policy"],
+  residence_evidence: ["residence_proof"],
+  business_premises: ["business_premises_proof"],
+  retirement_record_review: ["retirement_account_statement"],
 };
 
 export function missingEvidence(nodeKey: string, evidence: JourneyEvidence[]) {

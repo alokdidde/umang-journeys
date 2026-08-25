@@ -25,6 +25,41 @@ const healthProfileSchema = z.object({
   "health.abhaStatus": z.enum(["yes", "not_sure", "no"]),
   idempotencyKey: z.string().min(8),
 });
+const moveProfileSchema = z.object({
+  "person.name": z.string().trim().min(2),
+  "move.newAddress": z.string().trim().min(8),
+  "move.newCity": z.string().trim().min(2),
+  "move.newState": z.string().trim().min(2),
+  "move.pinCode": z.string().regex(/^\d{6}$/),
+  "move.date": z.iso.date(),
+  "move.occupancy": z.enum(["rented", "owned", "family", "not_sure"]),
+  "household.size": z.string().regex(/^\d{1,2}$/),
+  "move.hasEpic": z.enum(["yes", "not_sure", "no"]),
+  idempotencyKey: z.string().min(8),
+});
+const businessProfileSchema = z.object({
+  "business.name": z.string().trim().min(2),
+  "business.activity": z.string().trim().min(2),
+  "business.structure": z.enum(["sole_proprietorship", "partnership", "llp", "company", "not_sure"]),
+  "business.address": z.string().trim().min(8),
+  "business.city": z.string().trim().min(2),
+  "business.state": z.string().trim().min(2),
+  "business.startDate": z.iso.date(),
+  "business.occupancy": z.enum(["rented", "owned", "consent", "shared"]),
+  "business.expectedTurnover": z.string().regex(/^\d{1,12}$/),
+  "business.interstateSupplies": z.enum(["yes", "not_sure", "no"]),
+  idempotencyKey: z.string().min(8),
+});
+const retirementProfileSchema = z.object({
+  "person.name": z.string().trim().min(2),
+  "person.dateOfBirth": z.iso.date(),
+  "retirement.date": z.iso.date(),
+  "retirement.employmentSector": z.enum(["private", "central_government", "state_government", "self_employed", "not_sure"]),
+  "retirement.accountType": z.enum(["epfo", "nps", "employer_pension", "multiple", "not_sure"]),
+  "retirement.serviceYears": z.string().regex(/^\d{1,2}$/),
+  "retirement.pensionStarted": z.enum(["yes", "not_sure", "no"]),
+  idempotencyKey: z.string().min(8),
+});
 export async function POST(request: Request, { params }: { params: Promise<{ id: string; key: string }> }) {
   const { id, key } = await params;
   const sessionId = await getDemoSession();
@@ -48,6 +83,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (key === "health_profile") {
     const parsed = healthProfileSchema.safeParse(payload);
     if (!parsed.success) return NextResponse.json({ code: "MISSING_REQUIREMENTS", message: "Complete the person and coverage details using the requested format." }, { status: 400 });
+    const { idempotencyKey, ...facts } = parsed.data;
+    await journeyRepository.updateFacts(sessionId, id, facts);
+    const journey = await journeyRepository.completeStep(sessionId, id, key, idempotencyKey);
+    return journey ? NextResponse.json({ ...journey, synthetic: true }) : NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
+  }
+  const profileSchema = key === "move_profile" ? moveProfileSchema : key === "business_profile" ? businessProfileSchema : key === "retirement_profile" ? retirementProfileSchema : null;
+  if (profileSchema) {
+    const parsed = profileSchema.safeParse(payload);
+    if (!parsed.success) return NextResponse.json({ code: "MISSING_REQUIREMENTS", message: "Complete each required journey detail using the requested format." }, { status: 400 });
     const { idempotencyKey, ...facts } = parsed.data;
     await journeyRepository.updateFacts(sessionId, id, facts);
     const journey = await journeyRepository.completeStep(sessionId, id, key, idempotencyKey);

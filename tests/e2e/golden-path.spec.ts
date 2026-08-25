@@ -325,6 +325,106 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   await page.request.post("/api/demo/reset");
 });
 
+test("moving home, business, and retirement each complete from evidence to archived outputs", async ({ page }) => {
+  test.setTimeout(150_000);
+  await login(page);
+  const scenarios = [
+    {
+      sample: "Address proof",
+      proposal: "Start a moving-home journey for this address",
+      applied: "The residence evidence was added and the moving-home journey is ready for review.",
+      profileLink: "Confirm your move",
+      profileHeading: "Where are you moving?",
+      profileSubmit: "Confirm move and continue",
+      journeyHeading: "New home in Hyderabad",
+      services: [
+        ["residence_evidence", "Check address evidence", "Residence evidence summary"],
+        ["aadhaar_address", "Prepare Aadhaar update", "Aadhaar address-update checklist"],
+        ["voter_address", "Prepare voter update", "Voter Form 8 preparation"],
+        ["move_completion_pack", "Build move checklist", "Move completion pack"],
+      ],
+      completed: "Your move pack is ready",
+      activity: "Moving Home journey started",
+    },
+    {
+      sample: "Business premises",
+      proposal: "Start a business journey for Ananya Design Studio",
+      applied: "The premises evidence was added and the business journey is ready for review.",
+      profileLink: "Confirm the business",
+      profileHeading: "What business are you starting?",
+      profileSubmit: "Confirm business and continue",
+      journeyHeading: "Ananya Design Studio",
+      services: [
+        ["business_premises", "Check premises evidence", "Business premises evidence summary"],
+        ["udyam_readiness", "Prepare Udyam registration", "Udyam registration readiness"],
+        ["gst_readiness", "Check GST registration path", "GST registration readiness result"],
+        ["business_launch_pack", "Build business launch pack", "Business launch pack"],
+      ],
+      completed: "Your business launch pack is ready",
+      activity: "Starting a Business journey started",
+    },
+    {
+      sample: "Retirement statement",
+      proposal: "Start a retirement journey for Ananya Sharma",
+      applied: "The statement was added and the retirement journey is ready for review.",
+      profileLink: "Confirm your retirement",
+      profileHeading: "What does retirement look like for you?",
+      profileSubmit: "Confirm retirement and continue",
+      journeyHeading: "Ananya Sharma",
+      services: [
+        ["retirement_record_review", "Review retirement records", "Retirement record review"],
+        ["pension_pathway", "Prepare pension pathways", "Pension pathway indications"],
+        ["life_certificate_readiness", "Prepare life-certificate plan", "Life-certificate readiness plan"],
+        ["retirement_pack", "Build retirement pack", "Retirement transition pack"],
+      ],
+      completed: "Your retirement pack is ready",
+      activity: "Retirement journey started",
+    },
+  ] as const;
+
+  for (const scenario of scenarios) {
+    await page.request.post("/api/demo/reset");
+    await openDocumentAssistant(page);
+    await page.getByRole("button", { name: scenario.sample }).click();
+    await expect(page.getByRole("heading", { name: scenario.proposal })).toBeVisible();
+    await page.getByRole("button", { name: /Approve update/i }).click();
+    await expect(page.getByText(scenario.applied)).toBeVisible();
+    await page.getByRole("link", { name: "Open updated journey" }).click();
+    await expect(page.getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
+    const id = page.url().split("/").at(-1)!;
+
+    await page.getByRole("link", { name: scenario.profileLink, exact: true }).click();
+    await expect(page.getByRole("heading", { name: scenario.profileHeading })).toBeVisible();
+    const profileA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+    expect(profileA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+    await page.getByRole("button", { name: scenario.profileSubmit }).click();
+    await expect(page.getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
+
+    for (const [key, action, artifactTitle] of scenario.services) {
+      await page.goto(`/journeys/${id}/services/${key}`);
+      await expect(page.getByRole("button", { name: action })).toBeVisible();
+      const missingEvidence = page.getByRole("button", { name: "Use sample evidence" });
+      if (await missingEvidence.isVisible()) await missingEvidence.click();
+      await page.getByLabel("I authorise this evaluation-only submission").check();
+      await page.getByRole("button", { name: action }).click();
+      await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
+      await expect(page.locator(".service-artifact").getByRole("heading", { name: artifactTitle })).toBeVisible();
+      await expect(page.locator(".service-timeline time")).toHaveCount(4);
+    }
+
+    await page.goto(`/journeys/${id}`);
+    await expect(page.getByText("Done", { exact: true })).toHaveCount(5);
+    await expect(page.getByText(scenario.completed)).toBeVisible();
+    await page.goto("/journeys");
+    await expect(page.locator("#completed-journeys").getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
+    await page.goto("/documents");
+    await expect(page.getByText(scenario.services.at(-1)![2], { exact: true })).toBeVisible();
+    await page.goto("/activity");
+    await expect(page.getByText(scenario.activity, { exact: true })).toBeVisible();
+  }
+  await page.request.post("/api/demo/reset");
+});
+
 test("document tools create and enrich journeys while the library and activity ledger stay inspectable", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");

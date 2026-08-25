@@ -63,6 +63,29 @@ function documentFacts(analysis: DocumentAnalysis) {
     "birth.dischargeReference": analysis.fields.dischargeReference,
     "intake.source": "hospital_discharge_summary",
   };
+  if (analysis.kind === "residence_proof") return {
+    "person.name": analysis.fields.residentName,
+    "move.newAddress": analysis.fields.address,
+    "move.newCity": analysis.fields.city,
+    "move.newState": analysis.fields.state,
+    "move.occupancy": analysis.fields.documentType?.toLocaleLowerCase("en-IN").includes("property") ? "owned" : "rented",
+    "intake.source": "residence_proof",
+  };
+  if (analysis.kind === "business_premises_proof") return {
+    "business.name": analysis.fields.businessName,
+    "business.address": analysis.fields.address,
+    "business.city": analysis.fields.city,
+    "business.state": analysis.fields.state,
+    "business.occupancy": analysis.fields.occupancy?.toLocaleLowerCase("en-IN").includes("rent") ? "rented" : analysis.fields.occupancy?.toLocaleLowerCase("en-IN").includes("own") ? "owned" : "consent",
+    "intake.source": "business_premises_proof",
+  };
+  if (analysis.kind === "retirement_account_statement") return {
+    "person.name": analysis.fields.memberName,
+    "retirement.accountType": analysis.fields.accountType?.toLocaleLowerCase("en-IN").includes("nps") ? "nps" : analysis.fields.accountType?.toLocaleLowerCase("en-IN").match(/epfo|eps/) ? "epfo" : "not_sure",
+    "retirement.accountReference": analysis.fields.accountReference,
+    "retirement.serviceYears": analysis.fields.eligibleService?.match(/\d+/)?.[0],
+    "intake.source": "retirement_account_statement",
+  };
   return {};
 }
 
@@ -126,6 +149,15 @@ export class DocumentAssistantService {
     } else if (intake.proposal.toolName === "createHealthJourneyFromPolicy") {
       const journey = await this.journeys.create(sessionId, facts, "health-insurance.india.v1");
       journeyId = journey.id;
+    } else if (intake.proposal.toolName === "createMoveJourneyFromResidenceProof") {
+      const journey = await this.journeys.create(sessionId, facts, "moving-home.india.v1");
+      journeyId = journey.id;
+    } else if (intake.proposal.toolName === "createBusinessJourneyFromPremisesProof") {
+      const journey = await this.journeys.create(sessionId, facts, "business-setup.india.v1");
+      journeyId = journey.id;
+    } else if (intake.proposal.toolName === "createRetirementJourneyFromStatement") {
+      const journey = await this.journeys.create(sessionId, facts, "retirement.india.v1");
+      journeyId = journey.id;
     } else if (journeyId) {
       await this.journeys.updateFacts(sessionId, journeyId, facts);
     }
@@ -165,6 +197,12 @@ export class DocumentAssistantService {
             ? "The health policy was added and the health journey is ready for review."
           : intake.proposal.toolName === "createChildJourneyFromDischargeSummary" || intake.proposal.toolName === "updateChildFromDischargeSummary"
             ? "The hospital record was added and the child journey was pre-filled for review."
+          : intake.proposal.toolName === "createMoveJourneyFromResidenceProof" || intake.proposal.toolName === "updateMoveFromResidenceProof"
+            ? "The residence evidence was added and the moving-home journey is ready for review."
+          : intake.proposal.toolName === "createBusinessJourneyFromPremisesProof" || intake.proposal.toolName === "updateBusinessFromPremisesProof"
+            ? "The premises evidence was added and the business journey is ready for review."
+          : intake.proposal.toolName === "createRetirementJourneyFromStatement" || intake.proposal.toolName === "updateRetirementFromStatement"
+            ? "The statement was added and the retirement journey is ready for review."
         : "The RC was attached and the vehicle journey is ready for review.",
     };
   }

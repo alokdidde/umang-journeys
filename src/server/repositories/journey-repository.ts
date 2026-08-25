@@ -38,6 +38,14 @@ function isComplete(projection: JourneyProjection) {
   return projection.nodes.every((node) => node.status === "completed" || node.status === "skipped");
 }
 
+function subjectForJourney(lifeEvent: string, facts: Record<string, string>): Omit<JourneySubject, "id"> {
+  if (lifeEvent === "buying_a_vehicle") return { type: "vehicle", displayName: facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || "Your vehicle" };
+  if (lifeEvent === "moving_home") return { type: "residence", displayName: facts["move.label"]?.trim() || `New home in ${facts["move.newCity"]?.trim() || "your new area"}` };
+  if (lifeEvent === "starting_a_business") return { type: "business", displayName: facts["business.name"]?.trim() || "Your new business" };
+  if (lifeEvent === "managing_health_cover" || lifeEvent === "retirement") return { type: "person", displayName: facts["person.name"]?.trim() || "Ananya Sharma" };
+  return { type: "child", displayName: facts["child.name"]?.trim() || "Your baby" };
+}
+
 export class MemoryJourneyRepository implements JourneyRepository {
   private journeys = new Map<string, StoredJourney>();
   private idempotency = new Map<string, string>();
@@ -47,18 +55,13 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const template = getJourneyTemplate(templateId);
     if (!template) throw new Error(`Unknown journey template: ${templateId}`);
     const timestamp = now();
-    const isVehicle = template.lifeEvent === "buying_a_vehicle";
-    const isPerson = template.lifeEvent === "managing_health_cover";
-    const subjectId = `${isVehicle ? "vehicle" : isPerson ? "person" : "child"}-${crypto.randomUUID()}`;
+    const subject = subjectForJourney(template.lifeEvent, facts);
+    const subjectId = `${subject.type}-${crypto.randomUUID()}`;
     const journey: StoredJourney = {
       id: `journey-${crypto.randomUUID()}`,
       sessionId,
       status: "active",
-      subject: isVehicle
-        ? { id: subjectId, type: "vehicle", displayName: facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || "Your vehicle" }
-        : isPerson
-          ? { id: subjectId, type: "person", displayName: facts["person.name"]?.trim() || "Ananya Sharma" }
-          : { id: subjectId, type: "child", displayName: facts["child.name"]?.trim() || "Your baby" },
+      subject: { id: subjectId, ...subject },
       projection: compileJourney(template),
       facts,
       serviceRuns: {},
@@ -82,9 +85,12 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const childName = facts["child.name"]?.trim();
     const vehicleName = facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim();
     const personName = facts["person.name"]?.trim();
+    const residenceName = facts["move.label"]?.trim() || (facts["move.newCity"]?.trim() ? `New home in ${facts["move.newCity"].trim()}` : undefined);
+    const businessName = facts["business.name"]?.trim();
+    const displayName = childName || vehicleName || residenceName || businessName || personName;
     const updated = {
       ...journey,
-      subject: childName || vehicleName || personName ? { ...journey.subject, displayName: childName || vehicleName || personName || journey.subject.displayName } : journey.subject,
+      subject: displayName ? { ...journey.subject, displayName } : journey.subject,
       facts: { ...journey.facts, ...facts },
       updatedAt: now(),
     };
