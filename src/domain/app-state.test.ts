@@ -49,4 +49,31 @@ describe("demo journey state", () => {
     expect(failed.pending).toBe(false);
     expect(failed.form.childName).toBe("Aarav Sharma");
   });
+
+  it("hydrates persisted external-service progress for refresh recovery", () => {
+    const state = appReducer(pristineState, {
+      type: "server_journey_loaded",
+      journey: {
+        id: "journey-progress",
+        projection: pristineState.projection,
+        facts: {},
+        serviceRuns: {
+          vaccination_timeline: {
+            runId: "RUN-123",
+            nodeKey: "vaccination_timeline",
+            provider: "U-WIN immunisation sandbox",
+            status: "waiting_external",
+            progress: 52,
+            currentStage: 2,
+            startedAt: "2026-08-25T10:00:00.000Z",
+            updatedAt: "2026-08-25T10:00:01.000Z",
+            receipt: "SBX-123",
+            events: [],
+          },
+        },
+      },
+    });
+
+    expect(state.serviceRuns.vaccination_timeline).toMatchObject({ status: "waiting_external", progress: 52 });
+  });
 });

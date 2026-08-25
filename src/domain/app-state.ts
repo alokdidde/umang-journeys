@@ -1,4 +1,5 @@
 import { compileJourney, newBabyTemplate, type JourneyProjection } from "./journey-engine";
+import type { SandboxServiceKey, SandboxServiceRun } from "./service-workflows";
 
 export type RegistrationForm = { childName: string; localWard: string };
 export type FormErrors = Partial<Record<keyof RegistrationForm, string>>;
@@ -13,6 +14,7 @@ export type AppState = {
   projection: JourneyProjection;
   form: RegistrationForm;
   facts: Record<string, string>;
+  serviceRuns: Partial<Record<SandboxServiceKey, SandboxServiceRun>>;
   formErrors: FormErrors;
   registrationId: string | null;
 };
@@ -21,6 +23,7 @@ export type ServerJourney = {
   id: string;
   projection: JourneyProjection;
   facts: Record<string, string>;
+  serviceRuns?: Partial<Record<SandboxServiceKey, SandboxServiceRun>>;
   registrationId?: string;
 };
 
@@ -47,6 +50,7 @@ export const pristineState: AppState = {
   projection: compileJourney(newBabyTemplate),
   form: { childName: "", localWard: "" },
   facts: {},
+  serviceRuns: {},
   formErrors: {},
   registrationId: null,
 };
@@ -84,6 +88,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         journeyId: action.journey.id,
         projection: action.journey.projection,
         facts: action.journey.facts,
+        serviceRuns: action.journey.serviceRuns ?? {},
         form: {
           childName: action.journey.facts["child.name"] ?? state.form.childName,
           localWard: action.journey.facts["birth.place.ward"] ?? state.form.localWard,

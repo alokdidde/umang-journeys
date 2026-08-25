@@ -61,17 +61,25 @@ test("newborn journey persists, completes every sandbox integration, downloads a
   await expect(page.getByText(/BR-DEMO-2026-7429/)).toBeVisible();
 
   const services = [
-    ["birth_certificate", "Generate certificate"],
-    ["child_health_record", "Create health record"],
-    ["vaccination_timeline", "Build vaccination timeline"],
-    ["child_identity", "Prepare identity checklist"],
-    ["eligible_benefits", "Match family benefits"],
+    ["birth_certificate", "Generate certificate", "Sandbox birth certificate"],
+    ["child_health_record", "Create health record", "Child health profile"],
+    ["vaccination_timeline", "Build vaccination timeline", "Vaccination timeline"],
+    ["child_identity", "Prepare identity checklist", "Newborn identity checklist"],
+    ["eligible_benefits", "Match family benefits", "Family benefit matches"],
   ] as const;
-  for (const [key, action] of services) {
+  for (const [key, action, artifactTitle] of services) {
     await page.goto(`/journeys/${id}/services/${key}`);
     await page.getByRole("button", { name: action }).click();
-    await expect(page.getByRole("status")).toContainText("Sandbox service completed");
-    await expect(page.getByText(/^Receipt SBX-/)).toBeVisible();
+    await expect(page.getByRole("progressbar")).toBeVisible();
+    if (key === "birth_certificate") {
+      await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "24");
+      await page.reload();
+      await expect(page.getByRole("progressbar")).toBeVisible();
+    }
+    await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
+    await expect(page.locator(".service-artifact").getByRole("heading", { name: artifactTitle })).toBeVisible();
+    await expect(page.locator(".service-timeline time")).toHaveCount(4);
+    await expect(page.locator(".service-progress-card footer").getByText(/^Receipt SBX-/)).toBeVisible();
   }
 
   const pdf = await page.request.get(`/api/journeys/${id}/certificate`);
@@ -100,12 +108,20 @@ test("authenticated workflow pages have no serious accessibility violations", as
   }
 });
 
-test("login and home have no horizontal overflow at mobile width", async ({ page }) => {
+test("login, home, and a completed service reflow at mobile width", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/login");
   let sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client);
   await login(page);
+  sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+  expect(sizes.scroll).toBeLessThanOrEqual(sizes.client);
+  await page.request.post("/api/demo/reset");
+  const id = await seedJourney(page);
+  await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "mobile-registration" } });
+  await page.goto(`/journeys/${id}/services/child_health_record`);
+  await page.getByRole("button", { name: "Create health record" }).click();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
   sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client);
 });

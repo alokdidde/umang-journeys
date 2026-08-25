@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, LockKeyhole, MapP
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { journeyIcons } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
+import { isSandboxServiceKey } from "@/domain/service-workflows";
 
 export default function JourneyRevealPage() {
   const { state, loadJourney } = useJourney();
@@ -33,12 +34,14 @@ export default function JourneyRevealPage() {
         <div className="graph-layout">
           <GraphNode node={registration} number={1} />
           <span className="graph-arrow"><ArrowRight /></span>
-          <GraphNode node={certificate} number={2} />
+          <GraphNode node={certificate} number={2} href={certificate.status === "locked" ? undefined : `/journeys/${id}/services/birth_certificate`} />
           <div className="branch-line" aria-hidden="true" />
           <div className="downstream-list">
             {downstream.map((node, index) => {
               const Icon = journeyIcons[node.icon];
-              const contents = <><span className="node-number">{index + 3}</span><span className={`event-icon tone-${index}`}><Icon /></span><div><strong>{node.title}</strong><p>{node.description}</p></div><span className={`status ${node.status}`}>{node.status === "locked" && <LockKeyhole />}{node.status === "locked" ? "Locked" : node.status === "completed" ? "Completed" : "Available"}</span></>;
+              const run = isSandboxServiceKey(node.key) ? state.serviceRuns[node.key] : undefined;
+              const status = node.status === "locked" ? "Locked" : node.status === "completed" ? "Completed" : node.status === "waiting_external" ? "Waiting for provider" : node.status === "in_progress" ? `${run?.progress ?? 0}% complete` : "Ready to start";
+              const contents = <><span className="node-number">{index + 3}</span><span className={`event-icon tone-${index}`}><Icon /></span><div><strong>{node.title}</strong><p>{node.description}</p></div><span className={`status ${node.status}`}>{node.status === "locked" && <LockKeyhole />}{status}</span></>;
               return node.status === "locked"
                 ? <article key={node.key} className="compact-node" title="Complete birth registration first">{contents}</article>
                 : <Link key={node.key} href={`/journeys/${id}/services/${node.key}`} className="compact-node service-node-link">{contents}</Link>;
@@ -46,13 +49,14 @@ export default function JourneyRevealPage() {
           </div>
         </div>
       </section>
-      <div className="primary-cta-wrap content-layer"><Link href={`/journeys/${id}/birth-registration`} className="primary-cta"><Baby />Review Birth Registration<ArrowRight /></Link><TrustNote>Your information stays within this evaluation sandbox.</TrustNote></div>
+      <div className="primary-cta-wrap content-layer"><Link href={registration.status === "completed" ? `/journeys/${id}/services/birth_certificate` : `/journeys/${id}/birth-registration`} className="primary-cta"><Baby />{registration.status === "completed" ? "Continue with birth certificate" : "Review birth registration"}<ArrowRight /></Link><TrustNote>Your information stays within this evaluation sandbox.</TrustNote></div>
     </main>
   );
 }
 
-function GraphNode({ node, number }: { node: ReturnType<typeof useJourney>["state"]["projection"]["nodes"][number]; number: number }) {
+function GraphNode({ node, number, href }: { node: ReturnType<typeof useJourney>["state"]["projection"]["nodes"][number]; number: number; href?: string }) {
   const Icon = journeyIcons[node.icon];
   const label = node.status === "locked" ? "Complete registration first" : node.status === "completed" ? "Completed" : node.status === "in_progress" ? "In progress" : "Available";
-  return <article className={`graph-node ${node.status}`}><span className="node-number">{number}</span><span className="event-icon rose"><Icon /></span><strong>{node.title}</strong><p>{node.description}</p><span className={`status ${node.status}`}>{node.status === "locked" ? <LockKeyhole /> : null}{label}</span></article>;
+  const contents = <><span className="node-number">{number}</span><span className="event-icon rose"><Icon /></span><strong>{node.title}</strong><p>{node.description}</p><span className={`status ${node.status}`}>{node.status === "locked" ? <LockKeyhole /> : null}{label}</span></>;
+  return href ? <Link href={href} className={`graph-node service-node-link ${node.status}`}>{contents}</Link> : <article className={`graph-node ${node.status}`}>{contents}</article>;
 }

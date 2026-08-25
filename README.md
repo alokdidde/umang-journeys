@@ -47,7 +47,7 @@ This starts PostgreSQL, applies the Prisma schema, and runs the app with the Pos
 
 ## Simulated integrations
 
-The evaluation executes explicit sandbox adapters for civil registration, birth certificate issuance, ABDM-style health records, U-WIN-style vaccination planning, identity guidance, and benefit matching. Every result is clearly marked synthetic, receives a deterministic `SBX-…` receipt, is persisted, and can be reset. No government or third-party production system is contacted.
+The evaluation executes explicit sandbox adapters for civil registration, birth certificate issuance, ABDM-style health records, U-WIN-style vaccination planning, identity guidance, and benefit matching. Each downstream service moves through four persisted provider-specific stages, records timestamped activity, survives refreshes, and finishes with a detailed artifact. Every result is clearly marked synthetic, receives a deterministic `SBX-…` receipt, and can be reset. No government or third-party production system is contacted.
 
 ## Verify
 

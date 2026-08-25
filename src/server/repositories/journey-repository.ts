@@ -1,15 +1,16 @@
 import { completeNode, compileJourney, newBabyTemplate, type JourneyProjection } from "@/domain/journey-engine";
 import { PrismaJourneyRepository } from "@/server/repositories/prisma-journey-repository";
-import { isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
+import { advanceSimulatedService, isSandboxServiceKey } from "@/server/integrations/sandbox-services";
+import type { SandboxServiceKey, SandboxServiceRun } from "@/domain/service-workflows";
 
-export type StoredJourney = { id: string; sessionId: string; projection: JourneyProjection; facts: Record<string, string>; registrationId?: string };
+export type StoredJourney = { id: string; sessionId: string; projection: JourneyProjection; facts: Record<string, string>; serviceRuns: Partial<Record<SandboxServiceKey, SandboxServiceRun>>; registrationId?: string };
 
 export interface JourneyRepository {
   create(sessionId: string): Promise<StoredJourney>;
   get(sessionId: string, id: string): Promise<StoredJourney | null>;
   updateFacts(sessionId: string, id: string, facts: Record<string, string>): Promise<StoredJourney | null>;
   completeRegistration(sessionId: string, id: string, idempotencyKey: string): Promise<StoredJourney | null>;
-  completeService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string): Promise<StoredJourney | null>;
+  advanceService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string): Promise<StoredJourney | null>;
   reset(sessionId: string): Promise<void>;
 }
 
@@ -18,7 +19,7 @@ const idempotency = new Map<string, string>();
 
 export class MemoryJourneyRepository implements JourneyRepository {
   async create(sessionId: string) {
-    const journey: StoredJourney = { id: "demo-new-baby", sessionId, projection: compileJourney(newBabyTemplate), facts: {} };
+    const journey: StoredJourney = { id: "demo-new-baby", sessionId, projection: compileJourney(newBabyTemplate), facts: {}, serviceRuns: {} };
     journeys.set(`${sessionId}:${journey.id}`, journey);
     return journey;
   }
@@ -40,22 +41,18 @@ export class MemoryJourneyRepository implements JourneyRepository {
     journeys.set(`${sessionId}:${id}`, updated);
     return updated;
   }
-  async completeService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
+  async advanceService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
     const journey = await this.get(sessionId, id);
     const node = journey?.projection.nodes.find((candidate) => candidate.key === nodeKey);
     if (!journey || !node || node.status === "locked" || !isSandboxServiceKey(nodeKey)) return null;
     const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
-    const result = simulateExternalService(id, nodeKey);
-    idempotency.set(scopedKey, result.receipt);
-    const updated = {
-      ...journey,
-      projection: completeNode(journey.projection, nodeKey),
-      facts: {
-        ...journey.facts,
-        [`service.${nodeKey}.receipt`]: idempotency.get(scopedKey) ?? result.receipt,
-        [`service.${nodeKey}.summary`]: result.summary,
-      },
-    };
+    if (idempotency.has(scopedKey)) return journey;
+    idempotency.set(scopedKey, idempotencyKey);
+    const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey]);
+    const projection = run.status === "completed"
+      ? completeNode(journey.projection, nodeKey)
+      : { ...journey.projection, nodes: journey.projection.nodes.map((candidate) => candidate.key === nodeKey ? { ...candidate, status: run.status === "waiting_external" ? "waiting_external" as const : "in_progress" as const } : candidate) };
+    const updated = { ...journey, projection, serviceRuns: { ...journey.serviceRuns, [nodeKey]: run } };
     journeys.set(`${sessionId}:${id}`, updated);
     return updated;
   }

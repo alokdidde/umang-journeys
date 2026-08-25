@@ -1,7 +1,8 @@
 import { newBabyTemplate, type JourneyProjection, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
 import type { JourneyRepository, StoredJourney } from "@/server/repositories/journey-repository";
-import { isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
+import { advanceSimulatedService, isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
+import type { SandboxServiceKey, SandboxServiceRun } from "@/domain/service-workflows";
 
 type DatabaseJourney = Awaited<ReturnType<ReturnType<typeof getPrisma>["journeyInstance"]["findFirst"]>>;
 
@@ -47,7 +48,19 @@ function mapJourney(
       Boolean(metadata && typeof metadata === "object" && "registrationId" in metadata),
     );
 
-  return { id: journey.id, sessionId, projection, facts, registrationId: registration?.registrationId };
+  const serviceRuns: Partial<Record<SandboxServiceKey, SandboxServiceRun>> = {};
+  for (const fact of journey.facts) {
+    const match = fact.key.match(/^service\.(.+)\.run$/);
+    if (!match || !isSandboxServiceKey(match[1])) continue;
+    try {
+      const raw = typeof fact.valueJson === "string" ? fact.valueJson : JSON.stringify(fact.valueJson);
+      serviceRuns[match[1]] = JSON.parse(raw) as SandboxServiceRun;
+    } catch {
+      // Ignore an invalid historical sandbox snapshot and allow the run to restart.
+    }
+  }
+
+  return { id: journey.id, sessionId, projection, facts, serviceRuns, registrationId: registration?.registrationId };
 }
 
 const includeJourney = { nodes: true, facts: true, documents: true } as const;
@@ -168,7 +181,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
     return this.get(sessionId, id);
   }
 
-  async completeService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
+  async advanceService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
     const journey = await this.get(sessionId, id);
     const projectedNode = journey?.projection.nodes.find((candidate) => candidate.key === nodeKey);
     if (!journey || !projectedNode || projectedNode.status === "locked" || !isSandboxServiceKey(nodeKey)) return null;
@@ -176,38 +189,47 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const node = await prisma.journeyNode.findUniqueOrThrow({ where: { journeyId_nodeKey: { journeyId: id, nodeKey } } });
     const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
     const existing = await prisma.externalAction.findUnique({ where: { idempotencyKey: scopedKey } });
+    if (existing) return this.get(sessionId, id);
+    const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey]);
     const result = simulateExternalService(id, nodeKey);
+    const nodeStatus = run.status === "completed" ? "COMPLETED" : run.status === "waiting_external" ? "WAITING_EXTERNAL" : "IN_PROGRESS";
 
     await prisma.$transaction(async (tx) => {
-      if (!existing) {
-        await tx.externalAction.create({
-          data: {
-            nodeId: node.id,
-            adapterKey: result.adapterKey,
-            actionType: result.actionType,
-            status: "SUCCEEDED",
-            idempotencyKey: scopedKey,
-            requestJson: { synthetic: true },
-            responseJson: { receipt: result.receipt, summary: result.summary, synthetic: true },
-          },
-        });
-      }
+      await tx.externalAction.create({
+        data: {
+          nodeId: node.id,
+          adapterKey: result.adapterKey,
+          actionType: run.events.at(-1)?.stageKey ?? result.actionType,
+          status: run.status === "waiting_external" ? "PENDING" : "SUCCEEDED",
+          idempotencyKey: scopedKey,
+          requestJson: { runId: run.runId, stage: run.currentStage, synthetic: true },
+          responseJson: { progress: run.progress, state: run.status, receipt: run.receipt, synthetic: true },
+        },
+      });
       await tx.journeyNode.update({
         where: { id: node.id },
-        data: { status: "COMPLETED", recommended: false, completedAt: new Date() },
+        data: { status: nodeStatus, recommended: false, completedAt: run.completedAt ? new Date(run.completedAt) : null },
       });
-      for (const [key, valueJson] of [
-        [`service.${nodeKey}.receipt`, result.receipt],
-        [`service.${nodeKey}.summary`, result.summary],
-      ]) {
-        await tx.fact.upsert({
-          where: { journeyId_key: { journeyId: id, key } },
-          update: { valueJson, sourceType: "DERIVED", confirmed: true },
-          create: { journeyId: id, key, valueJson, sourceType: "DERIVED", confirmed: true },
-        });
+      await tx.fact.upsert({
+        where: { journeyId_key: { journeyId: id, key: `service.${nodeKey}.run` } },
+        update: { valueJson: JSON.stringify(run), sourceType: "DERIVED", confirmed: true },
+        create: { journeyId: id, key: `service.${nodeKey}.run`, valueJson: JSON.stringify(run), sourceType: "DERIVED", confirmed: true },
+      });
+      if (run.status === "completed") {
+        for (const [key, valueJson] of [
+          [`service.${nodeKey}.receipt`, run.receipt],
+          [`service.${nodeKey}.summary`, run.artifact?.subtitle ?? result.summary],
+        ]) {
+          await tx.fact.upsert({
+            where: { journeyId_key: { journeyId: id, key } },
+            update: { valueJson, sourceType: "DERIVED", confirmed: true },
+            create: { journeyId: id, key, valueJson, sourceType: "DERIVED", confirmed: true },
+          });
+        }
       }
+      const latest = run.events.at(-1);
       await tx.auditEvent.create({
-        data: { journeyId: id, actorType: "demo_user", eventType: `${nodeKey}_completed`, payloadJson: { receipt: result.receipt } },
+        data: { journeyId: id, actorType: "sandbox_adapter", eventType: `${nodeKey}_${latest?.stageKey ?? "advanced"}`, payloadJson: { runId: run.runId, progress: run.progress, status: run.status } },
       });
     });
     return this.get(sessionId, id);

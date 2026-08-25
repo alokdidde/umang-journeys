@@ -10,7 +10,7 @@ type JourneyContextValue = {
   createJourney: (facts: Record<string, string>) => Promise<string | null>;
   loadJourney: (id: string) => Promise<boolean>;
   submitRegistration: (id: string) => Promise<boolean>;
-  completeService: (id: string, nodeKey: string) => Promise<boolean>;
+  advanceService: (id: string, nodeKey: string) => Promise<boolean>;
   resetJourney: () => Promise<void>;
 };
 
@@ -84,7 +84,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
-  const completeService = useCallback(async (id: string, nodeKey: string) => {
+  const advanceService = useCallback(async (id: string, nodeKey: string) => {
     dispatch({ type: "operation_started" });
     try {
       const journey = await requestJson<ServerJourney>(`/api/journeys/${encodeURIComponent(id)}/nodes/${encodeURIComponent(nodeKey)}/submit`, {
@@ -100,7 +100,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
-  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, completeService, resetJourney }}>{children}</JourneyContext.Provider>;
+  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, advanceService, resetJourney }}>{children}</JourneyContext.Provider>;
 }
 
 export function useJourney() {

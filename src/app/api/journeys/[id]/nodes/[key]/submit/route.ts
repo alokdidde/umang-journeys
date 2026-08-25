@@ -26,6 +26,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (current.projection.nodes.find((node) => node.key === key)?.status === "locked") {
     return NextResponse.json({ code: "NODE_LOCKED", message: "Complete birth registration before using this service." }, { status: 409 });
   }
-  const journey = await journeyRepository.completeService(sessionId, id, key, parsed.data.idempotencyKey);
+  const journey = await journeyRepository.advanceService(sessionId, id, key, parsed.data.idempotencyKey);
   return journey ? NextResponse.json({ ...journey, synthetic: true }) : NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
 }
