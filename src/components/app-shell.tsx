@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { Activity, CircleHelp, Files, House, LogOut, RotateCcw, Route, ShieldCheck } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,14 +19,31 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { resetJourney } = useJourney();
   const router = useRouter();
   const pathname = usePathname();
+  useEffect(() => {
+    if (pathname === "/login") return;
+    let disposed = false;
+    async function verifySession() {
+      const response = await fetch("/api/auth/session", { cache: "no-store" }).catch(() => null);
+      if (disposed || response?.ok || response?.status !== 401) return;
+      const returnTo = `${window.location.pathname}${window.location.search}`;
+      window.location.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+    }
+    void verifySession();
+    const handlePageShow = () => { void verifySession(); };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => {
+      disposed = true;
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, [pathname]);
   async function reset() {
     await resetJourney();
     router.push("/");
   }
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.replace("/login");
-    router.refresh();
+    const response = await fetch("/api/auth/logout", { method: "POST" });
+    if (!response.ok) return;
+    window.location.replace("/login");
   }
   if (pathname === "/login") {
     return <><header className="login-header"><Brand /><span className="prototype-pill"><ShieldCheck size={15} /> Evaluation demo</span></header><div id="main-content" tabIndex={-1}>{children}</div></>;

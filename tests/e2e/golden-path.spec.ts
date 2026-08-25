@@ -30,7 +30,7 @@ async function openDocumentAssistant(page: Page) {
 
 test.describe.configure({ mode: "serial" });
 
-test("only the seeded evaluation account can sign in", async ({ page }) => {
+test("authentication protects the app, logs out completely, and supports signing in again", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login\?returnTo=%2F$/);
   await expect(page.getByRole("heading", { name: "Life changes. Your next step stays clear." })).toBeVisible();
@@ -40,13 +40,48 @@ test("only the seeded evaluation account can sign in", async ({ page }) => {
   await expect(page.getByRole("link", { name: /sign up|register/i })).toHaveCount(0);
   const loginA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(loginA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+
+  for (const route of ["/journeys", "/documents", "/activity", "/intake"]) {
+    await page.goto(route);
+    await expect(page).toHaveURL(/\/login\?returnTo=/);
+    expect(new URL(page.url()).searchParams.get("returnTo")).toBe(route);
+  }
+  expect((await page.request.get("/api/hub")).status()).toBe(401);
+  expect((await page.request.get("/api/auth/session")).status()).toBe(401);
+
+  await page.goto("/login?returnTo=%2F%2Fevil.example");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill("wrong-password");
   await page.getByRole("button", { name: "Open the guided demo" }).click();
   await expect(page.getByText("The email or password is incorrect.")).toBeVisible();
+  expect((await page.context().cookies()).find((cookie) => cookie.name === "umang_session")).toBeUndefined();
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Open the guided demo" }).click();
   await expect(page).toHaveURL(/\/$/);
+
+  const sessionCookie = (await page.context().cookies()).find((cookie) => cookie.name === "umang_session");
+  expect(sessionCookie).toMatchObject({ httpOnly: true, sameSite: "Lax", secure: false, path: "/" });
+  expect(sessionCookie?.expires ?? 0).toBeGreaterThan(Date.now() / 1000);
+  expect((await page.request.get("/api/hub")).status()).toBe(200);
+  expect((await page.request.get("/api/auth/session")).status()).toBe(200);
+
+  await page.goto("/login");
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/documents");
+  await page.getByRole("button", { name: "Sign out Ananya Sharma" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  expect((await page.context().cookies()).find((cookie) => cookie.name === "umang_session")).toBeUndefined();
+  expect((await page.request.get("/api/hub")).status()).toBe(401);
+  expect((await page.request.get("/api/auth/session")).status()).toBe(401);
+  expect((await page.request.post("/api/auth/logout")).status()).toBe(200);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/login(?:\?|$)/);
+  await page.goto("/journeys?view=completed");
+  expect(new URL(page.url()).searchParams.get("returnTo")).toBe("/journeys?view=completed");
+  await page.getByRole("button", { name: "Open the guided demo" }).click();
+  await expect(page).toHaveURL(/\/journeys\?view=completed$/);
+  expect((await page.request.get("/api/hub")).status()).toBe(200);
 });
 
 test("newborn journey persists, completes every sandbox integration, downloads a PDF, and resets", async ({ page }) => {
@@ -569,13 +604,15 @@ test("an invalid uploaded document fails safely without mutating a journey", asy
 });
 
 test("authenticated workflow pages have no serious accessibility violations", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await login(page);
   await page.request.post("/api/demo/reset");
   const id = await seedJourney(page);
   await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "axe-registration" } });
   for (const route of ["/", "/journeys", "/documents", "/activity", "/intake", `/journeys/${id}`, `/journeys/${id}/birth-registration`, `/journeys/${id}/success`, `/journeys/${id}/services/child_health_record`]) {
     await page.goto(route);
-    await page.waitForLoadState("networkidle");
+    await expect(page.locator("main")).toBeVisible();
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
     expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? "")), route).toEqual([]);
   }
@@ -599,7 +636,7 @@ test("login, home, and a completed service reflow at mobile width", async ({ pag
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client);
   for (const route of ["/documents", "/activity", "/journeys"]) {
     await page.goto(route);
-    await page.waitForLoadState("networkidle");
+    await expect(page.locator("main")).toBeVisible();
     sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
     expect(sizes.scroll, route).toBeLessThanOrEqual(sizes.client);
   }

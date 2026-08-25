@@ -30,7 +30,8 @@ function LoginForm() {
       const body = await response.json() as { message?: string };
       if (!response.ok) throw new Error(body.message ?? "Sign in failed.");
       const returnTo = searchParams.get("returnTo");
-      router.replace(returnTo?.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/");
+      const safeReturnTo = returnTo?.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\") && !returnTo.startsWith("/login") ? returnTo : "/";
+      router.replace(safeReturnTo);
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Sign in failed.");
