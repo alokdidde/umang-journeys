@@ -18,4 +18,22 @@ describe("vehicle evidence ingestion", () => {
       extractedFields: { registrationNumber: "TS09EV4321", chassisLast5: "7K2P9" },
     });
   });
+
+  it("generates a vaccination receipt that can be matched to a child journey", async () => {
+    const evidence = await createSampleEvidence("vaccination_receipt", {
+      "child.name": "Aarav Sharma",
+      "child.dateOfBirth": "2026-08-24",
+    });
+
+    expect(evidence).toMatchObject({
+      type: "vaccination_receipt",
+      source: "sample",
+      extractedFields: {
+        childName: "Aarav Sharma",
+        vaccine: "BCG",
+        administeredOn: "2026-08-24",
+        provider: "Apollo Hospital",
+      },
+    });
+  });
 });

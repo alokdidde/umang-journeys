@@ -76,7 +76,14 @@ function numericReference(journeyId: string, nodeKey: SandboxServiceKey) {
   return (BigInt(`0x${hex}`) % 100_000_000_000_000n).toString().padStart(14, "0");
 }
 
-function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: string): ServiceArtifact {
+function formatShortDate(value: string | undefined) {
+  if (!value) return "Date not recorded";
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.valueOf())) return value;
+  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
+}
+
+function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: string, facts: Record<string, string> = {}): ServiceArtifact {
   const reference = numericReference(journeyId, nodeKey);
   switch (nodeKey) {
     case "birth_certificate":
@@ -116,6 +123,8 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         notice: "ABDM facilitates consent-based record exchange; this simulation does not create an ABHA or store a real medical record.",
       };
     case "vaccination_timeline":
+      const recordedVaccine = facts["vaccination.last.vaccine"];
+      const administeredOn = facts["vaccination.last.administeredOn"];
       return {
         title: "Vaccination timeline",
         subtitle: "Calculated from the recorded birth date of 24 August 2026",
@@ -123,14 +132,18 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceValue: `UWIN-SBX-${reference.slice(-8)}`,
         facts: [
           { label: "Schedule anchor", value: "24 August 2026", status: "verified" },
-          { label: "Birth doses", value: "Administration not confirmed", status: "review" },
+          recordedVaccine
+            ? { label: "Recorded dose", value: `${recordedVaccine} · ${formatShortDate(administeredOn)}`, status: "verified" }
+            : { label: "Birth doses", value: "Administration not confirmed", status: "review" },
           { label: "Reminder channel", value: "Not configured", status: "information" },
         ],
         groups: [{
           title: "Upcoming milestones",
           description: "Confirm the exact vaccine and dose with a qualified health provider.",
           items: [
-            { title: "Birth-dose review", meta: "BCG · OPV-0 · Hepatitis B birth dose", detail: "Ask the birth facility to confirm what was administered.", status: "due" },
+            recordedVaccine
+              ? { title: `${recordedVaccine} recorded`, meta: `${formatShortDate(administeredOn)} · ${facts["vaccination.last.provider"] || "Provider receipt"}`, detail: "Verified from the attached synthetic provider receipt.", status: "verified" }
+              : { title: "Birth-dose review", meta: "BCG · OPV-0 · Hepatitis B birth dose", detail: "Ask the birth facility to confirm what was administered.", status: "due" },
             { title: "6-week visit", meta: "Due 5 October 2026", detail: "First primary-series milestone", status: "upcoming" },
             { title: "10-week visit", meta: "Due 2 November 2026", detail: "Second primary-series milestone", status: "upcoming" },
             { title: "14-week visit", meta: "Due 30 November 2026", detail: "Third primary-series milestone", status: "upcoming" },
@@ -266,6 +279,7 @@ export function advanceSimulatedService(
   journeyId: string,
   nodeKey: SandboxServiceKey,
   current: SandboxServiceRun | undefined,
+  facts: Record<string, string> = {},
   now = new Date(),
 ): SandboxServiceRun {
   if (current?.status === "completed") return current;
@@ -287,6 +301,6 @@ export function advanceSimulatedService(
     receipt,
     events: [...(current?.events ?? []), { stageKey: stage.key, title: stage.title, detail: stage.detail, occurredAt }],
   };
-  if (stage.state === "completed") run.artifact = createArtifact(journeyId, nodeKey, receipt);
+  if (stage.state === "completed") run.artifact = createArtifact(journeyId, nodeKey, receipt, facts);
   return run;
 }

@@ -55,6 +55,7 @@ export const ModelName = {
   JourneySubject: 'JourneySubject',
   JourneyTemplate: 'JourneyTemplate',
   JourneyInstance: 'JourneyInstance',
+  DocumentIntake: 'DocumentIntake',
   JourneyNode: 'JourneyNode',
   JourneyEdge: 'JourneyEdge',
   Fact: 'Fact',
@@ -130,6 +131,27 @@ export const JourneyInstanceScalarFieldEnum = {
 } as const
 
 export type JourneyInstanceScalarFieldEnum = (typeof JourneyInstanceScalarFieldEnum)[keyof typeof JourneyInstanceScalarFieldEnum]
+
+
+export const DocumentIntakeScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  journeyId: 'journeyId',
+  status: 'status',
+  fileName: 'fileName',
+  mimeType: 'mimeType',
+  size: 'size',
+  source: 'source',
+  documentType: 'documentType',
+  confidence: 'confidence',
+  contentBase64: 'contentBase64',
+  analysisJson: 'analysisJson',
+  proposalJson: 'proposalJson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentIntakeScalarFieldEnum = (typeof DocumentIntakeScalarFieldEnum)[keyof typeof DocumentIntakeScalarFieldEnum]
 
 
 export const JourneyNodeScalarFieldEnum = {

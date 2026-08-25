@@ -1,0 +1,70 @@
+import { NextResponse } from "next/server";
+import { createSampleEvidence } from "@/server/evidence-ingestion";
+import { analyzeUploadedDocument } from "@/server/document-analysis";
+import { documentAssistant } from "@/server/document-assistant-instance";
+import { getDemoSession } from "@/server/session";
+import { journeyRepository } from "@/server/repositories/journey-repository";
+
+function publicRecord(record: Awaited<ReturnType<typeof documentAssistant.propose>>) {
+  return {
+    id: record.id,
+    status: record.status,
+    fileName: record.fileName,
+    mimeType: record.mimeType,
+    size: record.size,
+    source: record.source,
+    analysis: record.analysis,
+    proposal: record.proposal,
+    appliedJourneyId: record.appliedJourneyId,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  };
+}
+
+export async function POST(request: Request) {
+  const sessionId = await getDemoSession();
+  if (!sessionId) return NextResponse.json({ code: "UNAUTHENTICATED", message: "Sign in to continue." }, { status: 401 });
+
+  try {
+    const form = await request.formData();
+    const sampleType = String(form.get("sampleType") ?? "");
+    let fileName: string;
+    let mimeType: string;
+    let bytes: Uint8Array;
+    let source: "sample" | "user_upload";
+    let analysis;
+
+    if (sampleType === "vehicle_rc" || sampleType === "vaccination_receipt") {
+      const journeys = await journeyRepository.list(sessionId);
+      const child = journeys.find((journey) => journey.subject.type === "child");
+      const sampleFacts: Record<string, string> = sampleType === "vehicle_rc" ? {
+        "vehicle.registrationNumber": "TS09EV4321",
+        "vehicle.makeModel": "Tata Nexon EV",
+        "vehicle.chassisLast5": "7K2P9",
+      } : {
+        "child.name": child?.subject.displayName ?? "Aarav Sharma",
+        "child.dateOfBirth": child?.facts["child.dateOfBirth"] ?? "2026-08-24",
+        "birth.hospital": child?.facts["birth.hospital"] ?? child?.facts["hospital.name"] ?? "Apollo Hospital",
+      };
+      const sample = await createSampleEvidence(sampleType, sampleFacts);
+      fileName = sample.fileName;
+      mimeType = sample.mimeType;
+      bytes = new Uint8Array(Buffer.from(sample.contentBase64, "base64"));
+      source = "sample";
+      analysis = { kind: sampleType, confidence: 0.98, fields: sample.extractedFields } as const;
+    } else {
+      const file = form.get("file");
+      if (!(file instanceof File)) return NextResponse.json({ code: "MISSING_DOCUMENT", message: "Choose a document to analyse." }, { status: 400 });
+      fileName = file.name.slice(0, 120);
+      mimeType = file.type;
+      bytes = new Uint8Array(await file.arrayBuffer());
+      source = "user_upload";
+      analysis = await analyzeUploadedDocument({ fileName, mimeType, bytes });
+    }
+
+    const record = await documentAssistant.propose(sessionId, { fileName, mimeType, bytes, source, analysis });
+    return NextResponse.json({ document: publicRecord(record), resolver: source === "sample" ? "synthetic_fixture" : analysis.confidence >= 0.8 ? "ai_gateway" : "filename_fallback" }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ code: "DOCUMENT_ANALYSIS_FAILED", message: error instanceof Error ? error.message : "The document could not be analysed." }, { status: 400 });
+  }
+}

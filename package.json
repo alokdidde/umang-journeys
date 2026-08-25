@@ -4,7 +4,9 @@
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.19.0",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -19,23 +21,31 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@ai-sdk/react": "^4.0.81",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "ai": "^7.0.78",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "lucide-react": "^0.553.0",
+    "nanoid": "^6.0.1",
     "next": "16.3.2",
     "openai": "^7.5.0",
     "pdf-lib": "^1.17.1",
     "pg": "^8.16.3",
+    "radix-ui": "^1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.66.0",
+    "tailwind-merge": "^3.6.0",
     "use-effect-reducer": "^0.3.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.3.8",
     "@axe-core/playwright": "^4.11.0",
+    "@electric-sql/pglite": "^0.3.8",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.1.17",
     "@testing-library/jest-dom": "^6.9.1",

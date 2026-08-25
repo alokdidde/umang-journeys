@@ -62,6 +62,11 @@ export type JourneyTemplate = Prisma.JourneyTemplateModel
  */
 export type JourneyInstance = Prisma.JourneyInstanceModel
 /**
+ * Model DocumentIntake
+ * 
+ */
+export type DocumentIntake = Prisma.DocumentIntakeModel
+/**
  * Model JourneyNode
  * 
  */

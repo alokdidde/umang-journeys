@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { JourneyProvider } from "@/components/journey-provider";
 import { AppHeader } from "@/components/app-shell";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -15,7 +16,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={inter.variable}>
-        <JourneyProvider><AppHeader />{children}</JourneyProvider>
+        <TooltipProvider><JourneyProvider><AppHeader />{children}</JourneyProvider></TooltipProvider>
       </body>
     </html>
   );

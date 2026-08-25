@@ -17,6 +17,13 @@ function extractedFields(type: EvidenceType, facts: Record<string, string>): Rec
     buyerName: "Ananya Sharma",
     saleDate: facts["vehicle.purchaseDate"] ?? "2026-08-25",
   };
+  if (type === "vaccination_receipt") return {
+    childName: facts["child.name"] ?? "Aarav Sharma",
+    dateOfBirth: facts["child.dateOfBirth"] ?? "2026-08-24",
+    vaccine: "BCG",
+    administeredOn: facts["child.dateOfBirth"] ?? "2026-08-24",
+    provider: facts["birth.hospital"] ?? facts["hospital.name"] ?? "Apollo Hospital",
+  };
   return {
     policyNumber: "MTR-SBX-884210",
     registrationNumber: facts["vehicle.registrationNumber"] ?? "TS09EV4321",
@@ -27,6 +34,7 @@ function extractedFields(type: EvidenceType, facts: Record<string, string>): Rec
 function titleFor(type: EvidenceType) {
   if (type === "vehicle_rc") return "SYNTHETIC REGISTRATION CERTIFICATE";
   if (type === "sale_agreement") return "SYNTHETIC VEHICLE SALE AGREEMENT";
+  if (type === "vaccination_receipt") return "SYNTHETIC VACCINATION RECEIPT";
   return "SYNTHETIC MOTOR INSURANCE POLICY";
 }
 

@@ -401,6 +401,7 @@ export const ModelName = {
   JourneySubject: 'JourneySubject',
   JourneyTemplate: 'JourneyTemplate',
   JourneyInstance: 'JourneyInstance',
+  DocumentIntake: 'DocumentIntake',
   JourneyNode: 'JourneyNode',
   JourneyEdge: 'JourneyEdge',
   Fact: 'Fact',
@@ -423,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "userProfile" | "journeySubject" | "journeyTemplate" | "journeyInstance" | "journeyNode" | "journeyEdge" | "fact" | "evidence" | "externalAction" | "outputDocument" | "auditEvent"
+    modelProps: "userProfile" | "journeySubject" | "journeyTemplate" | "journeyInstance" | "documentIntake" | "journeyNode" | "journeyEdge" | "fact" | "evidence" | "externalAction" | "outputDocument" | "auditEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -720,6 +721,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.JourneyInstanceCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.JourneyInstanceCountAggregateOutputType> | number
+        }
+      }
+    }
+    DocumentIntake: {
+      payload: Prisma.$DocumentIntakePayload<ExtArgs>
+      fields: Prisma.DocumentIntakeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DocumentIntakeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DocumentIntakeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload>
+        }
+        findFirst: {
+          args: Prisma.DocumentIntakeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DocumentIntakeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload>
+        }
+        findMany: {
+          args: Prisma.DocumentIntakeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload>[]
+        }
+        create: {
+          args: Prisma.DocumentIntakeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload>
+        }
+        createMany: {
+          args: Prisma.DocumentIntakeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DocumentIntakeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload>[]
+        }
+        delete: {
+          args: Prisma.DocumentIntakeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload>
+        }
+        update: {
+          args: Prisma.DocumentIntakeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload>
+        }
+        deleteMany: {
+          args: Prisma.DocumentIntakeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DocumentIntakeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DocumentIntakeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload>[]
+        }
+        upsert: {
+          args: Prisma.DocumentIntakeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentIntakePayload>
+        }
+        aggregate: {
+          args: Prisma.DocumentIntakeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDocumentIntake>
+        }
+        groupBy: {
+          args: Prisma.DocumentIntakeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentIntakeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DocumentIntakeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentIntakeCountAggregateOutputType> | number
         }
       }
     }
@@ -1332,6 +1407,27 @@ export const JourneyInstanceScalarFieldEnum = {
 export type JourneyInstanceScalarFieldEnum = (typeof JourneyInstanceScalarFieldEnum)[keyof typeof JourneyInstanceScalarFieldEnum]
 
 
+export const DocumentIntakeScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  journeyId: 'journeyId',
+  status: 'status',
+  fileName: 'fileName',
+  mimeType: 'mimeType',
+  size: 'size',
+  source: 'source',
+  documentType: 'documentType',
+  confidence: 'confidence',
+  contentBase64: 'contentBase64',
+  analysisJson: 'analysisJson',
+  proposalJson: 'proposalJson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentIntakeScalarFieldEnum = (typeof DocumentIntakeScalarFieldEnum)[keyof typeof DocumentIntakeScalarFieldEnum]
+
+
 export const JourneyNodeScalarFieldEnum = {
   id: 'id',
   journeyId: 'journeyId',
@@ -1565,20 +1661,6 @@ export type ListEnumJourneyStatusFieldRefInput<$PrismaModel> = FieldRefInputType
 
 
 /**
- * Reference to a field of type 'NodeStatus'
- */
-export type EnumNodeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NodeStatus'>
-    
-
-
-/**
- * Reference to a field of type 'NodeStatus[]'
- */
-export type ListEnumNodeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NodeStatus[]'>
-    
-
-
-/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -1589,6 +1671,20 @@ export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, '
  * Reference to a field of type 'Float[]'
  */
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+/**
+ * Reference to a field of type 'NodeStatus'
+ */
+export type EnumNodeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NodeStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'NodeStatus[]'
+ */
+export type ListEnumNodeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NodeStatus[]'>
     
 
 
@@ -1774,6 +1870,7 @@ export type GlobalOmitConfig = {
   journeySubject?: Prisma.JourneySubjectOmit
   journeyTemplate?: Prisma.JourneyTemplateOmit
   journeyInstance?: Prisma.JourneyInstanceOmit
+  documentIntake?: Prisma.DocumentIntakeOmit
   journeyNode?: Prisma.JourneyNodeOmit
   journeyEdge?: Prisma.JourneyEdgeOmit
   fact?: Prisma.FactOmit

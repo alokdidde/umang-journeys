@@ -40,6 +40,7 @@ test("only the seeded evaluation account can sign in", async ({ page }) => {
 test("newborn journey persists, completes every sandbox integration, downloads a PDF, and resets", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");
+  await page.reload();
   await expect(page).toHaveScreenshot("home-1280.png", { fullPage: true, animations: "disabled" });
   await page.getByRole("button", { name: /Start New Baby Journey/i }).click();
   await page.getByRole("button", { name: "Not sure" }).click();
@@ -195,6 +196,92 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await page.goto("/");
   await expect(page.getByText("Journey complete")).toBeVisible();
   await expect(page.getByText("Next for Aarav Sharma")).toBeVisible();
+  await page.request.post("/api/demo/reset");
+});
+
+test("the document assistant creates a vehicle journey from an approved sample RC and replays safely", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  const babyId = await seedJourney(page);
+  await page.request.post(`/api/journeys/${babyId}/nodes/birth_registration/submit`, {
+    data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "document-rc-registration" },
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Registration certificate" }).click();
+  await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
+  await expect(page.getByText("TS09EV4321", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Approve update/i }).click();
+  await expect(page.getByText("The RC was attached and the vehicle journey is ready for review.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tata Nexon EV" })).toBeVisible();
+  await expect(page.getByText("2 journeys")).toBeVisible();
+
+  const journeysResponse = await page.request.get("/api/journeys");
+  const journeysBody = await journeysResponse.json() as { journeys: Array<{ id: string; subject: { type: string }; nextAction: { nodeKey: string } | null }> };
+  const vehicle = journeysBody.journeys.find((journey) => journey.subject.type === "vehicle");
+  expect(vehicle?.nextAction?.nodeKey).toBe("vehicle_details");
+  const full = await (await page.request.get(`/api/journeys/${vehicle!.id}`)).json() as { evidence: Array<{ type: string }> };
+  expect(full.evidence).toEqual([expect.objectContaining({ type: "vehicle_rc" })]);
+  await page.request.post("/api/demo/reset");
+});
+
+test("the document assistant records an approved vaccination receipt on the matching child", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  const babyId = await seedJourney(page);
+  await page.request.post(`/api/journeys/${babyId}/nodes/birth_registration/submit`, {
+    data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "document-vaccine-registration" },
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Vaccination receipt" }).click();
+  await expect(page.getByRole("heading", { name: "Record BCG for Aarav Sharma" })).toBeVisible();
+  await expect(page.getByText("Apollo Hospital", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Approve update/i }).click();
+  await expect(page.getByText("The vaccination receipt was added and the child’s timeline was refreshed.")).toBeVisible();
+
+  const saved = await (await page.request.get(`/api/journeys/${babyId}`)).json() as {
+    facts: Record<string, string>;
+    evidence: Array<{ type: string }>;
+    serviceRuns: { vaccination_timeline?: { progress: number } };
+    projection: { nodes: Array<{ key: string; status: string }> };
+  };
+  expect(saved.facts["vaccination.last.vaccine"]).toBe("BCG");
+  expect(saved.evidence).toEqual([expect.objectContaining({ type: "vaccination_receipt" })]);
+  expect(saved.serviceRuns.vaccination_timeline?.progress).toBe(100);
+  expect(saved.projection.nodes.find((node) => node.key === "vaccination_timeline")?.status).toBe("completed");
+  await page.request.post("/api/demo/reset");
+});
+
+test("rejecting a document proposal leaves every journey unchanged", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  await seedJourney(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Registration certificate" }).click();
+  await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
+  await page.getByRole("button", { name: "Don’t update" }).click();
+  await expect(page.getByText("No journey data was changed.")).toBeVisible();
+  const body = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
+  expect(body.journeys).toHaveLength(1);
+  await page.request.post("/api/demo/reset");
+});
+
+test("an invalid uploaded document fails safely without mutating a journey", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  await seedJourney(page);
+  await page.goto("/");
+  await page.locator('.document-desk input[type="file"]').setInputFiles({
+    name: "registration-certificate.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("not really a PDF"),
+  });
+  await page.getByRole("button", { name: "Analyse document" }).click();
+  await expect(page.getByText("The file contents do not match the selected file type.")).toBeVisible();
+  await expect(page.getByText("No journey data was changed.")).toBeVisible();
+  const body = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
+  expect(body.journeys).toHaveLength(1);
   await page.request.post("/api/demo/reset");
 });
 

@@ -52,6 +52,7 @@ model UserProfile {
   demoProfile Boolean           @default(true)
   journeys    JourneyInstance[]
   subjects    JourneySubject[]
+  documentIntakes DocumentIntake[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
@@ -95,6 +96,29 @@ model JourneyInstance {
   evidence        Evidence[]
   documents       OutputDocument[]
   audits          AuditEvent[]
+  documentIntakes DocumentIntake[]
+}
+
+model DocumentIntake {
+  id               String           @id @default(cuid())
+  profileId        String
+  journeyId        String?
+  status           String           @default("proposed")
+  fileName         String
+  mimeType         String
+  size             Int
+  source           String
+  documentType     String
+  confidence       Float
+  contentBase64    String
+  analysisJson     Json
+  proposalJson     Json
+  profile          UserProfile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  journey          JourneyInstance? @relation(fields: [journeyId], references: [id], onDelete: SetNull)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([profileId, createdAt])
 }
 
 model JourneyNode {

@@ -326,7 +326,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
     const existing = await prisma.externalAction.findUnique({ where: { idempotencyKey: scopedKey } });
     if (existing) return this.get(sessionId, id);
-    const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey]);
+    const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey], journey.facts);
     const result = simulateExternalService(id, nodeKey);
     const nodeStatus = run.status === "completed" ? "COMPLETED" : run.status === "waiting_external" ? "WAITING_EXTERNAL" : "IN_PROGRESS";
     const nextProjection = run.status === "completed" ? completeNode(journey.projection, nodeKey) : null;

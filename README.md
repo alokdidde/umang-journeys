@@ -24,18 +24,26 @@ There is deliberately no registration flow. For a shared deployment, set `EVALUA
 node -e "const {randomBytes,scryptSync}=require('node:crypto');const p=process.argv[1],s=randomBytes(16).toString('hex');console.log(s+':'+scryptSync(p,s,64).toString('hex'))" 'replace-with-a-strong-password'
 ```
 
-## AI intake
+## AI intake and document assistant
+
+Returning users see a compact document assistant above **Your journeys**. It accepts PDF, PNG, and JPEG files up to 5 MB, extracts a typed proposal, and always asks for approval before changing journey data. The included synthetic samples demonstrate two end-to-end tool paths:
+
+- a vehicle registration certificate creates and pre-fills a vehicle journey;
+- a vaccination receipt matches the child, stores the evidence, and updates the vaccination timeline and artifact.
+
+The interface uses the official Vercel AI Elements prompt input, attachment, and confirmation primitives. Sample documents are generated as real PDFs; uploaded documents use structured model output when AI Gateway credentials are available and fall back to a safe, non-applicable review state when extraction is unavailable.
 
 The preferred configuration is Vercel AI Gateway:
 
 ```text
 AI_GATEWAY_API_KEY=...
 AI_INTAKE_MODEL=openai/gpt-5.5
+AI_DOCUMENT_MODEL=openai/gpt-5.5
 ```
 
 `VERCEL_OIDC_TOKEN` is also recognized on Vercel. A direct `OPENAI_API_KEY` remains supported; omit `AI_INTAKE_MODEL` to use the provider-appropriate default. Never commit API keys. If a key has been pasted into a chat or log, rotate it before deployment.
 
-Without AI credentials, the constrained deterministic resolver keeps the evaluation workflow usable.
+Without AI credentials, the constrained deterministic resolver and both sample-document workflows keep the evaluation usable. Uploaded documents are never applied from filename inference alone.
 
 ## Run the Docker handoff
 
@@ -43,7 +51,7 @@ Without AI credentials, the constrained deterministic resolver keeps the evaluat
 docker compose up --build
 ```
 
-This starts PostgreSQL, applies the Prisma schema, and runs the app with the PostgreSQL repository. Journey facts, node completions, sandbox receipts, audit events, and generated-document metadata are server-authoritative and survive refreshes.
+This starts PostgreSQL, applies the Prisma schema, and runs the app with the PostgreSQL repository. Journey facts, node completions, sandbox receipts, audit events, document proposals and approvals, evidence, and generated-document metadata are server-authoritative and survive refreshes.
 
 ## Simulated integrations
 

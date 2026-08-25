@@ -1,4 +1,4 @@
-export const evidenceTypes = ["vehicle_rc", "sale_agreement", "insurance_policy"] as const;
+export const evidenceTypes = ["vehicle_rc", "sale_agreement", "insurance_policy", "vaccination_receipt"] as const;
 
 export type EvidenceType = (typeof evidenceTypes)[number];
 export type EvidenceSource = "user_upload" | "sample";
@@ -25,6 +25,7 @@ export const evidenceLabels: Record<EvidenceType, { title: string; description: 
   vehicle_rc: { title: "Registration certificate (RC)", description: "The vehicle number and chassis suffix must be readable." },
   sale_agreement: { title: "Sale agreement or delivery note", description: "It should identify the buyer, seller, vehicle and sale date." },
   insurance_policy: { title: "Motor insurance policy", description: "The vehicle number, policy number and validity dates must be readable." },
+  vaccination_receipt: { title: "Vaccination receipt", description: "The child’s name, vaccine, date, and provider must be readable." },
 };
 
 export const serviceEvidenceRequirements: Partial<Record<string, EvidenceType[]>> = {

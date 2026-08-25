@@ -140,7 +140,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
     if (this.idempotency.has(scopedKey)) return journey;
     this.idempotency.set(scopedKey, idempotencyKey);
-    const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey]);
+    const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey], journey.facts);
     const projection = run.status === "completed"
       ? completeNode(journey.projection, nodeKey)
       : { ...journey.projection, nodes: journey.projection.nodes.map((candidate) => candidate.key === nodeKey ? { ...candidate, status: run.status === "waiting_external" ? "waiting_external" as const : "in_progress" as const } : candidate) };

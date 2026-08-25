@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Baby, Car, Check, Clock3, CreditCard, FileText, Gift, HeartPulse, IdCard, LoaderCircle, Mic, Plus, Search, ShieldCheck, Sparkles, Syringe } from "lucide-react";
@@ -8,6 +8,7 @@ import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { lifeEvents } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
 import type { JourneySummary } from "@/domain/journey-summary";
+import { DocumentDesk } from "@/components/document-desk";
 
 type JourneyListResponse = { journeys: JourneySummary[] };
 
@@ -18,6 +19,14 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const router = useRouter();
+
+  const refreshJourneys = useCallback(async () => {
+    const response = await fetch("/api/journeys");
+    const body = await response.json() as JourneyListResponse & { message?: string };
+    if (!response.ok) throw new Error(body.message ?? "Your journeys could not be loaded.");
+    setJourneys(body.journeys);
+    setLoadError(null);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -47,11 +56,11 @@ export default function HomePage() {
   }
 
   return journeys.length > 0
-    ? <ReturningHome journeys={journeys} start={start} loadError={loadError} />
+    ? <ReturningHome journeys={journeys} start={start} loadError={loadError} refreshJourneys={refreshJourneys} />
     : <FirstVisitHome query={query} setQuery={setQuery} start={start} loadError={loadError} />;
 }
 
-function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string) => void; loadError: string | null }) {
+function ReturningHome({ journeys, start, loadError, refreshJourneys }: { journeys: JourneySummary[]; start: (statement?: string) => void; loadError: string | null; refreshJourneys: () => Promise<void> }) {
   return (
     <main className="page returning-home">
       <ScenicBackdrop />
@@ -60,6 +69,8 @@ function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummar
         <button className="secondary-button" type="button" onClick={() => start()}><Plus />Start another journey</button>
       </section>
       {loadError && <p className="workflow-error content-layer" role="alert">{loadError}</p>}
+
+      <DocumentDesk onJourneyChanged={refreshJourneys} />
 
       <section className="active-journeys content-layer" aria-labelledby="active-journeys-heading">
         <div className="dashboard-section-heading"><div><span>Continue where you left off</span><h2 id="active-journeys-heading">Your {journeys.length === 1 ? "active journey" : "journeys"}</h2></div><small>{journeys.length} {journeys.length === 1 ? "journey" : "journeys"}</small></div>

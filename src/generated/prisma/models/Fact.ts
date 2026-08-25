@@ -481,10 +481,6 @@ export type EnumSourceTypeFieldUpdateOperationsInput = {
   set?: $Enums.SourceType
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type FactCreateWithoutJourneyInput = {
   id?: string
   key: string
