@@ -1,0 +1,7 @@
+node_modules
+.next
+.git
+.env*
+playwright-report
+test-results
+UMANG_Journeys_Product_Engineering_Spec_v0.1.docx

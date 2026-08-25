@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: umang
+      POSTGRES_USER: umang
+      POSTGRES_PASSWORD: umang
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umang -d umang"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "5432:5432"
+    volumes:
+      - umang_postgres:/var/lib/postgresql/data
+
+  app:
+    build: .
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://umang:umang@postgres:5432/umang
+      PERSISTENCE_MODE: postgres
+      SESSION_SECRET: local-docker-demo-secret-change-before-public-use
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_INTAKE_MODEL: ${OPENAI_INTAKE_MODEL:-gpt-5.6-terra}
+    ports:
+      - "3000:3000"
+
+  migrate:
+    build:
+      context: .
+      target: migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://umang:umang@postgres:5432/umang
+
+volumes:
+  umang_postgres:
