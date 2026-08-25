@@ -97,6 +97,15 @@ test("newborn journey persists, completes every sandbox integration, downloads a
   await expect(page.getByText("Done", { exact: true })).toHaveCount(6);
   await page.reload();
   await expect(page.getByText("Done", { exact: true })).toHaveCount(6);
+
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Nothing needs your attention." })).toBeVisible();
+  await page.getByRole("link", { name: "View completed journeys" }).click();
+  await expect(page).toHaveURL(/\/journeys#completed-journeys$/);
+  await expect(page.getByRole("heading", { name: "Completed journeys" })).toBeVisible();
+  await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
+  await expect(page.getByText("Nothing needs your attention", { exact: true })).toBeVisible();
+
   await page.request.post("/api/demo/reset");
   expect((await page.request.get(`/api/journeys/${id}`)).status()).toBe(404);
 });
@@ -200,10 +209,12 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
 
   await page.goto("/");
-  await expect(page.getByText("This journey is complete")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
   await page.goto("/journeys");
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${babyId}/services/birth_certificate`);
+  await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
   await page.request.post("/api/demo/reset");
 });
 

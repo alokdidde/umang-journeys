@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Activity, ArrowRight, Baby, Check, Files, LoaderCircle, Mic, Plus, Route, Search, Sparkles } from "lucide-react";
+import { Activity, ArrowRight, Baby, Check, CheckCircle2, Files, LoaderCircle, Mic, Plus, Route, Search, Sparkles } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { lifeEvents } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
@@ -53,6 +53,8 @@ export default function HomePage() {
 }
 
 function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string) => void; loadError: string | null }) {
+  const activeJourney = journeys.find((journey) => journey.status !== "completed");
+  const completedCount = journeys.filter((journey) => journey.status === "completed").length;
   return (
     <main className="page returning-home">
       <ScenicBackdrop />
@@ -62,12 +64,18 @@ function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummar
       {loadError && <p className="workflow-error content-layer" role="alert">{loadError}</p>}
 
       <section className="home-next-step content-layer" aria-labelledby="active-journeys-heading">
-        <div className="dashboard-section-heading"><div><span>What to do now</span><h2 id="active-journeys-heading">Next for you</h2></div></div>
-        <JourneyCard journey={journeys[0]} />
+        {activeJourney ? <>
+          <div className="dashboard-section-heading"><div><span>What to do now</span><h2 id="active-journeys-heading">Next for you</h2></div></div>
+          <JourneyCard journey={activeJourney} />
+        </> : <div className="all-caught-up panel">
+          <span><CheckCircle2 /></span>
+          <div><p>You’re all caught up</p><h2 id="active-journeys-heading">Nothing needs your attention.</h2><small>Your completed journeys and records are still saved.</small></div>
+          <Link href="/journeys#completed-journeys">View completed journeys<ArrowRight /></Link>
+        </div>}
       </section>
 
       <section className="home-shortcuts content-layer" aria-label="More things you can do">
-        <Link href="/journeys"><Route /><span><strong>My journeys</strong><small>See every step</small></span><ArrowRight /></Link>
+        <Link href="/journeys"><Route /><span><strong>My journeys</strong><small>{completedCount ? `${completedCount} completed · see every journey` : "See every step"}</small></span><ArrowRight /></Link>
         <Link href="/documents"><Files /><span><strong>Add a document</strong><small>We’ll work out where it belongs</small></span><ArrowRight /></Link>
         <Link href="/activity"><Activity /><span><strong>Recent activity</strong><small>See what changed</small></span><ArrowRight /></Link>
       </section>

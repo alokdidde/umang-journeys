@@ -54,7 +54,9 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 
 ## Screen structure
 - Home shows one saved journey and its next action before anything else.
+- Home ignores completed journeys when choosing the next action; when all work is done, it shows one “all caught up” state linked to the archive.
 - Starting another journey is collapsed by default.
+- My Journeys visibly separates “In progress” from “Completed journeys”; completion changes placement, never availability.
 - Journeys use a vertical ordered checklist, not a dependency graph.
 - Documents expose “Add a document” as a disclosure above a plain library.
 - Service provider and data-sharing metadata are available under “Provider and data details.”
