@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, CircleHelp, Files, House, LogOut, RotateCcw, Route, ShieldCheck } from "lucide-react";
+import { Activity, CircleHelp, Files, House, LoaderCircle, LogOut, RotateCcw, Route, ShieldCheck } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useJourney } from "./journey-provider";
 
@@ -19,6 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { resetJourney } = useJourney();
   const router = useRouter();
   const pathname = usePathname();
+  const [logoutState, setLogoutState] = useState<"idle" | "pending" | "error">("idle");
   useEffect(() => {
     if (pathname === "/login") return;
     let disposed = false;
@@ -41,8 +42,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     router.push("/");
   }
   async function logout() {
-    const response = await fetch("/api/auth/logout", { method: "POST" });
-    if (!response.ok) return;
+    setLogoutState("pending");
+    const response = await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    if (!response?.ok) {
+      setLogoutState("error");
+      return;
+    }
     window.location.replace("/login");
   }
   if (pathname === "/login") {
@@ -63,7 +68,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="prototype-pill"><ShieldCheck size={15} /> Demo</span>
           <button className="header-button demo-control" type="button" onClick={reset}><RotateCcw size={17} /> Reset</button>
           <a className="header-button help-control" href="https://web.umang.gov.in/landing/faq" target="_blank" rel="noreferrer"><CircleHelp size={18} /><span>Help</span></a>
-          <button className="avatar avatar-button" type="button" onClick={logout} aria-label="Sign out Ananya Sharma"><span>AS</span><LogOut /></button>
+          <span className="sr-only" aria-live="polite">{logoutState === "pending" ? "Signing out…" : logoutState === "error" ? "Could not sign out. Try again." : ""}</span>
+          <button className="header-button sign-out-control" type="button" onClick={logout} disabled={logoutState === "pending"} data-error={logoutState === "error" || undefined} aria-label="Sign out Ananya Sharma">{logoutState === "pending" ? <LoaderCircle className="service-spinner" aria-hidden="true" /> : <LogOut aria-hidden="true" />}<span>{logoutState === "pending" ? "Signing out…" : logoutState === "error" ? "Try sign out again" : "Sign out"}</span></button>
         </div>
       </header>
       <div id="main-content" tabIndex={-1}>{children}</div>

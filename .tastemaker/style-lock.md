@@ -70,6 +70,7 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Forms with more than one conceptual group use two short parts with Back/Continue controls and a visible “Part 1 of 2” label.
 - Evidence details, provider checks, generated-result groups, and less-used sample documents are progressively disclosed.
 - Completion screens offer exactly one recommended next action, with the full journey available as a secondary link.
+- Authentication keeps the pre-filled gateway visually stable: password visibility is user-controlled, errors stay beside the fields, pending actions show progress, and sign-out is an explicit desktop label rather than an ambiguous account avatar. Mobile keeps the same sign-out action as a 44px icon control with an accessible name.
 
 ## Mood descriptors
 Calm, trustworthy, guided, humane.

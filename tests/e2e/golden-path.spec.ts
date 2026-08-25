@@ -7,7 +7,7 @@ const password = "demo1234";
 async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Email address").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Open the guided demo" }).click();
   await expect(page.getByRole("heading", { name: /Life happens\. We guide you\.|One thing at a time\./ })).toBeVisible();
 }
@@ -36,7 +36,13 @@ test("authentication protects the app, logs out completely, and supports signing
   await expect(page.getByRole("heading", { name: "Life changes. Your next step stays clear." })).toBeVisible();
   await expect(page.getByText("The demo details are already filled in.")).toBeVisible();
   await expect(page.getByLabel("Email address")).toHaveValue(email);
-  await expect(page.getByLabel("Password")).toHaveValue(password);
+  const passwordInput = page.getByLabel("Password", { exact: true });
+  await expect(passwordInput).toHaveValue(password);
+  await expect(passwordInput).toHaveAttribute("type", "password");
+  await page.getByRole("button", { name: "Show password" }).click();
+  await expect(passwordInput).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "Hide password" }).click();
+  await expect(passwordInput).toHaveAttribute("type", "password");
   await expect(page.getByRole("link", { name: /sign up|register/i })).toHaveCount(0);
   const loginA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(loginA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
@@ -51,11 +57,11 @@ test("authentication protects the app, logs out completely, and supports signing
 
   await page.goto("/login?returnTo=%2F%2Fevil.example");
   await page.getByLabel("Email address").fill(email);
-  await page.getByLabel("Password").fill("wrong-password");
+  await page.getByLabel("Password", { exact: true }).fill("wrong-password");
   await page.getByRole("button", { name: "Open the guided demo" }).click();
   await expect(page.getByText("The email or password is incorrect.")).toBeVisible();
   expect((await page.context().cookies()).find((cookie) => cookie.name === "umang_session")).toBeUndefined();
-  await page.getByLabel("Password").fill(password);
+  await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Open the guided demo" }).click();
   await expect(page).toHaveURL(/\/$/);
 
@@ -624,6 +630,11 @@ test("login, home, and a completed service reflow at mobile width", async ({ pag
   let sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client);
   await login(page);
+  const mobileSignOut = page.getByRole("button", { name: "Sign out Ananya Sharma" });
+  await expect(mobileSignOut).toBeVisible();
+  const signOutBox = await mobileSignOut.boundingBox();
+  expect(signOutBox?.width).toBeGreaterThanOrEqual(44);
+  expect(signOutBox?.height).toBeGreaterThanOrEqual(44);
   sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client);
   await page.request.post("/api/demo/reset");

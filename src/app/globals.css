@@ -1279,6 +1279,17 @@ button,a,summary { touch-action:manipulation; }
 .login-card .primary-cta { min-height:52px; margin-top:18px; font-size:14px; }
 .login-card footer { margin-top:18px; padding-top:16px; justify-content:flex-start; color:var(--muted); font-size:10px; line-height:1.4; }
 .login-card footer svg { flex:0 0 auto; }
+.login-password-action { min-width:64px; min-height:44px; display:flex; align-items:center; justify-content:flex-end; gap:5px; margin-right:-5px; padding:0 5px; border:0; border-radius:8px; color:var(--blue); background:transparent; cursor:pointer; font-size:11px; font-weight:750; }
+.login-password-action:hover { background:var(--soft-blue); }
+.login-password-action svg { width:16px; flex:0 0 auto; }
+.login-card .login-error { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:8px; padding:10px 11px; border:1px solid #efc8c8; line-height:1.45; }
+.login-card .login-error svg { width:17px; margin-top:1px; }
+.login-card .primary-cta:disabled { opacity:1; background:var(--blue-dark); cursor:wait; box-shadow:none; }
+.login-card .primary-cta > svg { width:18px; flex:0 0 auto; }
+.sign-out-control { min-height:42px; padding-inline:11px; border:1px solid var(--line); background:#fff; font-size:12px; font-weight:750; white-space:nowrap; }
+.sign-out-control svg { width:16px; }
+.sign-out-control:disabled { color:var(--muted); cursor:wait; }
+.sign-out-control[data-error="true"] { color:var(--destructive); border-color:#edc7c7; background:#fff8f8; }
 @keyframes welcome-rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 
 @media (prefers-reduced-transparency:reduce),(prefers-contrast:more) {
@@ -1311,4 +1322,9 @@ button,a,summary { touch-action:manipulation; }
   .login-card { width:100%; padding:22px; }
   .login-card-heading { margin-bottom:18px; }
   .login-card .primary-cta { width:100%; }
+}
+
+@media (max-width:1020px) {
+  .header-actions .sign-out-control { width:44px; height:44px; min-height:44px; display:grid; place-items:center; padding:0; border-radius:50%; }
+  .sign-out-control > span { display:none; }
 }

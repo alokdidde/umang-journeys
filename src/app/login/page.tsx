@@ -2,13 +2,14 @@
 
 import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("demo@umang.com");
   const [password, setPassword] = useState("demo1234");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const errorRef = useRef<HTMLParagraphElement>(null);
@@ -61,9 +62,9 @@ function LoginForm() {
             <label htmlFor="evaluation-email"><span>Email address</span></label>
             <div className="login-field"><Mail aria-hidden="true" /><input id="evaluation-email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" spellCheck={false} required /></div>
             <label htmlFor="evaluation-password"><span>Password</span></label>
-            <div className="login-field"><LockKeyhole aria-hidden="true" /><input id="evaluation-password" name="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></div>
-            {error && <p className="login-error" role="alert" ref={errorRef} tabIndex={-1}>{error}</p>}
-            <button type="submit" className="primary-cta" disabled={pending}>{pending ? "Opening the demo…" : "Open the guided demo"}<ArrowRight /></button>
+            <div className="login-field"><LockKeyhole aria-hidden="true" /><input id="evaluation-password" name="password" type={passwordVisible ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /><button className="login-password-action" type="button" onClick={() => setPasswordVisible((visible) => !visible)} aria-label={passwordVisible ? "Hide password" : "Show password"} aria-pressed={passwordVisible}>{passwordVisible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}<span>{passwordVisible ? "Hide" : "Show"}</span></button></div>
+            {error && <p className="login-error" role="alert" ref={errorRef} tabIndex={-1}><AlertCircle aria-hidden="true" /><span>{error}</span></p>}
+            <button type="submit" className="primary-cta" disabled={pending}>{pending ? <LoaderCircle className="service-spinner" aria-hidden="true" /> : null}<span>{pending ? "Opening the demo…" : "Open the guided demo"}</span>{pending ? null : <ArrowRight aria-hidden="true" />}</button>
           </form>
           <footer><ShieldCheck aria-hidden="true" /> Synthetic records only. No real service is contacted.</footer>
         </section>
