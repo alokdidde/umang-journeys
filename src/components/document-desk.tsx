@@ -148,12 +148,17 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
           <span>Try a synthetic sample</span>
           <button type="button" onClick={() => void analyseSample("vehicle_rc")}><Car />Registration certificate</button>
           <button type="button" onClick={() => void analyseSample("vaccination_receipt")}><Syringe />Vaccination receipt</button>
-          <button type="button" onClick={() => void analyseSample("insurance_policy")}><ShieldCheck />Insurance policy</button>
           <button type="button" onClick={() => void analyseSample("health_insurance_policy")}><ShieldCheck />Health policy</button>
-          <button type="button" onClick={() => void analyseSample("hospital_discharge_summary")}><Hospital />Discharge summary</button>
           <button type="button" onClick={() => void analyseSample("residence_proof")}><House />Address proof</button>
-          <button type="button" onClick={() => void analyseSample("business_premises_proof")}><BriefcaseBusiness />Business premises</button>
-          <button type="button" onClick={() => void analyseSample("retirement_account_statement")}><Armchair />Retirement statement</button>
+          <details className="sample-more">
+            <summary>More sample documents</summary>
+            <div>
+              <button type="button" onClick={() => void analyseSample("insurance_policy")}><ShieldCheck />Insurance policy</button>
+              <button type="button" onClick={() => void analyseSample("hospital_discharge_summary")}><Hospital />Discharge summary</button>
+              <button type="button" onClick={() => void analyseSample("business_premises_proof")}><BriefcaseBusiness />Business premises</button>
+              <button type="button" onClick={() => void analyseSample("retirement_account_statement")}><Armchair />Retirement statement</button>
+            </div>
+          </details>
         </div>
       </div> : null}
 

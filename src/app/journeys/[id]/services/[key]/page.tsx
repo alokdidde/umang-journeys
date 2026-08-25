@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -89,6 +89,7 @@ export default function SandboxServicePage() {
   const definition = validKey ? serviceWorkflowDefinitions[validKey] : null;
   const node = state.projection.nodes.find((candidate) => candidate.key === key);
   const run = validKey ? state.serviceRuns[validKey] : undefined;
+  const artifactHeadingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (id && state.journeyId !== id) void loadJourney(id);
@@ -100,8 +101,12 @@ export default function SandboxServicePage() {
     return () => window.clearTimeout(timer);
   }, [advanceService, id, run, state.error, state.pending, validKey]);
 
+  useEffect(() => {
+    if (run?.status === "completed") artifactHeadingRef.current?.focus();
+  }, [run?.status]);
+
   if (!definition || !validKey) return <main className="page workflow-state"><h1>Service not found</h1><p>This journey does not include that service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
-  if (state.pending && state.journeyId !== id) return <main className="page workflow-state"><LoaderCircle className="service-spinner" /><p>Loading service workspace…</p></main>;
+  if (state.journeyId !== id && !state.error) return <main className="page workflow-state"><LoaderCircle className="service-spinner" /><p>Loading service workspace…</p></main>;
   if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>Unable to load this service.</h1><p>{state.error}</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
   if (node?.status === "locked") return <main className="page workflow-state"><LockKeyhole /><h1>This service is still locked.</h1><p>Complete the previous journey step before using this service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
 
@@ -123,14 +128,14 @@ export default function SandboxServicePage() {
             <h1>{node?.title ?? validKey}</h1>
             <p>{definition.explanation}</p>
           </div>
-          <div className={`service-state-card ${completed ? "completed" : run ? "processing" : "ready"}`} role="status" aria-live="polite">
+          {run ? <div className={`service-state-card ${completed ? "completed" : "processing"}`} role="status" aria-live="polite">
             <span>{completed ? <BadgeCheck /> : run ? <LoaderCircle className="service-spinner" /> : <ShieldCheck />}</span>
             <div>
               <small>Current state</small>
               <strong>{completed ? "Completed" : run?.status === "waiting_external" ? "Waiting for provider" : run ? "Processing securely" : "Ready to connect"}</strong>
               <p>{completed ? `Finished ${formatTimestamp(run.completedAt ?? run.updatedAt)}` : run ? `${run.progress}% complete · ${definition.turnaround}` : "No data has been sent yet"}</p>
             </div>
-          </div>
+          </div> : null}
         </header>
 
         <div className="service-workspace-grid">
@@ -151,7 +156,6 @@ export default function SandboxServicePage() {
             ) : !run ? (
               <section className="service-start-card panel">
                 <span className="service-emblem"><Activity /></span>
-                <p className="eyebrow">Prepared request</p>
                 <h2>Everything needed is ready.</h2>
                 <p>The simulation will show each validation and provider hand-off as it happens. You can refresh at any point without losing progress.</p>
                 <div className="service-preflight">
@@ -173,7 +177,7 @@ export default function SandboxServicePage() {
                     <button type="button" className="secondary-button" onClick={() => void advanceService(id, validKey)}>Retry provider check</button>
                   </section>
                 ) : null}
-                {completed && run.artifact ? <ServiceArtifactView artifact={run.artifact} /> : null}
+                {completed && run.artifact ? <ServiceArtifactView artifact={run.artifact} headingRef={artifactHeadingRef} /> : null}
               </>
             )}
           </div>
@@ -251,13 +255,13 @@ function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, acti
   }
 
   return <section className="panel vehicle-service-preparation">
-    <header><p className="eyebrow">Prepare the request</p><h2>{missing.length ? `${missing.length} ${missing.length === 1 ? "item" : "items"} needed before submission` : "Review and authorise this simulation"}</h2><p>The provider run stays locked until each required input has been verified.</p></header>
+    <header><h2>{missing.length ? `${missing.length} ${missing.length === 1 ? "item" : "items"} needed before submission` : "Review and authorise this simulation"}</h2><p>The provider run stays locked until each required input has been verified.</p></header>
     {required.length ? <div className="evidence-requirements">{required.map((type) => {
       const item = evidence.find((candidate) => candidate.type === type);
       const label = evidenceLabels[type];
       return <article className={item ? "verified" : "missing"} key={type}>
         <span>{item ? <CheckCircle2 /> : <FileUp />}</span><div><strong>{label.title}</strong><p>{label.description}</p>
-          {item ? <><small>{item.fileName} · {(item.size / 1024).toFixed(1)} KB · {item.source === "sample" ? "Synthetic sample" : "Uploaded"}</small><dl>{Object.entries(item.extractedFields).map(([key, value]) => <div key={key}><dt>{key.replace(/([A-Z])/g, " $1")}</dt><dd>{value}</dd></div>)}</dl></> : null}
+          {item ? <><small>{item.fileName} · {(item.size / 1024).toFixed(1)} KB · {item.source === "sample" ? "Synthetic sample" : "Uploaded"}</small><details className="evidence-details"><summary>View extracted details</summary><dl>{Object.entries(item.extractedFields).map(([key, value]) => <div key={key}><dt>{key.replace(/([A-Z])/g, " $1")}</dt><dd>{value}</dd></div>)}</dl></details></> : null}
         </div>
         <div className="evidence-actions">{item ? <a href={`/api/journeys/${id}/evidence/${item.id}`} target="_blank" rel="noreferrer"><Eye />Preview</a> : <>
           <label><FileUp />Upload<input type="file" accept="application/pdf,image/png,image/jpeg" onChange={(event) => { const file = event.target.files?.[0]; if (file) void addEvidence(id, type, file); }} /></label>
@@ -280,13 +284,16 @@ function ServiceProgress({ run, stages, nextStageTitle, pending }: {
   nextStageTitle?: string;
   pending: boolean;
 }) {
+  const completed = run.status === "completed";
   return (
     <section className="panel service-progress-card">
       <header>
-        <div><span className="progress-icon">{run.status === "completed" ? <CheckCircle2 /> : <LoaderCircle className="service-spinner" />}</span><div><p className="eyebrow">Live service run</p><h2>{run.status === "completed" ? "All checks completed" : pending ? "Running provider check…" : nextStageTitle ?? "Finalising result"}</h2></div></div>
+        <div><span className="progress-icon">{run.status === "completed" ? <CheckCircle2 /> : <LoaderCircle className="service-spinner" />}</span><div><h2>{run.status === "completed" ? "All checks completed" : pending ? "Running provider check…" : nextStageTitle ?? "Finalising result"}</h2></div></div>
         <strong className="progress-number">{run.progress}%</strong>
       </header>
       <div className="service-progress-track" aria-label={`${run.progress}% complete`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={run.progress}><span style={{ width: `${run.progress}%` }} /></div>
+      <details className="service-checks" open={!completed ? true : undefined} key={run.status}>
+        <summary>{completed ? "View the 4 completed checks" : "Checks in progress"}</summary>
       <ol className="service-timeline">
         {stages.map((stage, index) => {
           const event = run.events.find((candidate) => candidate.stageKey === stage.key);
@@ -298,17 +305,18 @@ function ServiceProgress({ run, stages, nextStageTitle, pending }: {
           </li>;
         })}
       </ol>
+      </details>
       <footer><Clock3 />Started {formatTimestamp(run.startedAt)}<span>Receipt {run.receipt}</span></footer>
     </section>
   );
 }
 
-function ServiceArtifactView({ artifact }: { artifact: ServiceArtifact }) {
+function ServiceArtifactView({ artifact, headingRef }: { artifact: ServiceArtifact; headingRef: RefObject<HTMLHeadingElement | null> }) {
   return (
     <section className="panel service-artifact">
-      <header><span><BadgeCheck /></span><div><p className="eyebrow">Generated result</p><h2>{artifact.title}</h2><p>{artifact.subtitle}</p></div><div className="artifact-reference"><small>{artifact.referenceLabel}</small><strong>{artifact.referenceValue}</strong></div></header>
+      <header><span><BadgeCheck /></span><div><h2 ref={headingRef} tabIndex={-1}>{artifact.title}</h2><p>{artifact.subtitle}</p></div><div className="artifact-reference"><small>{artifact.referenceLabel}</small><strong>{artifact.referenceValue}</strong></div></header>
       <dl className="artifact-facts">{artifact.facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd><span>{fact.value}</span>{fact.status ? <span className={`artifact-status ${fact.status}`}>{statusLabel(fact.status)}</span> : null}</dd></div>)}</dl>
-      {artifact.groups.map((group) => <section className="artifact-group" key={group.title}><h3>{group.title}</h3>{group.description ? <p>{group.description}</p> : null}<div>{group.items.map((item) => <article key={item.title}><span className={`artifact-item-icon ${item.status}`}>{item.status === "verified" || item.status === "ready" ? <CheckCircle2 /> : item.status === "due" || item.status === "review" ? <Clock3 /> : <Circle />}</span><div><strong>{item.title}</strong><p>{item.meta}</p>{item.detail ? <small>{item.detail}</small> : null}</div><span className={`artifact-status ${item.status}`}>{statusLabel(item.status)}</span></article>)}</div></section>)}
+      {artifact.groups.map((group) => <details className="artifact-group" key={group.title}><summary><h3>{group.title}</h3><span>{group.items.length} {group.items.length === 1 ? "item" : "items"}</span></summary>{group.description ? <p>{group.description}</p> : null}<div>{group.items.map((item) => <article key={item.title}><span className={`artifact-item-icon ${item.status}`}>{item.status === "verified" || item.status === "ready" ? <CheckCircle2 /> : item.status === "due" || item.status === "review" ? <Clock3 /> : <Circle />}</span><div><strong>{item.title}</strong><p>{item.meta}</p>{item.detail ? <small>{item.detail}</small> : null}</div><span className={`artifact-status ${item.status}`}>{statusLabel(item.status)}</span></article>)}</div></details>)}
       <p className="artifact-notice"><ShieldCheck />{artifact.notice}</p>
     </section>
   );

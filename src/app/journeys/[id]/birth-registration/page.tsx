@@ -9,7 +9,6 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
-  Database,
   FileCheck2,
   House,
   MapPin,
@@ -42,7 +41,7 @@ export default function RegistrationPage() {
     if (await submitRegistration(id)) router.push(`/journeys/${id}/success`);
   }
 
-  if (state.pending && state.journeyId !== id) return <main className="page workflow-state"><p>Loading the prepared application…</p></main>;
+  if (state.journeyId !== id && !state.error) return <main className="page workflow-state"><p>Loading the prepared application…</p></main>;
   if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>We couldn’t load this application.</h1><p>{state.error}</p></main>;
 
   return (
@@ -51,15 +50,8 @@ export default function RegistrationPage() {
 
       <header className="ai-registration-hero content-layer">
         <span className="eyebrow"><Sparkles /> UMANG Assist</span>
-        <h1>Your application is nearly ready.</h1>
-        <p>I matched the hospital record with your demo profile. Instead of showing you a long form, I only need two answers.</p>
-        <div className="ai-readiness" aria-label="Application preparation summary">
-          <span><CheckCircle2 /> 10 facts prepared</span>
-          <i aria-hidden="true" />
-          <span><Database /> 2 trusted sources</span>
-          <i aria-hidden="true" />
-          <span className="needs-answer">2 answers needed</span>
-        </div>
+        <h1>Two answers, then you’re done.</h1>
+        <p>UMANG matched the hospital record with your demo profile and prepared the rest.</p>
       </header>
 
       <div className="assist-layout content-layer">
@@ -142,7 +134,9 @@ export default function RegistrationPage() {
           <p className="nothing-sent"><ShieldCheck /> Nothing has been submitted. This prototype uses synthetic data only.</p>
         </form>
 
-        <aside className="application-preview panel" aria-label="AI-prepared application preview">
+        <details className="application-preview panel">
+          <summary><FileCheck2 />Review the 10 prepared facts</summary>
+          <div className="application-preview-body">
           <div className="preview-header">
             <span className="preview-icon"><FileCheck2 /></span>
             <div><span>AI-prepared application</span><h2>Birth registration</h2></div>
@@ -170,7 +164,8 @@ export default function RegistrationPage() {
           </div>
 
           <div className="preview-note"><ShieldCheck /><span><strong>Reviewable, not mysterious</strong><small>Every prepared fact shows where it came from. You can change your two answers before creating the demo record.</small></span></div>
-        </aside>
+          </div>
+        </details>
       </div>
     </main>
   );

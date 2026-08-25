@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Activity, ArrowRight, Baby, Check, CheckCircle2, Files, LoaderCircle, Mic, Plus, Route, Search, Sparkles } from "lucide-react";
+import { Activity, ArrowRight, CheckCircle2, Files, LoaderCircle, Plus, Route, Search, Sparkles } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { lifeEvents } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
@@ -100,20 +100,13 @@ function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; 
         <form className="life-search" onSubmit={(event) => { event.preventDefault(); start(); }}>
           <Search aria-hidden="true" />
           <input aria-label="Describe your life event" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="I had a baby, we moved home, I bought a vehicle…" />
-          <span className="mic-muted" title="Voice input is coming later"><Mic /></span>
+          <button type="submit" className="life-search-submit">Show my steps<ArrowRight /></button>
         </form>
         {loadError && <p className="workflow-error" role="alert">{loadError}</p>}
       </section>
+      <p className="event-grid-label content-layer">Or choose a life event</p>
       <LifeEventGrid start={start} />
-      <section className="how-it-works content-layer">
-        <div className="section-rule"><span>How it works</span></div>
-        <div className="steps-row">
-          <article><span>1</span><div><strong>Tell us the life event</strong><p>In your own words—type it naturally.</p></div></article><ArrowRight />
-          <article><span>2</span><div><strong>Review what’s known</strong><p>Confirm facts from your statement and records.</p></div></article><ArrowRight />
-          <article><span>3</span><div><strong>Follow one journey</strong><p>See exactly what to do, step by step.</p></div></article>
-        </div>
-      </section>
-      <div className="primary-cta-wrap content-layer"><button className="primary-cta" onClick={() => start()} type="button"><span className="cta-baby"><Baby /></span>Start New Baby Journey<ArrowRight /></button><TrustNote /></div>
+      <TrustNote>Choose one event. We’ll ask only what is needed for the next step.</TrustNote>
     </main>
   );
 }
@@ -121,8 +114,8 @@ function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; 
 function LifeEventGrid({ start, returning = false }: { start: (statement?: string) => void; returning?: boolean }) {
   return <section className={`event-grid content-layer ${returning ? "compact-event-grid" : ""}`} aria-label="Life events">
     {lifeEvents.map(({ key, label, Icon, active, tone }) => (
-      <button key={key} className={`event-card ${active ? "active" : ""}`} onClick={active ? () => start(key === "vehicle" ? "I bought a used Tata Nexon in Hyderabad." : key === "health" ? "I want to understand my health insurance and prepare for cashless care in Hyderabad." : key === "home" ? "We are moving to a rented home in Hyderabad next month." : key === "business" ? "I am starting a design business from a rented office in Hyderabad." : key === "retirement" ? "I retire from private employment next month and have an EPFO account." : "We had a baby yesterday at Apollo Hospital in Hyderabad.") : undefined} type="button" aria-disabled={!active}>
-        {active && <span className="selected-badge">{returning ? <Plus size={15} /> : <Check size={15} />}</span>}
+      <button key={key} className={`event-card ${active ? "available" : ""}`} onClick={active ? () => start(key === "vehicle" ? "I bought a used Tata Nexon in Hyderabad." : key === "health" ? "I want to understand my health insurance and prepare for cashless care in Hyderabad." : key === "home" ? "We are moving to a rented home in Hyderabad next month." : key === "business" ? "I am starting a design business from a rented office in Hyderabad." : key === "retirement" ? "I retire from private employment next month and have an EPFO account." : "We had a baby yesterday at Apollo Hospital in Hyderabad.") : undefined} type="button" aria-disabled={!active}>
+        {active && returning ? <span className="selected-badge"><Plus size={15} /></span> : null}
         {!active && <span className="preview-badge">Preview</span>}
         <span className={`event-icon ${tone}`}><Icon /></span><strong>{returning && active ? `Another: ${label}` : label}</strong>
       </button>

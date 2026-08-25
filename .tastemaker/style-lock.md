@@ -64,6 +64,11 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Activity stays chronological, readable, and filterable without summary tiles.
 - Health & Insurance uses five sequential, plain-language tasks; policy findings, public-scheme indications, ABHA preparation, and cashless readiness must never look like approval or guaranteed cover.
 - Moving Home, Starting a Business, and Retirement each use five sequential steps: one short fact-confirmation form, one evidence review, two authority-specific preparations, and one completion pack. Synthetic readiness, registration, pension, and entitlement outputs must never look like official approval.
+- First-visit Home asks one plain-language question, then offers compact life-event choices; explanatory process content stays out of the primary path.
+- Active journey roadmaps stay collapsed behind “See the whole journey”; completed roadmaps may open so finished work remains inspectable.
+- Forms with more than one conceptual group use two short parts with Back/Continue controls and a visible “Part 1 of 2” label.
+- Evidence details, provider checks, generated-result groups, and less-used sample documents are progressively disclosed.
+- Completion screens offer exactly one recommended next action, with the full journey available as a secondary link.
 
 ## Mood descriptors
 Calm, trustworthy, guided, humane.

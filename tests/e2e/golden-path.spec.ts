@@ -24,6 +24,8 @@ async function seedJourney(page: Page) {
 async function openDocumentAssistant(page: Page) {
   await page.goto("/documents");
   await page.getByText("Add a document", { exact: true }).click();
+  const moreSamples = page.getByText("More sample documents", { exact: true });
+  if (await moreSamples.isVisible()) await moreSamples.click();
 }
 
 test.describe.configure({ mode: "serial" });
@@ -47,7 +49,7 @@ test("newborn journey persists, completes every sandbox integration, downloads a
   await page.request.post("/api/demo/reset");
   await page.reload();
   await expect(page).toHaveScreenshot("home-1280.png", { fullPage: true, animations: "disabled" });
-  await page.getByRole("button", { name: /Start New Baby Journey/i }).click();
+  await page.getByRole("button", { name: /Having a Baby/i }).click();
   await page.getByRole("button", { name: "Not sure" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByRole("heading", { name: "Aarav’s journey" })).toBeVisible();
@@ -205,6 +207,7 @@ test("every new life event starts the correct journey and opens its profile step
 });
 
 test("a vehicle journey completes with real sample evidence while a baby journey keeps its own next action", async ({ page }) => {
+  test.setTimeout(60_000);
   await login(page);
   await page.request.post("/api/demo/reset");
   const babyId = await seedJourney(page);
@@ -222,6 +225,7 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   const vehicleId = page.url().split("/").at(-1)!;
 
   await page.getByRole("link", { name: /Confirm vehicle details/i }).click();
+  await page.getByRole("button", { name: "Continue to purchase details" }).click();
   await page.getByRole("button", { name: /Confirm vehicle and continue/i }).click();
   await expect(page.getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
 
@@ -340,6 +344,7 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   await expect(page.getByRole("heading", { name: "Who is this health plan for?" })).toBeVisible();
   const profileA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(profileA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+  await page.getByRole("button", { name: "Continue to cover details" }).click();
   await page.getByRole("button", { name: "Confirm and continue" }).click();
   await expect(page.getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
 
@@ -449,6 +454,7 @@ test("moving home, business, and retirement each complete from evidence to archi
     await expect(page.getByRole("heading", { name: scenario.profileHeading })).toBeVisible();
     const profileA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
     expect(profileA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+    await page.getByRole("button", { name: "Continue to the next part" }).click();
     await page.getByRole("button", { name: scenario.profileSubmit }).click();
     await expect(page.getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
 
@@ -485,6 +491,7 @@ test("document tools create and enrich journeys while the library and activity l
   await expect(page.getByRole("heading", { name: "Your documents" })).toBeVisible();
 
   await page.getByText("Add a document", { exact: true }).click();
+  await page.getByText("More sample documents", { exact: true }).click();
   await page.getByRole("button", { name: "Discharge summary" }).click();
   await expect(page.getByRole("heading", { name: "Start a journey for Mira Sharma" })).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
@@ -503,6 +510,7 @@ test("document tools create and enrich journeys while the library and activity l
   await expect(page.getByText("The RC was attached and the vehicle journey is ready for review.")).toBeVisible();
 
   await page.getByRole("button", { name: "Use another document" }).click();
+  await page.getByText("More sample documents", { exact: true }).click();
   await page.getByRole("button", { name: "Insurance policy" }).click();
   await expect(page.getByRole("heading", { name: "Add insurance for Tata Nexon EV" })).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();

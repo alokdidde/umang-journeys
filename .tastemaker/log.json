@@ -48,5 +48,15 @@
     "footer": "none",
     "knobs": "low-density/sequential/evidence-first/authority-separated/safety-labelled",
     "brief": "UMANG Journeys · complete moving, business setup, and retirement workflows with evidence, sandbox services, artifacts, archive, documents, and activity"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "whole-product design audit",
+    "macrostructure": "Guided Citizen Lane",
+    "nav": "familiar desktop top navigation and mobile bottom navigation",
+    "hero": "one prompt or one next action",
+    "footer": "none",
+    "knobs": "low-density/two-part-forms/progressive-disclosure/one-action-completion",
+    "brief": "UMANG Journeys · simplify every entry, detail, evidence, service, and completion screen without removing inspectability"
   }
 ]

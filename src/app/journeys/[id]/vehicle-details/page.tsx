@@ -10,6 +10,7 @@ export default function VehicleDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { state, loadJourney, completeVehicleDetails } = useJourney();
+  const [formStep, setFormStep] = useState<1 | 2>(1);
   const [values, setValues] = useState(() => ({
     registrationNumber: state.facts["vehicle.registrationNumber"] ?? "TS09EV4321",
     makeModel: state.facts["vehicle.makeModel"] ?? "Tata Nexon EV",
@@ -31,7 +32,10 @@ export default function VehicleDetailsPage() {
       "vehicle.chassisLast5": values.chassisLast5.toUpperCase(),
       "vehicle.transferScope": values.transferScope,
     });
-    if (ok) router.push(`/journeys/${id}`);
+    // Let the submit interaction settle before replacing the route. This keeps
+    // keyboard/pointer activation reliable while the provider publishes the
+    // completed step state.
+    if (ok) window.setTimeout(() => router.push(`/journeys/${id}`), 120);
   }
 
   const field = (key: keyof typeof values) => ({
@@ -47,20 +51,24 @@ export default function VehicleDetailsPage() {
       </header>
       <div className="vehicle-form-layout">
         <form className="panel vehicle-details-form" onSubmit={submit}>
-          <section><h2>Vehicle identity</h2><p>Use the values printed on the registration certificate.</p>
+          <p className="form-step-label">Part {formStep} of 2</p>
+          {formStep === 1 ? <section><h2>Vehicle identity</h2><p>Use the values printed on the registration certificate.</p>
             <label htmlFor="registration-number">Registration number</label><span className="field-helper">No spaces, for example TS09EV4321</span><input id="registration-number" required pattern="[A-Za-z]{2}[0-9]{2}[A-Za-z0-9]{1,3}[0-9]{4}" {...field("registrationNumber")} />
             <label htmlFor="make-model">Make and model</label><input id="make-model" required {...field("makeModel")} />
             <label htmlFor="chassis-suffix">Last 5 characters of chassis number</label><span className="field-helper">Only the suffix is stored in this evaluation.</span><input id="chassis-suffix" required minLength={5} maxLength={5} {...field("chassisLast5")} />
-          </section>
-          <section><h2>Purchase details</h2><p>This determines the applicable ownership-transfer route and timing.</p>
+          </section> : <section><h2>Purchase details</h2><p>This determines the applicable ownership-transfer route and timing.</p>
             <label htmlFor="purchase-date">Purchase date</label><input id="purchase-date" type="date" required {...field("purchaseDate")} />
             <label htmlFor="seller-name">Seller’s name</label><input id="seller-name" required {...field("sellerName")} />
             <label htmlFor="transfer-scope">Where was the vehicle registered?</label><select id="transfer-scope" {...field("transferScope")}><option value="same_state">Same state as my address</option><option value="interstate">Another state</option></select>
           </section>
+          }
           {state.error ? <p className="workflow-error" role="alert">{state.error}</p> : null}
-          <button className="primary-cta" type="submit" disabled={state.pending}>{state.pending ? "Confirming vehicle…" : "Confirm vehicle and continue"}<ArrowRight /></button>
+          <div className="profile-form-actions">
+            {formStep === 2 ? <button className="secondary-button" type="button" onClick={() => setFormStep(1)}>Back</button> : null}
+            {formStep === 1 ? <button className="primary-cta" type="button" onClick={(event) => { if (event.currentTarget.form?.reportValidity()) setFormStep(2); }}>Continue to purchase details<ArrowRight /></button> : <button className="primary-cta" type="submit" disabled={state.pending}>{state.pending ? "Confirming vehicle…" : "Confirm vehicle and continue"}<ArrowRight /></button>}
+          </div>
         </form>
-        <aside className="panel vehicle-form-assurance"><ShieldCheck /><h2>What happens next</h2><ul><li><CheckCircle2 />You’ll add an RC and sale document.</li><li><FileCheck2 />We’ll extract and show the matched facts.</li><li><Car />Only then can the transfer simulation start.</li></ul><p>Sample evidence is visibly watermarked and goes through the same ingestion and verification path as an uploaded file.</p></aside>
+        <details className="panel vehicle-form-assurance"><summary>What happens next</summary><div><ShieldCheck /><ul><li><CheckCircle2 />You’ll add an RC and sale document.</li><li><FileCheck2 />We’ll extract and show the matched facts.</li><li><Car />Only then can the transfer simulation start.</li></ul><p>Sample evidence is visibly watermarked and follows the same verification path as an uploaded file.</p></div></details>
       </div>
     </div>
   </main>;

@@ -31,6 +31,7 @@ export default function DocumentsPage() {
       <DocumentDesk onJourneyChanged={async () => { await refresh(); }} />
     </details>
     <section className="library-panel panel content-layer" aria-labelledby="library-heading">
+      {loading ? <div className="collection-state" role="status"><LoaderCircle className="service-spinner" /><p>Loading your documents…</p></div> : snapshot.documents.length ? <>
       <header>
         <div><p className="eyebrow"><Filter />Your files</p><h2 id="library-heading">{filter === "all" ? "All documents" : filter === "uploaded" ? "Uploaded documents" : filter === "issued" ? "Issued records" : "Documents needing review"}</h2></div>
         <label className="library-search"><Search /><span className="sr-only">Search documents</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search documents or journeys" /></label>
@@ -38,7 +39,8 @@ export default function DocumentsPage() {
       <div className="library-filter-row" aria-label="Filter documents">
         {(["all", "uploaded", "issued", "needs_review"] as const).map((value) => <button type="button" aria-pressed={filter === value} onClick={() => setFilter(value)} key={value}>{value === "needs_review" ? "Needs review" : value.charAt(0).toUpperCase() + value.slice(1)}</button>)}
       </div>
-      {loading ? <div className="collection-state" role="status"><LoaderCircle className="service-spinner" /><p>Loading your documents…</p></div> : visible.length ? <div className="document-list">{visible.map((document) => <DocumentRow document={document} key={document.id} />)}</div> : <div className="collection-state"><Files /><h3>{query ? `No documents match “${query}”` : "No documents in this view"}</h3><p>{query ? "Clear the search or choose another filter." : "Add a document above or complete a journey service to create a record."}</p>{query ? <button type="button" className="secondary-button" onClick={() => setQuery("")}>Clear search</button> : null}</div>}
+      {visible.length ? <div className="document-list">{visible.map((document) => <DocumentRow document={document} key={document.id} />)}</div> : <div className="collection-state"><Files /><h3>{query ? `No documents match “${query}”` : "No documents in this view"}</h3><p>{query ? "Clear the search or choose another filter." : "Choose another filter to find your records."}</p>{query ? <button type="button" className="secondary-button" onClick={() => setQuery("")}>Clear search</button> : null}</div>}
+      </> : <div className="collection-state document-empty-state"><Files /><h2 id="library-heading">No documents yet</h2><p>Add a document above, or finish a journey step that creates a record.</p></div>}
     </section>
   </main>;
 }

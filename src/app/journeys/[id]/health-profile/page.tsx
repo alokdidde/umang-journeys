@@ -10,6 +10,7 @@ export default function HealthProfilePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { state, loadJourney, completeHealthProfile } = useJourney();
+  const [formStep, setFormStep] = useState<1 | 2>(1);
   const [values, setValues] = useState(() => ({
     name: state.facts["person.name"] ?? "Ananya Sharma",
     dateOfBirth: state.facts["person.dateOfBirth"] ?? "1992-04-18",
@@ -31,7 +32,7 @@ export default function HealthProfilePage() {
       "health.currentCover": values.currentCover,
       "health.abhaStatus": values.abhaStatus,
     });
-    if (ok) router.push(`/journeys/${id}`);
+    if (ok) window.setTimeout(() => router.push(`/journeys/${id}`), 120);
   }
 
   const field = (key: keyof typeof values) => ({
@@ -47,20 +48,24 @@ export default function HealthProfilePage() {
       </header>
       <div className="vehicle-form-layout">
         <form className="panel vehicle-details-form" onSubmit={submit}>
-          <section><h2>About you</h2><p>Review the details used to match this evaluation journey.</p>
+          <p className="form-step-label">Part {formStep} of 2</p>
+          {formStep === 1 ? <section><h2>About you</h2><p>Review the details used to match this evaluation journey.</p>
             <label htmlFor="person-name">Full name</label><input id="person-name" autoComplete="name" required {...field("name")} />
             <label htmlFor="person-date-of-birth">Date of birth</label><input id="person-date-of-birth" type="date" required {...field("dateOfBirth")} />
             <label htmlFor="person-state">State</label><select id="person-state" {...field("state")}><option>Telangana</option><option>Andhra Pradesh</option><option>Delhi</option><option>Karnataka</option><option>Maharashtra</option></select>
             <label htmlFor="household-size">People in your household</label><input id="household-size" inputMode="numeric" min="1" max="20" type="number" required {...field("householdSize")} />
-          </section>
-          <section><h2>What you already have</h2><p>It is fine if you are unsure. We will show verification steps instead of guessing.</p>
+          </section> : <section><h2>What you already have</h2><p>It is fine if you are unsure. We will show verification steps instead of guessing.</p>
             <label htmlFor="current-cover">Do you have a health policy or government scheme card?</label><select id="current-cover" {...field("currentCover")}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></select>
             <label htmlFor="abha-status">Do you already have an ABHA number?</label><select id="abha-status" {...field("abhaStatus")}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></select>
           </section>
+          }
           {state.error ? <p className="workflow-error" role="alert">{state.error}</p> : null}
-          <button className="primary-cta" type="submit" disabled={state.pending}>{state.pending ? "Saving your profile…" : "Confirm and continue"}<ArrowRight /></button>
+          <div className="profile-form-actions">
+            {formStep === 2 ? <button className="secondary-button" type="button" onClick={() => setFormStep(1)}>Back</button> : null}
+            {formStep === 1 ? <button className="primary-cta" type="button" onClick={(event) => { if (event.currentTarget.form?.reportValidity()) setFormStep(2); }}>Continue to cover details<ArrowRight /></button> : <button className="primary-cta" type="submit" disabled={state.pending}>{state.pending ? "Saving your profile…" : "Confirm and continue"}<ArrowRight /></button>}
+          </div>
         </form>
-        <aside className="panel vehicle-form-assurance"><ShieldCheck /><h2>What happens next</h2><ul><li><ClipboardCheck />We’ll read a policy or scheme card.</li><li><CheckCircle2 />Potential public-scheme matches stay clearly unverified.</li><li><UserRound />You decide whether health records may be linked.</li></ul><p>No real insurer, scheme, ABHA account, hospital, or government service is contacted.</p></aside>
+        <details className="panel vehicle-form-assurance"><summary>What happens next</summary><div><ShieldCheck /><ul><li><ClipboardCheck />We’ll read a policy or scheme card.</li><li><CheckCircle2 />Potential public-scheme matches stay clearly unverified.</li><li><UserRound />You decide whether health records may be linked.</li></ul><p>No real insurer, scheme, ABHA account, hospital, or government service is contacted.</p></div></details>
       </div>
     </div>
   </main>;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, CheckCircle2, FileCheck2, FolderClock, House, ShieldCheck } from "lucide-react";
@@ -48,6 +48,8 @@ export function JourneyProfileForm({ kind }: { kind: ProfileKind }) {
   const copy = content[kind];
   const Icon = copy.icon;
   const [values, setValues] = useState<Record<string, string>>(() => defaults(kind, state.facts));
+  const [formStep, setFormStep] = useState<1 | 2>(1);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => { if (id && state.journeyId !== id) void loadJourney(id); }, [id, loadJourney, state.journeyId]);
 
@@ -58,7 +60,7 @@ export function JourneyProfileForm({ kind }: { kind: ProfileKind }) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     const ok = await completeProfileStep(id, copy.nodeKey, values);
-    if (ok) router.push(`/journeys/${id}`);
+    if (ok) window.setTimeout(() => router.push(`/journeys/${id}`), 120);
   }
 
   return <main className="page vehicle-details-page journey-profile-page">
@@ -66,12 +68,18 @@ export function JourneyProfileForm({ kind }: { kind: ProfileKind }) {
       <Link href={`/journeys/${id}`} className="floating-back"><ArrowLeft />Back to journey</Link>
       <header className="vehicle-form-heading"><span><Icon /></span><div><p className="eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p>{copy.intro}</p></div></header>
       <div className="vehicle-form-layout">
-        <form className="panel vehicle-details-form" onSubmit={submit}>
-          {kind === "move" ? <MoveFields values={values} set={set} /> : kind === "business" ? <BusinessFields values={values} set={set} /> : <RetirementFields values={values} set={set} />}
+        <form ref={formRef} className="panel vehicle-details-form" onSubmit={submit}>
+          <p className="form-step-label">Part {formStep} of 2</p>
+          {kind === "move" ? <MoveFields values={values} set={set} part={formStep} /> : kind === "business" ? <BusinessFields values={values} set={set} part={formStep} /> : <RetirementFields values={values} set={set} part={formStep} />}
           {state.error ? <p className="workflow-error" role="alert">{state.error}</p> : null}
-          <button className="primary-cta" type="submit" disabled={state.pending}>{state.pending ? copy.pending : copy.submit}<ArrowRight /></button>
+          <div className="profile-form-actions">
+            {formStep === 2 ? <button className="secondary-button" type="button" onClick={() => setFormStep(1)}>Back</button> : null}
+            {formStep === 1
+              ? <button className="primary-cta" type="button" onClick={() => { if (formRef.current?.reportValidity()) setFormStep(2); }}>Continue to the next part<ArrowRight /></button>
+              : <button className="primary-cta" type="submit" disabled={state.pending}>{state.pending ? copy.pending : copy.submit}<ArrowRight /></button>}
+          </div>
         </form>
-        <aside className="panel vehicle-form-assurance"><ShieldCheck /><h2>What happens next</h2><ul>{copy.assurance.map((item, index) => <li key={item}>{index === 0 ? <FileCheck2 /> : <CheckCircle2 />}{item}</li>)}</ul><p>All provider responses and generated documents stay synthetic and visibly labelled.</p></aside>
+        <details className="panel vehicle-form-assurance"><summary>What happens next</summary><div><ShieldCheck /><ul>{copy.assurance.map((item, index) => <li key={item}>{index === 0 ? <FileCheck2 /> : <CheckCircle2 />}{item}</li>)}</ul><p>All provider responses and generated documents stay synthetic and visibly labelled.</p></div></details>
       </div>
     </div>
   </main>;
@@ -120,46 +128,46 @@ function Select({ id, label, value, set, children }: { id: string; label: string
   return <><label htmlFor={id}>{label}</label><select id={id} name={id} value={value} onChange={(event) => set(id, event.target.value)}>{children}</select></>;
 }
 
-function MoveFields({ values, set }: { values: Record<string, string>; set: (key: string, value: string) => void }) {
-  return <><section><h2>New home</h2><p>Use the complete address you expect to show on official records.</p>
+function MoveFields({ values, set, part }: { values: Record<string, string>; set: (key: string, value: string) => void; part: 1 | 2 }) {
+  return part === 1 ? <section><h2>New home</h2><p>Use the complete address you expect to show on official records.</p>
     <Input id="person.name" label="Primary resident" value={values["person.name"]} set={set} autoComplete="name" required />
     <Input id="move.newAddress" label="House, building, street, and area" value={values["move.newAddress"]} set={set} autoComplete="street-address" required />
     <Input id="move.newCity" label="City" value={values["move.newCity"]} set={set} autoComplete="address-level2" required />
     <Select id="move.newState" label="State" value={values["move.newState"]} set={set}><option>Telangana</option><option>Andhra Pradesh</option><option>Karnataka</option><option>Maharashtra</option><option>Delhi</option></Select>
     <Input id="move.pinCode" label="PIN code" value={values["move.pinCode"]} set={set} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="postal-code" required />
-  </section><section><h2>Your move</h2><p>This helps order the updates and evidence checks.</p>
+  </section> : <section><h2>Your move</h2><p>This helps order the updates and evidence checks.</p>
     <Input id="move.date" label="Move date" value={values["move.date"]} set={set} type="date" required />
     <Select id="move.occupancy" label="How do you occupy the new home?" value={values["move.occupancy"]} set={set}><option value="rented">Rented</option><option value="owned">Owned</option><option value="family">With family</option><option value="not_sure">I’m not sure</option></Select>
     <Input id="household.size" label="People moving" value={values["household.size"]} set={set} type="number" min={1} max={20} required />
     <Select id="move.hasEpic" label="Do you have a voter ID or EPIC number?" value={values["move.hasEpic"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select>
-  </section></>;
+  </section>;
 }
 
-function BusinessFields({ values, set }: { values: Record<string, string>; set: (key: string, value: string) => void }) {
-  return <><section><h2>Business basics</h2><p>Choose the structure you intend to use; official checks may change the path.</p>
+function BusinessFields({ values, set, part }: { values: Record<string, string>; set: (key: string, value: string) => void; part: 1 | 2 }) {
+  return part === 1 ? <section><h2>Business basics</h2><p>Choose the structure you intend to use; official checks may change the path.</p>
     <Input id="business.name" label="Business name" value={values["business.name"]} set={set} required />
     <Input id="business.activity" label="Main activity" value={values["business.activity"]} set={set} required />
     <Select id="business.structure" label="Proposed structure" value={values["business.structure"]} set={set}><option value="sole_proprietorship">Sole proprietorship</option><option value="partnership">Partnership</option><option value="llp">LLP</option><option value="company">Company</option><option value="not_sure">I’m not sure</option></Select>
     <Input id="business.startDate" label="Expected start date" value={values["business.startDate"]} set={set} type="date" required />
-  </section><section><h2>Principal place & supplies</h2><p>These facts shape evidence and GST readiness, not a liability decision.</p>
+  </section> : <section><h2>Principal place & supplies</h2><p>These facts shape evidence and GST readiness, not a liability decision.</p>
     <Input id="business.address" label="Premises address" value={values["business.address"]} set={set} autoComplete="street-address" required />
     <Input id="business.city" label="City" value={values["business.city"]} set={set} required />
     <Select id="business.state" label="State" value={values["business.state"]} set={set}><option>Telangana</option><option>Andhra Pradesh</option><option>Karnataka</option><option>Maharashtra</option><option>Delhi</option></Select>
     <Select id="business.occupancy" label="Nature of possession" value={values["business.occupancy"]} set={set}><option value="rented">Rented</option><option value="owned">Owned</option><option value="consent">With owner consent</option><option value="shared">Shared</option></Select>
     <Input id="business.expectedTurnover" label="Expected annual turnover (₹)" value={values["business.expectedTurnover"]} set={set} type="number" inputMode="numeric" min={0} required />
     <Select id="business.interstateSupplies" label="Will you supply outside your state?" value={values["business.interstateSupplies"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select>
-  </section></>;
+  </section>;
 }
 
-function RetirementFields({ values, set }: { values: Record<string, string>; set: (key: string, value: string) => void }) {
-  return <><section><h2>About you</h2><p>These details help identify the official record and age-dependent routes to verify.</p>
+function RetirementFields({ values, set, part }: { values: Record<string, string>; set: (key: string, value: string) => void; part: 1 | 2 }) {
+  return part === 1 ? <section><h2>About you</h2><p>These details help identify the official record and age-dependent routes to verify.</p>
     <Input id="person.name" label="Full name" value={values["person.name"]} set={set} autoComplete="name" required />
     <Input id="person.dateOfBirth" label="Date of birth" value={values["person.dateOfBirth"]} set={set} type="date" required />
     <Input id="retirement.date" label="Retirement date" value={values["retirement.date"]} set={set} type="date" required />
     <Select id="retirement.employmentSector" label="Employment route" value={values["retirement.employmentSector"]} set={set}><option value="private">Private employment</option><option value="central_government">Central government</option><option value="state_government">State government</option><option value="self_employed">Self-employed</option><option value="not_sure">I’m not sure</option></Select>
-  </section><section><h2>Records you expect</h2><p>It is fine if you are unsure. The next steps will ask you to verify, not guess.</p>
+  </section> : <section><h2>Records you expect</h2><p>It is fine if you are unsure. The next steps will ask you to verify, not guess.</p>
     <Select id="retirement.accountType" label="Main retirement record" value={values["retirement.accountType"]} set={set}><option value="epfo">EPFO / EPS</option><option value="nps">NPS</option><option value="employer_pension">Employer pension</option><option value="multiple">More than one</option><option value="not_sure">I’m not sure</option></Select>
     <Input id="retirement.serviceYears" label="Years of eligible or recorded service" value={values["retirement.serviceYears"]} set={set} type="number" min={0} max={60} required />
     <Select id="retirement.pensionStarted" label="Has a pension already started?" value={values["retirement.pensionStarted"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select>
-  </section></>;
+  </section>;
 }
