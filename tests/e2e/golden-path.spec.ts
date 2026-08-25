@@ -11,10 +11,11 @@ test("golden newborn journey completes and unlocks downstream services", async (
   await page.getByRole("button", { name: "Build My Journey" }).click();
   await expect(page.getByRole("heading", { name: "Your family journey is ready." })).toBeVisible();
   await page.getByRole("link", { name: /Review Birth Registration/i }).click();
+  await expect(page.getByRole("heading", { name: "Your application is nearly ready." })).toBeVisible();
   await page.getByRole("button", { name: /Submit Demo Registration/i }).click();
   await expect(page.getByText("Enter the child's name")).toBeVisible();
   await page.getByLabel("Child’s name").fill("Aarav Sharma");
-  await page.getByLabel("Local ward / area").selectOption({ label: "Ward 72 — Serilingampally" });
+  await page.getByRole("button", { name: /Ward 72 — Serilingampally/i }).click();
   await page.getByRole("button", { name: /Submit Demo Registration/i }).click();
   await expect(page.getByRole("heading", { name: /Birth registered/i })).toBeVisible();
   await expect(page.getByText("Unlocked", { exact: true })).toBeVisible();
@@ -23,7 +24,7 @@ test("golden newborn journey completes and unlocks downstream services", async (
 });
 
 test("core pages have no serious accessibility violations", async ({ page }) => {
-  for (const route of ["/", "/intake", "/journeys/demo-new-baby"]) {
+  for (const route of ["/", "/intake", "/journeys/demo-new-baby", "/journeys/demo-new-baby/birth-registration"]) {
     await page.goto(route);
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
     expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
