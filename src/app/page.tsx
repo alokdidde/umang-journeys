@@ -52,7 +52,6 @@ export default function HomePage() {
 }
 
 function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string) => void; loadError: string | null }) {
-  const [primary, ...others] = journeys;
   return (
     <main className="page returning-home">
       <ScenicBackdrop />
@@ -64,8 +63,7 @@ function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummar
 
       <section className="active-journeys content-layer" aria-labelledby="active-journeys-heading">
         <div className="dashboard-section-heading"><div><span>Continue where you left off</span><h2 id="active-journeys-heading">Your {journeys.length === 1 ? "active journey" : "journeys"}</h2></div><small>{journeys.length} {journeys.length === 1 ? "journey" : "journeys"}</small></div>
-        <JourneyCard journey={primary} featured />
-        {others.length > 0 && <div className="other-journeys">{others.map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>}
+        <div className="journey-card-grid">{journeys.map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>
       </section>
 
       <section className="explore-journeys content-layer" aria-labelledby="explore-heading">
@@ -77,10 +75,10 @@ function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummar
   );
 }
 
-function JourneyCard({ journey, featured = false }: { journey: JourneySummary; featured?: boolean }) {
+function JourneyCard({ journey }: { journey: JourneySummary }) {
   const action = journey.nextAction;
   return (
-    <article className={`home-journey-card panel ${featured ? "featured" : ""}`}>
+    <article className="home-journey-card panel">
       <header>
         <span className={`journey-avatar ${journey.subject.type}`}>
           {journey.subject.type === "vehicle" ? <Car /> : <Baby />}
