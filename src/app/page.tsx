@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Activity, ArrowRight, Baby, Check, Files, LoaderCircle, Mic, Plus, Route, Search, Sparkles } from "lucide-react";
@@ -8,9 +8,7 @@ import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { lifeEvents } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
 import type { JourneySummary } from "@/domain/journey-summary";
-import { DocumentDesk } from "@/components/document-desk";
 import { JourneyCard } from "@/components/journey-card";
-import { useCitizenHub } from "@/components/use-citizen-hub";
 
 type JourneyListResponse = { journeys: JourneySummary[] };
 
@@ -21,14 +19,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const router = useRouter();
-
-  const refreshJourneys = useCallback(async () => {
-    const response = await fetch("/api/journeys");
-    const body = await response.json() as JourneyListResponse & { message?: string };
-    if (!response.ok) throw new Error(body.message ?? "Your journeys could not be loaded.");
-    setJourneys(body.journeys);
-    setLoadError(null);
-  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -58,42 +48,34 @@ export default function HomePage() {
   }
 
   return journeys.length > 0
-    ? <ReturningHome journeys={journeys} start={start} loadError={loadError} refreshJourneys={refreshJourneys} />
+    ? <ReturningHome journeys={journeys} start={start} loadError={loadError} />
     : <FirstVisitHome query={query} setQuery={setQuery} start={start} loadError={loadError} />;
 }
 
-function ReturningHome({ journeys, start, loadError, refreshJourneys }: { journeys: JourneySummary[]; start: (statement?: string) => void; loadError: string | null; refreshJourneys: () => Promise<void> }) {
-  const { snapshot, refresh: refreshHub } = useCitizenHub();
-  async function refreshAccount() { await Promise.all([refreshJourneys(), refreshHub()]); }
+function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string) => void; loadError: string | null }) {
   return (
     <main className="page returning-home">
       <ScenicBackdrop />
       <section className="dashboard-intro content-layer">
-        <div><p className="eyebrow"><Sparkles size={15} />Your UMANG journeys</p><h1>Welcome back, Ananya.</h1><p>Here’s what needs your attention next.</p></div>
-        <button className="secondary-button" type="button" onClick={() => start()}><Plus />Start another journey</button>
+        <div><p className="eyebrow"><Sparkles size={15} />Welcome back</p><h1>One thing at a time.</h1><p>We’ll show you the most useful next step first.</p></div>
       </section>
       {loadError && <p className="workflow-error content-layer" role="alert">{loadError}</p>}
 
-      <section className="account-overview content-layer" aria-label="Account overview">
-        <Link href="/journeys"><span><Route /></span><strong>{journeys.length}</strong><small>{journeys.length === 1 ? "Active journey" : "Journeys"}</small><ArrowRight /></Link>
-        <Link href="/documents"><span><Files /></span><strong>{snapshot.documents.length}</strong><small>Documents and records</small><ArrowRight /></Link>
-        <Link href="/activity"><span><Activity /></span><strong>{snapshot.summary.activity}</strong><small>Activity entries</small><ArrowRight /></Link>
+      <section className="home-next-step content-layer" aria-labelledby="active-journeys-heading">
+        <div className="dashboard-section-heading"><div><span>What to do now</span><h2 id="active-journeys-heading">Next for you</h2></div></div>
+        <JourneyCard journey={journeys[0]} />
       </section>
 
-      <section className="home-workbench content-layer" aria-label="Your next work">
-        <div className="home-primary-work">
-          <div className="dashboard-section-heading"><div><span>Continue where you left off</span><h2 id="active-journeys-heading">Next up</h2></div><Link href="/journeys">View all journeys<ArrowRight /></Link></div>
-          <div className="journey-card-grid" aria-labelledby="active-journeys-heading">{journeys.slice(0, 2).map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>
-        </div>
-        <div className="home-assistant-rail">
-          <DocumentDesk onJourneyChanged={refreshAccount} />
-        </div>
+      <section className="home-shortcuts content-layer" aria-label="More things you can do">
+        <Link href="/journeys"><Route /><span><strong>My journeys</strong><small>See every step</small></span><ArrowRight /></Link>
+        <Link href="/documents"><Files /><span><strong>Add a document</strong><small>We’ll work out where it belongs</small></span><ArrowRight /></Link>
+        <Link href="/activity"><Activity /><span><strong>Recent activity</strong><small>See what changed</small></span><ArrowRight /></Link>
       </section>
 
-      <section className="explore-journeys content-layer" aria-labelledby="explore-heading">
-        <div className="dashboard-section-heading"><div><span>Life keeps moving</span><h2 id="explore-heading">Start something new</h2></div><p>Your current journeys stay exactly where they are.</p></div>
+      <details className="journey-starter content-layer">
+        <summary><span><Plus />Start another journey</span><small>Your current journey will stay saved.</small></summary>
         <LifeEventGrid start={start} returning />
-      </section>
+      </details>
       <TrustNote>Your journeys are saved to this evaluation account using synthetic data.</TrustNote>
     </main>
   );

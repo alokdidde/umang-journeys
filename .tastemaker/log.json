@@ -18,5 +18,15 @@
     "footer": "none",
     "knobs": "dense/calm/evidence-first/contextual-shell/asymmetric-login",
     "brief": "UMANG Journeys · Tastemaker redesign across login, home, collections, journeys, forms, and service workspaces"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "complete authenticated product",
+    "macrostructure": "Guided Citizen Lane",
+    "nav": "familiar desktop top navigation and mobile bottom navigation",
+    "hero": "one next action in a narrow reading lane",
+    "footer": "none",
+    "knobs": "low-density/progressive-disclosure/one-action/plain-language",
+    "brief": "UMANG Journeys · simplify the dense workspace for a broad, occasional-use public audience"
   }
 ]

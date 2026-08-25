@@ -162,7 +162,9 @@ export default function SandboxServicePage() {
             )}
           </div>
 
-          <aside className="service-sidebar" aria-label="Connection details">
+          <details className="service-details">
+            <summary>Provider and data details</summary>
+            <aside className="service-sidebar" aria-label="Connection details">
             <section className="panel service-connection-card">
               <div className="connection-heading"><span><Database /></span><div><small>Connected provider</small><strong>{definition.agency}</strong></div><i>Sandbox</i></div>
               <dl>
@@ -179,7 +181,8 @@ export default function SandboxServicePage() {
             </section>
 
             {guidance ? <a className="official-guidance-link" href={guidance.href} target="_blank" rel="noreferrer">{guidance.label}<ExternalLink /></a> : null}
-          </aside>
+            </aside>
+          </details>
         </div>
 
         {completed ? (

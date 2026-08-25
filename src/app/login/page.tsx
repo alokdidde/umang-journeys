@@ -36,24 +36,18 @@ function LoginForm() {
   return (
     <main className="login-page">
       <div className="login-scene" aria-hidden="true" />
-      <section className="login-intro" aria-label="About UMANG Journeys">
-        <span className="eyebrow"><ShieldCheck /> Citizen services, one clear path</span>
-        <h2>Life events are complicated.<br />Your government journey shouldn’t be.</h2>
-        <p>See what is known, what needs attention, and every record created along the way—in one secure evaluation workspace.</p>
-        <ul><li>One next action at a time</li><li>Documents matched with your approval</li><li>Complete, timestamped activity history</li></ul>
-      </section>
       <section className="login-card panel">
         <span className="login-lock"><LockKeyhole /></span>
         <span className="eyebrow">Private evaluation</span>
         <h1>Welcome to UMANG Journeys</h1>
-        <p>Sign in with the evaluation account shared with you. Account creation is intentionally disabled.</p>
+        <p>Use the demo email and password shared with you.</p>
         <form onSubmit={login}>
           <label><span>Email address</span><div><Mail /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" required /></div></label>
           <label><span>Password</span><div><LockKeyhole /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></div></label>
           {error && <p className="login-error" role="alert">{error}</p>}
-          <button type="submit" className="primary-cta" disabled={pending}>{pending ? "Signing in…" : "Sign in to the evaluation"}<ArrowRight /></button>
+          <button type="submit" className="primary-cta" disabled={pending}>{pending ? "Signing in…" : "Sign in"}<ArrowRight /></button>
         </form>
-        <footer><ShieldCheck /> One seeded user · No registration · Sandbox integrations</footer>
+        <footer><ShieldCheck /> Demo account · Synthetic data only</footer>
       </section>
     </main>
   );

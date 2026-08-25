@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Baby, Car, Download, FileCheck2, FileClock, Files, Filter, LoaderCircle, Search, ShieldCheck } from "lucide-react";
+import { ArrowRight, Baby, Car, Download, Files, Filter, LoaderCircle, Plus, Search, ShieldCheck } from "lucide-react";
 import { DocumentDesk } from "@/components/document-desk";
 import { useCitizenHub } from "@/components/use-citizen-hub";
 import type { DocumentLibraryItem } from "@/domain/citizen-hub";
@@ -23,19 +23,16 @@ export default function DocumentsPage() {
 
   return <main className="page hub-page documents-page">
     <header className="hub-page-header content-layer">
-      <div><p className="eyebrow"><Files />Document library</p><h1>Your documents</h1><p>Every file you added and every synthetic record you received, with its source and journey.</p></div>
-      <Link className="secondary-button" href="/activity">View document activity<ArrowRight /></Link>
+      <div><p className="eyebrow"><Files />Documents</p><h1>Your documents</h1><p>Find a file, or add a new one.</p></div>
     </header>
     {error ? <p className="workflow-error content-layer" role="alert">{error}</p> : null}
-    <section className="hub-summary content-layer" aria-label="Document summary">
-      <SummaryLink label="Uploaded" value={snapshot.summary.uploaded} icon={<Files />} active={filter === "uploaded"} onClick={() => setFilter("uploaded")} />
-      <SummaryLink label="Issued records" value={snapshot.summary.issued} icon={<FileCheck2 />} active={filter === "issued"} onClick={() => setFilter("issued")} />
-      <SummaryLink label="Needs review" value={snapshot.summary.needsReview} icon={<FileClock />} active={filter === "needs_review"} onClick={() => setFilter("needs_review")} />
-    </section>
-    <DocumentDesk onJourneyChanged={async () => { await refresh(); }} />
+    <details className="document-assistant-disclosure content-layer">
+      <summary><span><Plus />Add a document</span><small>UMANG will read it and suggest where it belongs.</small></summary>
+      <DocumentDesk onJourneyChanged={async () => { await refresh(); }} />
+    </details>
     <section className="library-panel panel content-layer" aria-labelledby="library-heading">
       <header>
-        <div><p className="eyebrow"><Filter />Browse library</p><h2 id="library-heading">{filter === "all" ? "All documents" : filter === "uploaded" ? "Uploaded documents" : filter === "issued" ? "Issued records" : "Documents needing review"}</h2></div>
+        <div><p className="eyebrow"><Filter />Your files</p><h2 id="library-heading">{filter === "all" ? "All documents" : filter === "uploaded" ? "Uploaded documents" : filter === "issued" ? "Issued records" : "Documents needing review"}</h2></div>
         <label className="library-search"><Search /><span className="sr-only">Search documents</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search documents or journeys" /></label>
       </header>
       <div className="library-filter-row" aria-label="Filter documents">
@@ -44,10 +41,6 @@ export default function DocumentsPage() {
       {loading ? <div className="collection-state" role="status"><LoaderCircle className="service-spinner" /><p>Loading your documents…</p></div> : visible.length ? <div className="document-list">{visible.map((document) => <DocumentRow document={document} key={document.id} />)}</div> : <div className="collection-state"><Files /><h3>{query ? `No documents match “${query}”` : "No documents in this view"}</h3><p>{query ? "Clear the search or choose another filter." : "Add a document above or complete a journey service to create a record."}</p>{query ? <button type="button" className="secondary-button" onClick={() => setQuery("")}>Clear search</button> : null}</div>}
     </section>
   </main>;
-}
-
-function SummaryLink({ label, value, icon, active, onClick }: { label: string; value: number; icon: React.ReactNode; active: boolean; onClick: () => void }) {
-  return <button type="button" className={active ? "active" : ""} aria-pressed={active} onClick={onClick}><span>{icon}</span><strong>{value}</strong><small>{label}</small></button>;
 }
 
 function DocumentRow({ document }: { document: DocumentLibraryItem }) {

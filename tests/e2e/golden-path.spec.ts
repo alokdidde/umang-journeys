@@ -8,8 +8,8 @@ async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Sign in to the evaluation" }).click();
-  await expect(page.getByRole("heading", { name: /Life happens\. We guide you\.|Welcome back, Ananya\./ })).toBeVisible();
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: /Life happens\. We guide you\.|One thing at a time\./ })).toBeVisible();
 }
 
 async function seedJourney(page: Page) {
@@ -21,19 +21,24 @@ async function seedJourney(page: Page) {
   return journey.id;
 }
 
+async function openDocumentAssistant(page: Page) {
+  await page.goto("/documents");
+  await page.getByText("Add a document", { exact: true }).click();
+}
+
 test.describe.configure({ mode: "serial" });
 
 test("only the seeded evaluation account can sign in", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login\?returnTo=%2F$/);
-  await expect(page.getByText("Account creation is intentionally disabled.")).toBeVisible();
+  await expect(page.getByText("Use the demo email and password shared with you.")).toBeVisible();
   await expect(page.getByRole("link", { name: /sign up|register/i })).toHaveCount(0);
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill("wrong-password");
-  await page.getByRole("button", { name: "Sign in to the evaluation" }).click();
+  await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByText("The email or password is incorrect.")).toBeVisible();
   await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Sign in to the evaluation" }).click();
+  await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/$/);
 });
 
@@ -44,8 +49,8 @@ test("newborn journey persists, completes every sandbox integration, downloads a
   await expect(page).toHaveScreenshot("home-1280.png", { fullPage: true, animations: "disabled" });
   await page.getByRole("button", { name: /Start New Baby Journey/i }).click();
   await page.getByRole("button", { name: "Not sure" }).click();
-  await page.getByRole("button", { name: "Build My Journey" }).click();
-  await expect(page.getByRole("heading", { name: "Your family journey is ready." })).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "Aarav’s journey" })).toBeVisible();
   const id = page.url().split("/").at(-1)!;
   const locked = await page.request.post(`/api/journeys/${id}/nodes/child_health_record/submit`, { data: { idempotencyKey: "locked-service" } });
   expect(locked.status()).toBe(409);
@@ -89,9 +94,9 @@ test("newborn journey persists, completes every sandbox integration, downloads a
   expect((await pdf.body()).subarray(0, 4).toString()).toBe("%PDF");
 
   await page.goto(`/journeys/${id}`);
-  await expect(page.getByText("Completed", { exact: true })).toHaveCount(6);
+  await expect(page.getByText("Done", { exact: true })).toHaveCount(6);
   await page.reload();
-  await expect(page.getByText("Completed", { exact: true })).toHaveCount(6);
+  await expect(page.getByText("Done", { exact: true })).toHaveCount(6);
   await page.request.post("/api/demo/reset");
   expect((await page.request.get(`/api/journeys/${id}`)).status()).toBe(404);
 });
@@ -105,12 +110,13 @@ test("home prioritises the saved child journey and keeps starting another one av
   });
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Welcome back, Ananya." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "One thing at a time." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "Aarav Sharma journey progress" })).toHaveAttribute("aria-valuenow", "17");
-  await expect(page.getByRole("link", { name: /Start next step/i })).toHaveAttribute("href", `/journeys/${id}/services/birth_certificate`);
+  await expect(page.getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${id}/services/birth_certificate`);
 
+  await page.getByText("Start another journey", { exact: true }).click();
   await page.getByRole("button", { name: /Another: Having a Baby/i }).click();
   await expect(page).toHaveURL(/\/intake$/);
   await page.request.post("/api/demo/reset");
@@ -146,22 +152,22 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   });
 
   await page.goto("/");
+  await page.getByText("Start another journey", { exact: true }).click();
   await page.getByRole("button", { name: /Another: Buying a Vehicle/i }).click();
   await expect(page.getByRole("heading", { name: "Is the registration certificate already in your name?" })).toBeVisible();
   await page.getByRole("button", { name: "No", exact: true }).click();
-  await page.getByRole("button", { name: "Build My Journey" }).click();
-  await expect(page.getByRole("heading", { name: "Your vehicle journey is ready." })).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
   const vehicleId = page.url().split("/").at(-1)!;
 
   await page.getByRole("link", { name: /Confirm vehicle details/i }).click();
   await page.getByRole("button", { name: /Confirm vehicle and continue/i }).click();
-  await expect(page.getByRole("heading", { name: "Your vehicle journey is ready." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
 
-  await page.goto("/");
-  await expect(page.getByRole("link", { name: "2 Journeys" })).toBeVisible();
+  await page.goto("/journeys");
   await expect(page.getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Start next step/i })).toHaveCount(2);
+  await expect(page.getByRole("link", { name: "Start" })).toHaveCount(2);
 
   await page.goto(`/journeys/${vehicleId}/services/ownership_transfer`);
   await expect(page.getByRole("heading", { name: "2 items needed before submission" })).toBeVisible();
@@ -194,8 +200,10 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
 
   await page.goto("/");
-  await expect(page.getByText("Journey complete")).toBeVisible();
-  await expect(page.getByText("Next for Aarav Sharma")).toBeVisible();
+  await expect(page.getByText("This journey is complete")).toBeVisible();
+  await page.goto("/journeys");
+  await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${babyId}/services/birth_certificate`);
   await page.request.post("/api/demo/reset");
 });
 
@@ -207,14 +215,12 @@ test("the document assistant creates a vehicle journey from an approved sample R
     data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "document-rc-registration" },
   });
 
-  await page.goto("/");
+  await openDocumentAssistant(page);
   await page.getByRole("button", { name: "Registration certificate" }).click();
   await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
   await expect(page.getByText("TS09EV4321", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
   await expect(page.getByText("The RC was attached and the vehicle journey is ready for review.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Tata Nexon EV" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "2 Journeys" })).toBeVisible();
 
   const journeysResponse = await page.request.get("/api/journeys");
   const journeysBody = await journeysResponse.json() as { journeys: Array<{ id: string; subject: { type: string }; nextAction: { nodeKey: string } | null }> };
@@ -233,7 +239,7 @@ test("the document assistant records an approved vaccination receipt on the matc
     data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "document-vaccine-registration" },
   });
 
-  await page.goto("/");
+  await openDocumentAssistant(page);
   await page.getByRole("button", { name: "Vaccination receipt" }).click();
   await expect(page.getByRole("heading", { name: "Record BCG for Aarav Sharma" })).toBeVisible();
   await expect(page.getByText("Apollo Hospital", { exact: true })).toBeVisible();
@@ -260,6 +266,7 @@ test("document tools create and enrich journeys while the library and activity l
   await expect(page.getByRole("link", { name: "Documents" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("heading", { name: "Your documents" })).toBeVisible();
 
+  await page.getByText("Add a document", { exact: true }).click();
   await page.getByRole("button", { name: "Discharge summary" }).click();
   await expect(page.getByRole("heading", { name: "Start a journey for Mira Sharma" })).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
@@ -284,9 +291,9 @@ test("document tools create and enrich journeys while the library and activity l
   await expect(page.getByText("The policy was added to the matching vehicle journey.")).toBeVisible();
   await expect(page.getByText("Motor insurance policy", { exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "View document activity" }).click();
+  await page.getByRole("link", { name: "Activity", exact: true }).click();
   await expect(page.getByRole("link", { name: "Activity", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What changed", exact: true })).toBeVisible();
   await expect(page.getByText("Document update approved")).toHaveCount(3);
   await expect(page.getByText("Having a Baby journey started")).toBeVisible();
   await expect(page.getByText("Buying a Vehicle journey started")).toBeVisible();
@@ -302,7 +309,7 @@ test("rejecting a document proposal leaves every journey unchanged", async ({ pa
   await login(page);
   await page.request.post("/api/demo/reset");
   await seedJourney(page);
-  await page.goto("/");
+  await openDocumentAssistant(page);
   await page.getByRole("button", { name: "Registration certificate" }).click();
   await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
   await page.getByRole("button", { name: "Don’t update" }).click();
@@ -316,7 +323,7 @@ test("an invalid uploaded document fails safely without mutating a journey", asy
   await login(page);
   await page.request.post("/api/demo/reset");
   await seedJourney(page);
-  await page.goto("/");
+  await openDocumentAssistant(page);
   await page.locator('.document-desk input[type="file"]').setInputFiles({
     name: "registration-certificate.pdf",
     mimeType: "application/pdf",

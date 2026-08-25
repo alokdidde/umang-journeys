@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, Car, CheckCircle2, CircleHelp, FileCheck2, MapPin, Mic, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, Car, CheckCircle2, CircleHelp, FileCheck2, MapPin, Mic, Sparkles } from "lucide-react";
 import { useJourney } from "@/components/journey-provider";
 
 const choices = [
@@ -40,28 +40,17 @@ export default function IntakePage() {
     <main className="page intake-page">
       <div className="subtle-scene" aria-hidden="true" />
       <div className="intake-layout content-layer">
-        <aside className="intake-sidebar">
-          <Link href="/" className="back-link"><ArrowLeft />Change journey</Link>
-          <div className="chosen-event"><span className={`event-icon ${isVehicle ? "blue" : "rose"}`}>{isVehicle ? <Car /> : <Baby />}</span><strong>{isVehicle ? "Buying a Vehicle" : "Having a Baby"}</strong><Link href="/">Change</Link></div>
-          <ol className="vertical-steps">
-            <li className="active"><span>1</span>Tell us what happened</li>
-            <li><span>2</span>Confirm what we know</li>
-            <li><span>3</span>Your journey</li>
-          </ol>
-          <p className="sidebar-trust"><ShieldCheck /> Your information is synthetic and private.</p>
-        </aside>
-
         <section className="intake-content">
-          <header className="screen-heading"><h1>Tell us what happened.</h1><p><Sparkles />Simply describe your situation in your own words.</p></header>
+          <div className="intake-topline"><Link href="/" className="back-link"><ArrowLeft />Back</Link><span>Step 1 of 2</span></div>
+          <header className="screen-heading"><p className="eyebrow">{isVehicle ? <Car /> : <Baby />}{isVehicle ? "Vehicle journey" : "New baby journey"}</p><h1>Tell us what happened.</h1><p><Sparkles />Use your own words. A short sentence is enough.</p></header>
           <div className="panel statement-panel">
             <label htmlFor="statement">Your statement</label>
             <div className="statement-input"><textarea id="statement" value={state.statement} onChange={(event) => dispatch({ type: "set_statement", value: event.target.value })} /><Mic aria-label="Voice input unavailable" /></div>
-            <span className="field-hint">We understood:</span>
-            <div className="fact-chips">{isVehicle ? <>
+            <details className="understood-details"><summary>What UMANG understood</summary><div className="fact-chips">{isVehicle ? <>
               <span className="blue"><Car />Used vehicle</span><span className="green"><MapPin />Hyderabad</span><span className="purple"><MapPin />Telangana</span><span className="amber"><CalendarDays />25 August 2026</span>
             </> : <>
               <span className="rose"><Baby />Having a baby</span><span className="blue"><Building2 />Hospital birth</span><span className="green"><MapPin />Hyderabad</span><span className="purple"><MapPin />Telangana</span><span className="amber"><CalendarDays />24 August 2026</span>
-            </>}</div>
+            </>}</div></details>
           </div>
           <div className="panel question-panel">
             <div className="question-title"><span>{isVehicle ? <FileCheck2 /> : <CircleHelp />}</span><div><h2>{isVehicle ? "Is the registration certificate already in your name?" : "Has the hospital already registered the birth?"}</h2><p>{isVehicle ? "We’ll include ownership transfer only when it is still needed." : "This helps us include the right next steps in your journey."}</p></div></div>
@@ -71,7 +60,7 @@ export default function IntakePage() {
           </div>
           {!clarificationAnswer && <p className="inline-prompt">Choose one answer to continue.</p>}
           {state.error && <p className="workflow-error" role="alert">{state.error}</p>}
-          <div className="right-cta"><button type="button" className="primary-cta" disabled={!clarificationAnswer || state.pending} onClick={buildJourney}>{state.pending ? "Building your journey…" : "Build My Journey"}<ArrowRight /></button><small>We’ll use your answers to build the right journey for you.</small></div>
+          <div className="right-cta"><button type="button" className="primary-cta" disabled={!clarificationAnswer || state.pending} onClick={buildJourney}>{state.pending ? "Building your journey…" : "Continue"}<ArrowRight /></button><small>We’ll use your answer to show the right steps.</small></div>
         </section>
       </div>
     </main>
