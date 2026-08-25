@@ -1,6 +1,6 @@
-/* tastemaker · macrostructure: Guided Citizen Lane · mood: calm, clear, humane · page: complete product
- * arc: one next action -> optional detail -> simple record history
- * nav: familiar top bar · body: single reading lane · knobs: low-density/progressive-disclosure/guided
+/* tastemaker · macrostructure: Guided Citizen Lane (app) + Poster Fold (signed-out) · mood: calm, clear, humane · page: complete product
+ * arc: signed-out promise -> stakes -> one-step solution -> demo access; app next action -> optional detail -> record history
+ * nav: N1 signed-out + familiar app top bar · hero: H5 · close: C1 · knobs: single-fold/illustration-bleed/focused-form
  * palette: locked UMANG · contrast: pass
  * critique: ShowTell 4 · Phil 5 · Hier 5 · Spec 5 · Restr 5 · Var 5 */
 @import "tailwindcss";
@@ -1248,4 +1248,67 @@ button,a,summary { touch-action:manipulation; }
   .certificate-grid { grid-template-columns:1fr; }
   .success-actions { align-items:stretch; }
   .success-actions > * { width:100%; justify-content:center; }
+}
+
+/* Signed-out gateway: one illustrated promise and one ready-to-use demo action. */
+.login-header { position:relative; z-index:10; background:rgba(255,255,255,.96); }
+.login-header .prototype-pill { color:var(--text); background:var(--soft-blue); border-color:var(--line); }
+.login-page { min-height:calc(100svh - 72px); display:grid; place-items:center; padding:46px 24px 58px; background:var(--soft-blue); }
+.login-scene { inset:0; opacity:.52; background-position:center bottom; }
+.signed-out-gateway { position:relative; z-index:1; width:min(680px,100%); display:grid; gap:28px; }
+.login-promise { max-width:650px; padding-left:28px; border-left:3px solid var(--blue); animation:welcome-rise 240ms cubic-bezier(.23,1,.32,1) both; }
+.login-promise > p:first-child { margin:0 0 12px; color:var(--text); font-size:12px; font-weight:750; letter-spacing:.055em; text-transform:uppercase; }
+.login-promise h1 { max-width:640px; margin:0; color:var(--navy); font-size:clamp(42px,4.5vw,58px); line-height:1.04; letter-spacing:-.052em; text-wrap:balance; }
+.login-promise > p:last-child { max-width:610px; margin:16px 0 0; color:var(--text); font-size:16px; line-height:1.65; }
+.login-card { justify-self:end; width:min(520px,calc(100% - 28px)); padding:28px; text-align:left; border-color:var(--line); background:rgba(255,255,255,.96); box-shadow:0 18px 54px rgba(27,52,87,.13); animation:welcome-rise 260ms 60ms cubic-bezier(.23,1,.32,1) both; }
+.login-card-heading { display:grid; grid-template-columns:44px minmax(0,1fr); gap:14px; align-items:start; margin-bottom:22px; }
+.login-card-heading .login-lock { width:44px; height:44px; margin:0; border-radius:12px; color:#fff; background:var(--blue); box-shadow:0 7px 16px rgba(24,88,214,.2); }
+.login-card-heading .login-lock svg { width:20px; }
+.login-card-heading p { margin:1px 0 5px; color:var(--muted); font-size:10px; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }
+.login-card-heading h2 { margin:0; color:var(--navy); font-size:22px; line-height:1.2; letter-spacing:-.025em; }
+.login-card-heading div > span { display:block; margin-top:5px; color:var(--muted); font-size:12px; }
+.login-card form { gap:0; }
+.login-card label { margin-top:14px; }
+.login-card label:first-of-type { margin-top:0; }
+.login-card label > span { margin-bottom:7px; font-size:12px; }
+.login-field { min-height:50px; display:flex; align-items:center; gap:10px; padding:0 13px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+.login-field:focus-within { border-color:var(--blue); box-shadow:0 0 0 3px #e6efff; }
+.login-field svg { width:17px; color:#68768e; }
+.login-field input { min-width:0; flex:1; border:0; outline:0; color:var(--navy); background:transparent; }
+.login-card .login-error { margin-top:12px; font-size:12px; }
+.login-card .primary-cta { min-height:52px; margin-top:18px; font-size:14px; }
+.login-card footer { margin-top:18px; padding-top:16px; justify-content:flex-start; color:var(--muted); font-size:10px; line-height:1.4; }
+.login-card footer svg { flex:0 0 auto; }
+@keyframes welcome-rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more) {
+  .login-header,.login-card { background:#fff; }
+  .login-card { border-color:var(--text); }
+}
+
+@media (min-width:681px) and (max-height:760px) {
+  .login-page { padding-block:26px; }
+  .signed-out-gateway { gap:18px; }
+  .login-promise h1 { font-size:48px; }
+  .login-promise > p:last-child { margin-top:10px; line-height:1.5; }
+  .login-card { padding:22px 26px; }
+  .login-card-heading { margin-bottom:14px; }
+  .login-card label { margin-top:10px; }
+  .login-field { min-height:46px; }
+  .login-card .primary-cta { min-height:48px; margin-top:14px; }
+  .login-card footer { margin-top:12px; padding-top:12px; }
+}
+
+@media (max-width:680px) {
+  .login-header .prototype-pill { padding:6px 8px; }
+  .login-page { min-height:calc(100svh - 64px); align-items:start; padding:28px 14px 38px; }
+  .login-scene { opacity:.24; background-size:960px auto; background-position:left -90px bottom; }
+  .signed-out-gateway { gap:20px; }
+  .login-promise { padding-left:16px; }
+  .login-promise > p:first-child { margin-bottom:9px; font-size:10px; }
+  .login-promise h1 { font-size:38px; line-height:1.06; }
+  .login-promise > p:last-child { margin-top:12px; font-size:14px; line-height:1.55; }
+  .login-card { width:100%; padding:22px; }
+  .login-card-heading { margin-bottom:18px; }
+  .login-card .primary-cta { width:100%; }
 }

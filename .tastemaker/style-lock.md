@@ -53,6 +53,7 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Demo controls stay visually secondary to citizen tasks.
 
 ## Screen structure
+- The signed-out front door is one illustrated Poster Fold: one promise, one short explanation, and one pre-filled demo sign-in form in a single vertical gateway. It must not become an editorial split, feature grid, or long marketing page.
 - Home shows one saved journey and its next action before anything else.
 - Home ignores completed journeys when choosing the next action; when all work is done, it shows one “all caught up” state linked to the archive.
 - Starting another journey is collapsed by default.
@@ -75,6 +76,7 @@ Calm, trustworthy, guided, humane.
 
 ## Assets
 - Anchor asset: `public/assets/journey-landscape.png`, used at low opacity.
+- Signed-out use: the same landscape may bleed at both viewport edges to frame life stages while the centre remains quiet enough for the gateway.
 - Icons: Lucide, consistent outline stroke.
 - Existing UMANG CSS mark is preserved.
 

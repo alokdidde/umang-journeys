@@ -8,7 +8,7 @@ async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Open the guided demo" }).click();
   await expect(page.getByRole("heading", { name: /Life happens\. We guide you\.|One thing at a time\./ })).toBeVisible();
 }
 
@@ -33,14 +33,19 @@ test.describe.configure({ mode: "serial" });
 test("only the seeded evaluation account can sign in", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login\?returnTo=%2F$/);
-  await expect(page.getByText("Use the demo email and password shared with you.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Life changes. Your next step stays clear." })).toBeVisible();
+  await expect(page.getByText("The demo details are already filled in.")).toBeVisible();
+  await expect(page.getByLabel("Email address")).toHaveValue(email);
+  await expect(page.getByLabel("Password")).toHaveValue(password);
   await expect(page.getByRole("link", { name: /sign up|register/i })).toHaveCount(0);
+  const loginA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(loginA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill("wrong-password");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Open the guided demo" }).click();
   await expect(page.getByText("The email or password is incorrect.")).toBeVisible();
   await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Open the guided demo" }).click();
   await expect(page).toHaveURL(/\/$/);
 });
 

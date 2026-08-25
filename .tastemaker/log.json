@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-08-26",
+    "page": "signed-out homepage and login",
+    "macrostructure": "Poster Fold",
+    "nav": "N1 minimal wordmark with one evaluation-status label",
+    "hero": "H5 existing journey illustration framing a left-biased promise",
+    "footer": "none; C1 sign-in form is the close",
+    "knobs": "single-fold/illustration-bleed/vertical-gateway/pre-filled-demo/low-motion",
+    "brief": "UMANG Journeys · explain the product and open the evaluation in one calm first viewport"
+  },
+  {
+    "date": "2026-08-26",
     "page": "authenticated account shell",
     "macrostructure": "Citizen Account Ledger",
     "nav": "persistent service rail",

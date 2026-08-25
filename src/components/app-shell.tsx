@@ -29,7 +29,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     router.refresh();
   }
   if (pathname === "/login") {
-    return <><header className="login-header"><Brand /><span className="prototype-pill"><ShieldCheck size={15} /> Evaluation access</span></header><div id="main-content" tabIndex={-1}>{children}</div></>;
+    return <><header className="login-header"><Brand /><span className="prototype-pill"><ShieldCheck size={15} /> Evaluation demo</span></header><div id="main-content" tabIndex={-1}>{children}</div></>;
   }
 
   return (
