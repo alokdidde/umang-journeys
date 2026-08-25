@@ -1,9 +1,9 @@
 # Reference board
 
-Created: 2026-08-26
+Created: 2026-08-26 · Updated: 2026-08-26
 Mode: Operate
-Design read: Citizen-account app shell for returning residents, using a warm institutional document-vault and task-led journey language.
-Dials: variance 4, motion 3, density 8, art direction 6
+Design read: Citizen service workspace for returning residents, combining calm institutional structure with a humane life-event layer and evidence-first task language.
+Dials: variance 5, motion 3, density 8, art direction 7
 
 ## Quality bar
 - UMANG official portal: one citizen-facing service identity with direct access to services, schemes, dashboard, and DigiLocker.
@@ -22,7 +22,7 @@ Dials: variance 4, motion 3, density 8, art direction 6
 ## Borrow
 - Palette/material: preserve the locked UMANG blue, warm white canvas, and restrained purple AI accent.
 - Type/hierarchy: calm service headings, compact operational labels, and readable row-level metadata.
-- Layout/composition: persistent primary destinations; compact overview at Home; dense collection views for Documents and Activity.
+- Layout/composition: a persistent desktop service rail, contextual top bar, compact Home workbench, and dense collection views for Documents and Activity.
 - Motion/interaction: short state transitions and loading feedback only; no scroll storytelling in the authenticated shell.
 - Asset language: real document previews, status icons, journey glyphs, and timeline marks rather than decorative illustration.
 
@@ -34,7 +34,7 @@ Dials: variance 4, motion 3, density 8, art direction 6
 - Navigation that competes with the ordered task list inside a journey.
 
 ## Direction contract
-- Thesis: everything the citizen has done, uploaded, received, or must do next is visible from one account shell.
-- First viewport: navigation, one next action, compact document intake, and direct links to Documents and Activity.
-- System: existing UMANG tokens and AI Elements, dense rows, task-led journey cards, restrained state motion.
+- Thesis: everything the citizen has done, uploaded, received, or must do next is visible from one calm service workspace.
+- First viewport: one next action, compact account totals, document intelligence, and persistent access to Documents and Activity.
+- System: locked UMANG palette, dark civic service rail, AI Elements, dense ledger rows, task-led journey cards, and restrained state motion.
 - Risk: adding destinations without reducing homepage repetition would create more chrome but not more clarity.

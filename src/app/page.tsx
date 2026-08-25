@@ -80,11 +80,14 @@ function ReturningHome({ journeys, start, loadError, refreshJourneys }: { journe
         <Link href="/activity"><span><Activity /></span><strong>{snapshot.summary.activity}</strong><small>Activity entries</small><ArrowRight /></Link>
       </section>
 
-      <DocumentDesk onJourneyChanged={refreshAccount} />
-
-      <section className="active-journeys content-layer" aria-labelledby="active-journeys-heading">
-        <div className="dashboard-section-heading"><div><span>Continue where you left off</span><h2 id="active-journeys-heading">Next up</h2></div><Link href="/journeys">View all journeys<ArrowRight /></Link></div>
-        <div className="journey-card-grid">{journeys.slice(0, 2).map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>
+      <section className="home-workbench content-layer" aria-label="Your next work">
+        <div className="home-primary-work">
+          <div className="dashboard-section-heading"><div><span>Continue where you left off</span><h2 id="active-journeys-heading">Next up</h2></div><Link href="/journeys">View all journeys<ArrowRight /></Link></div>
+          <div className="journey-card-grid" aria-labelledby="active-journeys-heading">{journeys.slice(0, 2).map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>
+        </div>
+        <div className="home-assistant-rail">
+          <DocumentDesk onJourneyChanged={refreshAccount} />
+        </div>
       </section>
 
       <section className="explore-journeys content-layer" aria-labelledby="explore-heading">

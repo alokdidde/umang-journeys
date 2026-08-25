@@ -36,6 +36,12 @@ function LoginForm() {
   return (
     <main className="login-page">
       <div className="login-scene" aria-hidden="true" />
+      <section className="login-intro" aria-label="About UMANG Journeys">
+        <span className="eyebrow"><ShieldCheck /> Citizen services, one clear path</span>
+        <h2>Life events are complicated.<br />Your government journey shouldn’t be.</h2>
+        <p>See what is known, what needs attention, and every record created along the way—in one secure evaluation workspace.</p>
+        <ul><li>One next action at a time</li><li>Documents matched with your approval</li><li>Complete, timestamped activity history</li></ul>
+      </section>
       <section className="login-card panel">
         <span className="login-lock"><LockKeyhole /></span>
         <span className="eyebrow">Private evaluation</span>

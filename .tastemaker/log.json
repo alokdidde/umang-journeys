@@ -8,5 +8,15 @@
     "footer": "none",
     "knobs": "compact/returning-user/task-first/dense-ledger-rows",
     "brief": "UMANG Journeys · document library, activity history, and multi-journey account navigation"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "complete authenticated product",
+    "macrostructure": "Citizen Service Workspace",
+    "nav": "dark desktop service rail and mobile bottom navigation",
+    "hero": "compact task-led workspace header",
+    "footer": "none",
+    "knobs": "dense/calm/evidence-first/contextual-shell/asymmetric-login",
+    "brief": "UMANG Journeys · Tastemaker redesign across login, home, collections, journeys, forms, and service workspaces"
   }
 ]

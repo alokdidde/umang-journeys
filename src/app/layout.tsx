@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { JourneyProvider } from "@/components/journey-provider";
-import { AppHeader } from "@/components/app-shell";
+import { AppShell } from "@/components/app-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -17,7 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body className={inter.variable}>
         <a className="skip-link" href="#main-content">Skip to main content</a>
-        <TooltipProvider><JourneyProvider><AppHeader /><div id="main-content" tabIndex={-1}>{children}</div></JourneyProvider></TooltipProvider>
+        <TooltipProvider><JourneyProvider><AppShell>{children}</AppShell></JourneyProvider></TooltipProvider>
       </body>
     </html>
   );
