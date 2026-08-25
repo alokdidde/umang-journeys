@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compileJourney, completeNode, newBabyTemplate } from "./journey-engine";
+import { compileJourney, completeNode, newBabyTemplate, vehiclePurchaseTemplate } from "./journey-engine";
 
 describe("journey compiler", () => {
   it("compiles the newborn template into one recommended node and locked dependants", () => {
@@ -25,5 +25,20 @@ describe("journey compiler", () => {
     const certified = completeNode(registered, "birth_certificate");
 
     expect(certified.nodes.find((node) => node.recommended)?.key).toBe("child_health_record");
+  });
+
+  it("keeps a vehicle journey on its own template as steps complete", () => {
+    const started = compileJourney(vehiclePurchaseTemplate);
+    const vehicleConfirmed = completeNode(started, "vehicle_details");
+
+    expect(vehicleConfirmed.templateId).toBe(vehiclePurchaseTemplate.id);
+    expect(vehicleConfirmed.nodes.map((node) => node.key)).toEqual([
+      "vehicle_details",
+      "ownership_transfer",
+      "insurance_cover",
+      "fastag_setup",
+      "compliance_calendar",
+    ]);
+    expect(vehicleConfirmed.nodes.find((node) => node.key === "ownership_transfer")?.status).toBe("available");
   });
 });

@@ -1,5 +1,6 @@
 import { compileJourney, newBabyTemplate, type JourneyProjection } from "./journey-engine";
 import type { SandboxServiceKey, SandboxServiceRun } from "./service-workflows";
+import type { JourneyEvidence } from "./evidence";
 
 export type RegistrationForm = { childName: string; localWard: string };
 export type FormErrors = Partial<Record<keyof RegistrationForm, string>>;
@@ -11,10 +12,12 @@ export type AppState = {
   error: string | null;
   statement: string;
   hospitalRegistered: "yes" | "not_sure" | "no" | null;
+  vehicleOwnershipTransferred: "yes" | "not_sure" | "no" | null;
   projection: JourneyProjection;
   form: RegistrationForm;
   facts: Record<string, string>;
   serviceRuns: Partial<Record<SandboxServiceKey, SandboxServiceRun>>;
+  evidence: JourneyEvidence[];
   formErrors: FormErrors;
   registrationId: string | null;
 };
@@ -24,6 +27,7 @@ export type ServerJourney = {
   projection: JourneyProjection;
   facts: Record<string, string>;
   serviceRuns?: Partial<Record<SandboxServiceKey, SandboxServiceRun>>;
+  evidence?: JourneyEvidence[];
   registrationId?: string;
 };
 
@@ -31,6 +35,7 @@ export type AppAction =
   | { type: "hydrate"; state?: Partial<AppState> }
   | { type: "set_statement"; value: string }
   | { type: "set_hospital_registered"; value: "yes" | "not_sure" | "no" }
+  | { type: "set_vehicle_ownership_transferred"; value: "yes" | "not_sure" | "no" }
   | { type: "set_field"; field: keyof RegistrationForm; value: string }
   | { type: "submit_registration" }
   | { type: "server_journey_loaded"; journey: ServerJourney }
@@ -47,10 +52,12 @@ export const pristineState: AppState = {
   error: null,
   statement: goldenStatement,
   hospitalRegistered: null,
+  vehicleOwnershipTransferred: null,
   projection: compileJourney(newBabyTemplate),
   form: { childName: "", localWard: "" },
   facts: {},
   serviceRuns: {},
+  evidence: [],
   formErrors: {},
   registrationId: null,
 };
@@ -63,6 +70,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, statement: action.value };
     case "set_hospital_registered":
       return { ...state, hospitalRegistered: action.value };
+    case "set_vehicle_ownership_transferred":
+      return { ...state, vehicleOwnershipTransferred: action.value };
     case "set_field":
       return {
         ...state,
@@ -89,6 +98,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         projection: action.journey.projection,
         facts: action.journey.facts,
         serviceRuns: action.journey.serviceRuns ?? {},
+        evidence: action.journey.evidence ?? [],
         form: {
           childName: action.journey.facts["child.name"] ?? state.form.childName,
           localWard: action.journey.facts["birth.place.ward"] ?? state.form.localWard,

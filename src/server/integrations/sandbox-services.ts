@@ -41,6 +41,26 @@ const services: Record<SandboxServiceKey, Omit<SandboxServiceResult, "receipt">>
     actionType: "match_family_benefits",
     summary: "Potential family benefits were matched for review; eligibility is not guaranteed.",
   },
+  ownership_transfer: {
+    adapterKey: "sandbox-vahan",
+    actionType: "transfer_vehicle_ownership",
+    summary: "A synthetic VAHAN ownership-transfer acknowledgement was created.",
+  },
+  insurance_cover: {
+    adapterKey: "sandbox-insurance-exchange",
+    actionType: "verify_motor_policy",
+    summary: "The uploaded policy was matched and an ownership endorsement action was prepared.",
+  },
+  fastag_setup: {
+    adapterKey: "sandbox-ihmcl",
+    actionType: "activate_fastag",
+    summary: "A synthetic FASTag was activated after VAHAN and mobile verification.",
+  },
+  compliance_calendar: {
+    adapterKey: "sandbox-parivahan-compliance",
+    actionType: "build_vehicle_compliance_calendar",
+    summary: "A dated vehicle compliance calendar was generated from the available records.",
+  },
 };
 
 export function simulateExternalService(
@@ -161,6 +181,83 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
           ],
         }],
         notice: "A department or authorised field worker must confirm eligibility and required documents before any application.",
+      };
+    case "ownership_transfer":
+      return {
+        title: "Ownership transfer acknowledgement",
+        subtitle: "Synthetic Form 29/30 submission accepted by the VAHAN sandbox",
+        referenceLabel: "Application reference",
+        referenceValue: `VAHAN-SBX-${reference.slice(-8)}`,
+        facts: [
+          { label: "RC match", value: "Verified from evidence", status: "verified" },
+          { label: "Transfer route", value: "Normal sale · within Telangana", status: "information" },
+          { label: "Application status", value: "Sandbox acknowledged", status: "ready" },
+        ],
+        groups: [{
+          title: "Prepared application",
+          description: "The real service may require originals, state-specific documents, fees, or an RTO visit.",
+          items: [
+            { title: "Form 29 notice", meta: "Seller transfer notice · synthetic", status: "ready" },
+            { title: "Form 30 application", meta: "Buyer ownership application · synthetic", status: "ready" },
+            { title: "RTO document review", meta: "Not performed in this sandbox", detail: `Receipt ${receipt}`, status: "review" },
+          ],
+        }],
+        notice: "This acknowledgement is for evaluation only and does not change the registered owner in VAHAN.",
+      };
+    case "insurance_cover":
+      return {
+        title: "Motor insurance review",
+        subtitle: "Policy evidence matched to the purchased vehicle",
+        referenceLabel: "Verification reference",
+        referenceValue: `POL-SBX-${reference.slice(-8)}`,
+        facts: [
+          { label: "Vehicle match", value: "Verified", status: "verified" },
+          { label: "Cover valid until", value: "31 July 2027", status: "ready" },
+          { label: "Owner endorsement", value: "Contact insurer within 14 days", status: "due" },
+        ],
+        groups: [{ title: "Next insurance actions", items: [
+          { title: "Request ownership endorsement", meta: "Share the completed RC transfer acknowledgement", status: "due" },
+          { title: "Preserve continuous cover", meta: "Do not drive until the insurer confirms the endorsement", status: "review" },
+          { title: "Renewal reminder", meta: "Reminder set for 1 July 2027", status: "upcoming" },
+        ] }],
+        notice: "Only the issuing insurer can confirm cover or endorse the new owner; this result is a simulation.",
+      };
+    case "fastag_setup":
+      return {
+        title: "FASTag activation",
+        subtitle: "A synthetic tag linked after VAHAN pre-activation validation",
+        referenceLabel: "Tag reference",
+        referenceValue: `NETC-SBX-${reference.slice(-8)}`,
+        facts: [
+          { label: "VAHAN validation", value: "Matched", status: "verified" },
+          { label: "Vehicle class", value: "Car / Jeep / Van", status: "verified" },
+          { label: "Activation", value: "Sandbox active", status: "ready" },
+        ],
+        groups: [{ title: "Before your first trip", items: [
+          { title: "Affix tag to windscreen", meta: "Follow the selected issuer’s delivery instructions", status: "due" },
+          { title: "Add opening balance", meta: "No money was moved by this simulation", status: "review" },
+          { title: "Save helpline 1033", meta: "National Highway assistance", status: "information" },
+        ] }],
+        notice: "No bank account, wallet, or real FASTag was created or charged.",
+      };
+    case "compliance_calendar":
+      return {
+        title: "Vehicle compliance calendar",
+        subtitle: "Registration, insurance and PUC actions in one plan",
+        referenceLabel: "Calendar reference",
+        referenceValue: `CAL-SBX-${reference.slice(-8)}`,
+        facts: [
+          { label: "Ownership transfer", value: "Sandbox application prepared", status: "ready" },
+          { label: "Insurance", value: "Endorsement action due", status: "due" },
+          { label: "PUC status", value: "Evidence not provided", status: "review" },
+        ],
+        groups: [{ title: "Upcoming actions", items: [
+          { title: "Confirm RC transfer", meta: "Check the real VAHAN status after filing", status: "due" },
+          { title: "Complete insurer endorsement", meta: "Within the insurer’s stated transfer period", status: "due" },
+          { title: "Verify PUC validity", meta: "Use the official Parivahan PUC service or a testing centre", status: "review" },
+          { title: "Insurance renewal", meta: "Due 31 July 2027", status: "upcoming" },
+        ] }],
+        notice: "Dates are planning aids derived from synthetic records; verify every obligation with the issuing authority.",
       };
   }
 }

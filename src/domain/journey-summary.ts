@@ -1,9 +1,10 @@
 import type { JourneyProjection, NodeStatus } from "./journey-engine";
+import { getJourneyTemplate } from "./journey-engine";
 import type { SandboxServiceKey, SandboxServiceRun } from "./service-workflows";
 
 export type JourneySubject = {
   id: string;
-  type: "child";
+  type: "child" | "vehicle";
   displayName: string;
 };
 
@@ -45,9 +46,9 @@ export type JourneySummary = {
 type JourneyActionSource = Pick<SummarizableJourney, "id" | "projection" | "facts" | "serviceRuns">;
 
 function nodeHref(journeyId: string, nodeKey: string) {
-  return nodeKey === "birth_registration"
-    ? `/journeys/${journeyId}/birth-registration`
-    : `/journeys/${journeyId}/services/${nodeKey}`;
+  if (nodeKey === "birth_registration") return `/journeys/${journeyId}/birth-registration`;
+  if (nodeKey === "vehicle_details") return `/journeys/${journeyId}/vehicle-details`;
+  return `/journeys/${journeyId}/services/${nodeKey}`;
 }
 
 function actionStateLabel(status: JourneyNextAction["status"], progress?: number) {
@@ -103,7 +104,7 @@ export function buildJourneySummary(journey: SummarizableJourney): JourneySummar
   return {
     id: journey.id,
     templateId: journey.projection.templateId,
-    title: "Having a Baby",
+    title: getJourneyTemplate(journey.projection.templateId)?.title ?? "UMANG Journey",
     status: nextAction === null ? "completed" : journey.status,
     subject: journey.subject,
     progress: {

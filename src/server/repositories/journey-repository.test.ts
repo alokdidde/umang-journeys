@@ -17,6 +17,55 @@ describe("journey repository", () => {
     expect((await repository.list("session-family"))[0]?.subject.displayName).toBe("Aarav Sharma");
   });
 
+  it("creates a vehicle journey with a vehicle subject and its own template", async () => {
+    const repository = new MemoryJourneyRepository();
+    const journey = await repository.create(
+      "session-driver",
+      { "vehicle.registrationNumber": "TS09EV4321", "vehicle.makeModel": "Tata Nexon EV" },
+      "vehicle-purchase.india.v1",
+    );
+
+    expect(journey.projection.templateId).toBe("vehicle-purchase.india.v1");
+    expect(journey.subject).toMatchObject({ type: "vehicle", displayName: "Tata Nexon EV" });
+    expect(journey.projection.nodes[0]?.key).toBe("vehicle_details");
+  });
+
+  it("completes vehicle details without changing the vehicle template", async () => {
+    const repository = new MemoryJourneyRepository();
+    const created = await repository.create("session-driver", {}, "vehicle-purchase.india.v1");
+    await repository.updateFacts("session-driver", created.id, {
+      "vehicle.registrationNumber": "TS09EV4321",
+      "vehicle.makeModel": "Tata Nexon EV",
+    });
+
+    const journey = await repository.completeStep("session-driver", created.id, "vehicle_details", "vehicle-details-1");
+
+    expect(journey?.subject.displayName).toBe("Tata Nexon EV");
+    expect(journey?.projection.nodes.find((node) => node.key === "vehicle_details")?.status).toBe("completed");
+    expect(journey?.projection.nodes.find((node) => node.key === "ownership_transfer")?.status).toBe("available");
+  });
+
+  it("persists verified evidence independently for each journey", async () => {
+    const repository = new MemoryJourneyRepository();
+    const created = await repository.create("session-driver", {}, "vehicle-purchase.india.v1");
+
+    const journey = await repository.addEvidence("session-driver", created.id, {
+      type: "vehicle_rc",
+      fileName: "sample-rc.pdf",
+      mimeType: "application/pdf",
+      size: 842,
+      source: "sample",
+      verificationStatus: "verified",
+      extractedFields: { registrationNumber: "TS09EV4321" },
+      contentBase64: "JVBERi0xLjQ=",
+    });
+
+    expect(journey?.evidence).toEqual([
+      expect.objectContaining({ type: "vehicle_rc", source: "sample", verificationStatus: "verified" }),
+    ]);
+    expect((await repository.getEvidence("session-driver", created.id, journey!.evidence[0]!.id))?.contentBase64).toBe("JVBERi0xLjQ=");
+  });
+
   it("isolates anonymous sessions", async () => {
     const repository = new MemoryJourneyRepository();
     const created = await repository.create("session-a");

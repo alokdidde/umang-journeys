@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -14,7 +14,9 @@ import {
   Clock3,
   Database,
   ExternalLink,
+  Eye,
   FileDown,
+  FileUp,
   FlaskConical,
   LoaderCircle,
   LockKeyhole,
@@ -30,12 +32,16 @@ import {
   type SandboxServiceRun,
   type ServiceArtifact,
 } from "@/domain/service-workflows";
+import { evidenceLabels, missingEvidence, serviceEvidenceRequirements, type EvidenceType, type JourneyEvidence } from "@/domain/evidence";
 
 const guidanceLinks: Record<string, { label: string; href: string }> = {
   child_health_record: { label: "Read ABDM citizen guidance", href: "https://abdm.gov.in/citizens" },
   vaccination_timeline: { label: "View the U-WIN citizen guide", href: "https://uwindashboard.mohfw.gov.in/assets/pdf/Self_Registration_Module_U-WIN_SOP_v2_Apr_2024-1.pdf" },
   child_identity: { label: "Read UIDAI child enrolment guidance", href: "https://www.uidai.gov.in/en/296-english-uk/faqs/enrolment-update/aadhaar-enrolment-process/12811-what-is-the-enrolment-procedure-for-children-below-the-age-of-5-years.html" },
   eligible_benefits: { label: "View Telangana programme information", href: "https://hyderabad.telangana.gov.in/scheme/arogya-lakshmi/" },
+  ownership_transfer: { label: "Read Parivahan transfer guidance", href: "https://mparivahan.parivahan.gov.in/mstatic/english/rc-info-ownership.html" },
+  fastag_setup: { label: "Read the current IHMCL FASTag guidance", href: "https://ihmcl.co.in/faq/" },
+  compliance_calendar: { label: "Open Parivahan vehicle services", href: "https://parivahan.gov.in/parivahan/" },
 };
 
 function formatTimestamp(value: string) {
@@ -62,7 +68,7 @@ function statusLabel(status: ArtifactItemStatus) {
 
 export default function SandboxServicePage() {
   const { id, key } = useParams<{ id: string; key: string }>();
-  const { state, loadJourney, advanceService } = useJourney();
+  const { state, loadJourney, advanceService, addEvidence, updateJourneyFacts } = useJourney();
   const validKey = isSandboxServiceKey(key) ? key : null;
   const definition = validKey ? serviceWorkflowDefinitions[validKey] : null;
   const node = state.projection.nodes.find((candidate) => candidate.key === key);
@@ -113,7 +119,20 @@ export default function SandboxServicePage() {
 
         <div className="service-workspace-grid">
           <div className="service-main-column">
-            {!run ? (
+            {!run && ["ownership_transfer", "insurance_cover", "fastag_setup", "compliance_calendar"].includes(validKey) ? (
+              <VehicleServicePreparation
+                id={id}
+                nodeKey={validKey}
+                evidence={state.evidence}
+                facts={state.facts}
+                pending={state.pending}
+                error={state.error}
+                action={definition.action}
+                addEvidence={addEvidence}
+                updateFacts={updateJourneyFacts}
+                start={() => advanceService(id, validKey)}
+              />
+            ) : !run ? (
               <section className="service-start-card panel">
                 <span className="service-emblem"><Activity /></span>
                 <p className="eyebrow">Prepared request</p>
@@ -172,6 +191,55 @@ export default function SandboxServicePage() {
       </div>
     </main>
   );
+}
+
+function VehicleServicePreparation({ id, nodeKey, evidence, facts, pending, error, action, addEvidence, updateFacts, start }: {
+  id: string;
+  nodeKey: SandboxServiceRun["nodeKey"];
+  evidence: JourneyEvidence[];
+  facts: Record<string, string>;
+  pending: boolean;
+  error: string | null;
+  action: string;
+  addEvidence: (id: string, type: EvidenceType, file?: File) => Promise<boolean>;
+  updateFacts: (id: string, facts: Record<string, string>) => Promise<boolean>;
+  start: () => Promise<boolean>;
+}) {
+  const required = serviceEvidenceRequirements[nodeKey] ?? [];
+  const missing = missingEvidence(nodeKey, evidence);
+  const [consent, setConsent] = useState(false);
+  const [mobileLast4, setMobileLast4] = useState(facts["fastag.mobileLast4"] ?? "4421");
+  const [issuer, setIssuer] = useState(facts["fastag.issuer"] ?? "NHAI FASTag");
+  const fastagReady = nodeKey !== "fastag_setup" || (/^\d{4}$/.test(mobileLast4) && issuer.length > 1);
+
+  async function begin() {
+    if (nodeKey === "fastag_setup") {
+      const saved = await updateFacts(id, { "fastag.mobileLast4": mobileLast4, "fastag.issuer": issuer });
+      if (!saved) return;
+    }
+    await start();
+  }
+
+  return <section className="panel vehicle-service-preparation">
+    <header><p className="eyebrow">Prepare the request</p><h2>{missing.length ? `${missing.length} ${missing.length === 1 ? "item" : "items"} needed before submission` : "Review and authorise this simulation"}</h2><p>The provider run stays locked until each required input has been verified.</p></header>
+    {required.length ? <div className="evidence-requirements">{required.map((type) => {
+      const item = evidence.find((candidate) => candidate.type === type);
+      const label = evidenceLabels[type];
+      return <article className={item ? "verified" : "missing"} key={type}>
+        <span>{item ? <CheckCircle2 /> : <FileUp />}</span><div><strong>{label.title}</strong><p>{label.description}</p>
+          {item ? <><small>{item.fileName} · {(item.size / 1024).toFixed(1)} KB · {item.source === "sample" ? "Synthetic sample" : "Uploaded"}</small><dl>{Object.entries(item.extractedFields).map(([key, value]) => <div key={key}><dt>{key.replace(/([A-Z])/g, " $1")}</dt><dd>{value}</dd></div>)}</dl></> : null}
+        </div>
+        <div className="evidence-actions">{item ? <a href={`/api/journeys/${id}/evidence/${item.id}`} target="_blank" rel="noreferrer"><Eye />Preview</a> : <>
+          <label><FileUp />Upload<input type="file" accept="application/pdf,image/png,image/jpeg" onChange={(event) => { const file = event.target.files?.[0]; if (file) void addEvidence(id, type, file); }} /></label>
+          <button type="button" onClick={() => void addEvidence(id, type)}>Use sample evidence</button>
+        </>}</div>
+      </article>;
+    })}</div> : null}
+    {nodeKey === "fastag_setup" ? <div className="fastag-inputs"><label htmlFor="mobile-last-four">Mobile number ending</label><span className="field-helper">Enter only the last four digits; the sandbox simulates OTP verification.</span><input id="mobile-last-four" inputMode="numeric" maxLength={4} pattern="[0-9]{4}" value={mobileLast4} onChange={(event) => setMobileLast4(event.target.value.replace(/\D/g, ""))} /><label htmlFor="fastag-issuer">Issuer</label><select id="fastag-issuer" value={issuer} onChange={(event) => setIssuer(event.target.value)}><option>NHAI FASTag</option><option>State Bank of India</option><option>ICICI Bank</option></select></div> : null}
+    <label className="simulation-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span><strong>I authorise this evaluation-only submission</strong><small>No production provider, bank account, or government record will be changed.</small></span></label>
+    {error ? <p className="workflow-error" role="alert">{error}</p> : null}
+    <button className="primary-cta service-action" type="button" disabled={pending || missing.length > 0 || !fastagReady || !consent} onClick={() => void begin()}>{pending ? "Saving requirements…" : action}<ArrowRight /></button>
+  </section>;
 }
 
 function ServiceProgress({ run, stages, nextStageTitle, pending }: {

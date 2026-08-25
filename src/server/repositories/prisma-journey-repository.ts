@@ -1,8 +1,9 @@
-import { completeNode, newBabyTemplate, type JourneyProjection, type NodeStatus } from "@/domain/journey-engine";
+import { completeNode, getJourneyTemplate, newBabyTemplate, type JourneyProjection, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
 import type { JourneyRepository, StoredJourney } from "@/server/repositories/journey-repository";
 import { advanceSimulatedService, isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
 import type { SandboxServiceKey, SandboxServiceRun } from "@/domain/service-workflows";
+import type { EvidenceRecord, EvidenceSource, EvidenceType, JourneyEvidence } from "@/domain/evidence";
 
 type DatabaseJourney = Awaited<ReturnType<ReturnType<typeof getPrisma>["journeyInstance"]["findFirst"]>>;
 
@@ -20,14 +21,16 @@ function mapJourney(
     nodes: Array<{ nodeKey: string; status: string; recommended: boolean }>;
     facts: Array<{ key: string; valueJson: unknown }>;
     documents: Array<{ metadataJson: unknown }>;
+    evidence: Array<{ id: string; type: string; provider: string; metadataJson: unknown }>;
     subject: { id: string; type: string; displayName: string };
   },
   sessionId: string,
 ): StoredJourney {
   const nodeByKey = new Map(journey.nodes.map((node) => [node.nodeKey, node]));
+  const template = getJourneyTemplate(journey.templateId) ?? newBabyTemplate;
   const projection: JourneyProjection = {
-    templateId: newBabyTemplate.id,
-    nodes: newBabyTemplate.nodes.map((definition) => {
+    templateId: template.id,
+    nodes: template.nodes.map((definition) => {
       const stored = nodeByKey.get(definition.key);
       return {
         ...definition,
@@ -35,7 +38,7 @@ function mapJourney(
         recommended: stored?.recommended ?? false,
       };
     }),
-    edges: newBabyTemplate.nodes.flatMap((node) =>
+    edges: template.nodes.flatMap((node) =>
       (node.dependsOn ?? []).map((from) => ({ from, to: node.key })),
     ),
   };
@@ -61,21 +64,39 @@ function mapJourney(
     }
   }
 
+  const evidence: JourneyEvidence[] = journey.evidence.flatMap((item) => {
+    const metadata = item.metadataJson;
+    if (!metadata || typeof metadata !== "object") return [];
+    const value = metadata as Record<string, unknown>;
+    return [{
+      id: item.id,
+      type: item.type as EvidenceType,
+      fileName: String(value.fileName ?? "evidence"),
+      mimeType: String(value.mimeType ?? "application/octet-stream"),
+      size: Number(value.size ?? 0),
+      source: String(value.source ?? item.provider) as EvidenceSource,
+      verificationStatus: String(value.verificationStatus ?? "needs_review") as JourneyEvidence["verificationStatus"],
+      extractedFields: value.extractedFields && typeof value.extractedFields === "object" ? value.extractedFields as Record<string, string> : {},
+      createdAt: String(value.createdAt ?? journey.updatedAt.toISOString()),
+    }];
+  });
+
   return {
     id: journey.id,
     sessionId,
     status: journey.status === "COMPLETED" ? "completed" : journey.status === "ABANDONED" ? "abandoned" : "active",
-    subject: { id: journey.subject.id, type: "child", displayName: journey.subject.displayName },
+    subject: { id: journey.subject.id, type: journey.subject.type === "VEHICLE" ? "vehicle" : "child", displayName: journey.subject.displayName },
     projection,
     facts,
     serviceRuns,
+    evidence,
     registrationId: registration?.registrationId,
     createdAt: journey.startedAt.toISOString(),
     updatedAt: journey.updatedAt.toISOString(),
   };
 }
 
-const includeJourney = { nodes: true, facts: true, documents: true, subject: true } as const;
+const includeJourney = { nodes: true, facts: true, documents: true, evidence: true, subject: true } as const;
 
 function validDate(value: string | undefined) {
   if (!value) return undefined;
@@ -88,7 +109,10 @@ function projectionIsComplete(projection: JourneyProjection) {
 }
 
 export class PrismaJourneyRepository implements JourneyRepository {
-  async create(sessionId: string, facts: Record<string, string> = {}) {
+  async create(sessionId: string, facts: Record<string, string> = {}, templateId = newBabyTemplate.id) {
+    const template = getJourneyTemplate(templateId);
+    if (!template) throw new Error(`Unknown journey template: ${templateId}`);
+    const isVehicle = template.lifeEvent === "buying_a_vehicle";
     const prisma = getPrisma();
     const profile = await prisma.userProfile.upsert({
       where: { sessionId },
@@ -96,12 +120,12 @@ export class PrismaJourneyRepository implements JourneyRepository {
       create: { sessionId, displayName: "Ananya", stateCode: "DL", demoProfile: true },
     });
     await prisma.journeyTemplate.upsert({
-      where: { id: newBabyTemplate.id },
-      update: { version: 1, lifeEvent: newBabyTemplate.lifeEvent, configJson: newBabyTemplate },
-      create: { id: newBabyTemplate.id, version: 1, lifeEvent: newBabyTemplate.lifeEvent, configJson: newBabyTemplate },
+      where: { id: template.id },
+      update: { version: template.version, lifeEvent: template.lifeEvent, configJson: template },
+      create: { id: template.id, version: template.version, lifeEvent: template.lifeEvent, configJson: template },
     });
 
-    const initial = newBabyTemplate.nodes.map((node, index) => ({
+    const initial = template.nodes.map((node, index) => ({
       nodeKey: node.key,
       status: toDatabaseStatus(index === 0 ? "in_progress" : "locked"),
       recommended: index === 0,
@@ -109,14 +133,14 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const journey = await prisma.journeyInstance.create({
       data: {
         profile: { connect: { id: profile.id } },
-        template: { connect: { id: newBabyTemplate.id } },
-        templateVersion: 1,
+        template: { connect: { id: template.id } },
+        templateVersion: template.version,
         status: "ACTIVE",
         subject: {
           create: {
-            type: "CHILD" as const,
-            displayName: facts["child.name"]?.trim() || "Your baby",
-            dateOfBirth: validDate(facts["child.dateOfBirth"]),
+            type: isVehicle ? "VEHICLE" as const : "CHILD" as const,
+            displayName: isVehicle ? facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || "Your vehicle" : facts["child.name"]?.trim() || "Your baby",
+            dateOfBirth: isVehicle ? undefined : validDate(facts["child.dateOfBirth"]),
             profile: { connect: { id: profile.id } },
           },
         },
@@ -130,7 +154,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
           })),
         },
         edges: {
-          create: newBabyTemplate.nodes.flatMap((node) =>
+          create: template.nodes.flatMap((node) =>
             (node.dependsOn ?? []).map((fromNodeKey) => ({ fromNodeKey, toNodeKey: node.key })),
           ),
         },
@@ -169,13 +193,72 @@ export class PrismaJourneyRepository implements JourneyRepository {
           update: { valueJson, sourceType: "USER_CONFIRMED", confirmed: true },
           create: { journeyId: id, key, valueJson, sourceType: "USER_CONFIRMED", confirmed: true },
         })),
-        ...(facts["child.name"]?.trim()
-          ? [prisma.journeySubject.update({ where: { id: journey.subject.id }, data: { displayName: facts["child.name"].trim() } })]
+        ...((facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim())
+          ? [prisma.journeySubject.update({ where: { id: journey.subject.id }, data: { displayName: facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]!.trim() } })]
           : []),
         prisma.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } }),
       ],
     );
     return this.get(sessionId, id);
+  }
+
+  async completeStep(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
+    const journey = await this.get(sessionId, id);
+    const node = journey?.projection.nodes.find((candidate) => candidate.key === nodeKey);
+    if (!journey || !node || node.status === "locked") return null;
+    const prisma = getPrisma();
+    const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
+    const existing = await prisma.auditEvent.findFirst({ where: { journeyId: id, eventType: scopedKey } });
+    if (existing) return journey;
+    const projection = completeNode(journey.projection, nodeKey);
+    await prisma.$transaction(async (tx) => {
+      for (const projectedNode of projection.nodes) {
+        await tx.journeyNode.update({
+          where: { journeyId_nodeKey: { journeyId: id, nodeKey: projectedNode.key } },
+          data: { status: toDatabaseStatus(projectedNode.status), recommended: projectedNode.recommended, completedAt: projectedNode.status === "completed" ? new Date() : null },
+        });
+      }
+      await tx.auditEvent.create({ data: { journeyId: id, actorType: "demo_user", eventType: scopedKey, payloadJson: { nodeKey } } });
+      await tx.journeyInstance.update({ where: { id }, data: { status: projectionIsComplete(projection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() } });
+    });
+    return this.get(sessionId, id);
+  }
+
+  async addEvidence(sessionId: string, id: string, input: Omit<EvidenceRecord, "id" | "createdAt">) {
+    const journey = await this.get(sessionId, id);
+    if (!journey) return null;
+    const createdAt = new Date().toISOString();
+    await getPrisma().$transaction(async (tx) => {
+      await tx.evidence.deleteMany({ where: { journeyId: id, type: input.type } });
+      await tx.evidence.create({
+        data: {
+          journeyId: id,
+          type: input.type,
+          provider: input.source,
+          metadataJson: { ...input, createdAt },
+        },
+      });
+      await tx.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } });
+    });
+    return this.get(sessionId, id);
+  }
+
+  async getEvidence(sessionId: string, id: string, evidenceId: string) {
+    const item = await getPrisma().evidence.findFirst({ where: { id: evidenceId, journeyId: id, journey: { profile: { sessionId } } } });
+    if (!item || !item.metadataJson || typeof item.metadataJson !== "object") return null;
+    const value = item.metadataJson as Record<string, unknown>;
+    return {
+      id: item.id,
+      type: item.type as EvidenceType,
+      fileName: String(value.fileName ?? "evidence"),
+      mimeType: String(value.mimeType ?? "application/octet-stream"),
+      size: Number(value.size ?? 0),
+      source: String(value.source ?? item.provider) as EvidenceSource,
+      verificationStatus: String(value.verificationStatus ?? "needs_review") as EvidenceRecord["verificationStatus"],
+      extractedFields: value.extractedFields && typeof value.extractedFields === "object" ? value.extractedFields as Record<string, string> : {},
+      createdAt: String(value.createdAt ?? ""),
+      contentBase64: String(value.contentBase64 ?? ""),
+    };
   }
 
   async completeRegistration(sessionId: string, id: string, idempotencyKey: string) {

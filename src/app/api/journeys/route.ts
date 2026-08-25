@@ -4,7 +4,10 @@ import { journeyRepository } from "@/server/repositories/journey-repository";
 import { z } from "zod";
 import { buildJourneySummary } from "@/domain/journey-summary";
 
-const bodySchema = z.object({ facts: z.record(z.string(), z.string().max(500)).default({}) });
+const bodySchema = z.object({
+  templateId: z.enum(["new-baby.india.v1", "vehicle-purchase.india.v1"]).default("new-baby.india.v1"),
+  facts: z.record(z.string(), z.string().max(500)).default({}),
+});
 
 export async function GET() {
   const sessionId = await getDemoSession();
@@ -18,6 +21,6 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ code: "INVALID_FACTS", message: "The journey facts are invalid." }, { status: 400 });
   const sessionId = await getDemoSession();
   if (!sessionId) return NextResponse.json({ code: "UNAUTHENTICATED", message: "Sign in to continue." }, { status: 401 });
-  const journey = await journeyRepository.create(sessionId, parsed.data.facts);
+  const journey = await journeyRepository.create(sessionId, parsed.data.facts, parsed.data.templateId);
   return NextResponse.json(journey, { status: 201 });
 }

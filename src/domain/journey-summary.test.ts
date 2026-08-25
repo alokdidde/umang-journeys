@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compileJourney, completeNode, newBabyTemplate } from "./journey-engine";
+import { compileJourney, completeNode, newBabyTemplate, vehiclePurchaseTemplate } from "./journey-engine";
 import { buildJourneySummary } from "./journey-summary";
 
 describe("journey summary", () => {
@@ -25,6 +25,22 @@ describe("journey summary", () => {
         href: "/journeys/journey-aarav/services/birth_certificate",
       },
     });
+  });
+
+  it("summarises a vehicle journey with the vehicle title and details route", () => {
+    const summary = buildJourneySummary({
+      id: "journey-vehicle",
+      status: "active",
+      subject: { id: "vehicle-1", type: "vehicle", displayName: "Tata Nexon" },
+      projection: compileJourney(vehiclePurchaseTemplate),
+      facts: {},
+      serviceRuns: {},
+      createdAt: "2026-08-25T10:00:00.000Z",
+      updatedAt: "2026-08-25T10:00:00.000Z",
+    });
+
+    expect(summary.title).toBe("Buying a Vehicle");
+    expect(summary.nextAction?.href).toBe("/journeys/journey-vehicle/vehicle-details");
   });
 
   it("prioritises resumable provider work and includes its partial progress", () => {

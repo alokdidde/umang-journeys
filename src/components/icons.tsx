@@ -1,4 +1,4 @@
-import { Baby, BadgeCheck, FileText, Gift, HeartPulse, House, IdCard, Syringe, Car, Store, Armchair, type LucideIcon } from "lucide-react";
+import { Baby, BadgeCheck, CalendarDays, CreditCard, FileText, Gift, HeartPulse, House, IdCard, Syringe, Car, Store, Armchair, type LucideIcon } from "lucide-react";
 
 export const journeyIcons: Record<string, LucideIcon> = {
   baby: Baby,
@@ -7,12 +7,17 @@ export const journeyIcons: Record<string, LucideIcon> = {
   vaccine: Syringe,
   identity: IdCard,
   benefits: Gift,
+  vehicle: Car,
+  transfer: FileText,
+  insurance: BadgeCheck,
+  fastag: CreditCard,
+  calendar: CalendarDays,
 };
 
 export const lifeEvents = [
   { key: "baby", label: "Having a Baby", Icon: Baby, active: true, tone: "rose" },
   { key: "home", label: "Moving Home", Icon: House, active: false, tone: "green" },
-  { key: "vehicle", label: "Buying a Vehicle", Icon: Car, active: false, tone: "blue" },
+  { key: "vehicle", label: "Buying a Vehicle", Icon: Car, active: true, tone: "blue" },
   { key: "business", label: "Starting a Business", Icon: Store, active: false, tone: "purple" },
   { key: "retirement", label: "Retirement", Icon: Armchair, active: false, tone: "amber" },
 ] as const;

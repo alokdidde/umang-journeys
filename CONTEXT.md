@@ -20,6 +20,10 @@ _Avoid_: Form, application, template
 The person or thing the Journey is about. A newborn is the Journey Subject of a Having a Baby Journey and remains distinct from the account holder.
 _Avoid_: User, account, applicant
 
+**Vehicle Journey**:
+A Journey whose subject is one identified vehicle and whose steps coordinate ownership, coverage, tolling, and compliance outcomes after purchase.
+_Avoid_: Car form, transport application
+
 **Journey Step**:
 One service or outcome within a Journey whose state and dependencies are tracked independently.
 _Avoid_: Screen, page, form

@@ -4,6 +4,10 @@ export const sandboxServiceKeys = [
   "vaccination_timeline",
   "child_identity",
   "eligible_benefits",
+  "ownership_transfer",
+  "insurance_cover",
+  "fastag_setup",
+  "compliance_calendar",
 ] as const;
 
 export type SandboxServiceKey = (typeof sandboxServiceKeys)[number];
@@ -131,6 +135,62 @@ export const serviceWorkflowDefinitions: Record<SandboxServiceKey, ServiceWorkfl
       { key: "query_catalogue", title: "Programme catalogue checked", detail: "Central and Telangana maternal-child programmes were queried.", progress: 52, state: "waiting_external" },
       { key: "screen_rules", title: "Rules screened", detail: "Matches were labelled with evidence gaps instead of assumed eligible.", progress: 78, state: "running" },
       { key: "explain_matches", title: "Matches explained", detail: "Potential programmes and clear next checks are ready for review.", progress: 100, state: "completed" },
+    ],
+  },
+  ownership_transfer: {
+    agency: "VAHAN ownership sandbox",
+    agencyShort: "VAHAN sandbox",
+    action: "Submit transfer simulation",
+    explanation: "Validate the RC and sale documents, prepare Form 29/30 data, and simulate an ownership-transfer submission without contacting an RTO.",
+    turnaround: "About 4 simulated checks",
+    dataShared: ["Vehicle registration and chassis suffix", "Buyer and seller details", "RC and sale agreement evidence"],
+    stages: [
+      { key: "validate_rc", title: "Registration certificate validated", detail: "The uploaded RC matched the vehicle registration and chassis suffix.", progress: 24, state: "running" },
+      { key: "prepare_forms", title: "Transfer forms prepared", detail: "Sandbox Form 29 and Form 30 data were assembled for the in-state sale.", progress: 52, state: "waiting_external" },
+      { key: "check_dues", title: "VAHAN checks completed", detail: "The simulation checked tax, hypothecation, insurance and PUC flags.", progress: 78, state: "running" },
+      { key: "acknowledge_transfer", title: "Transfer request acknowledged", detail: "A synthetic VAHAN acknowledgement was issued for evaluation.", progress: 100, state: "completed" },
+    ],
+  },
+  insurance_cover: {
+    agency: "Motor insurance verification sandbox",
+    agencyShort: "Insurance sandbox",
+    action: "Verify insurance cover",
+    explanation: "Read the policy evidence, match it to the vehicle, and identify whether an endorsement or renewal is needed.",
+    turnaround: "About 4 simulated checks",
+    dataShared: ["Vehicle registration number", "Insurer and policy number", "Policy validity dates"],
+    stages: [
+      { key: "read_policy", title: "Policy document read", detail: "The sandbox extracted the vehicle, insurer and validity dates.", progress: 24, state: "running" },
+      { key: "match_vehicle", title: "Vehicle matched", detail: "Registration and make/model matched the confirmed vehicle.", progress: 52, state: "waiting_external" },
+      { key: "assess_transfer", title: "Ownership endorsement assessed", detail: "The policy was checked for the change-of-owner action required.", progress: 78, state: "running" },
+      { key: "publish_cover", title: "Coverage action published", detail: "A synthetic coverage summary and reminder were created.", progress: 100, state: "completed" },
+    ],
+  },
+  fastag_setup: {
+    agency: "IHMCL issuer sandbox",
+    agencyShort: "FASTag sandbox",
+    action: "Activate sandbox FASTag",
+    explanation: "Use VAHAN-validated vehicle details and a verified mobile number to simulate a new FASTag activation.",
+    turnaround: "About 4 simulated checks",
+    dataShared: ["VAHAN registration match", "Vehicle class", "Masked mobile number and selected issuer"],
+    stages: [
+      { key: "match_vahan", title: "VAHAN details matched", detail: "Pre-activation validation matched the registration and vehicle class.", progress: 24, state: "running" },
+      { key: "verify_mobile", title: "Mobile verified", detail: "A sandbox OTP confirmed the masked contact number.", progress: 52, state: "waiting_external" },
+      { key: "issue_tag", title: "Tag issued", detail: "The selected issuer reserved a synthetic tag identifier.", progress: 78, state: "running" },
+      { key: "activate_tag", title: "FASTag activated", detail: "The tag was linked to the vehicle in the isolated evaluation environment.", progress: 100, state: "completed" },
+    ],
+  },
+  compliance_calendar: {
+    agency: "Parivahan compliance sandbox",
+    agencyShort: "Compliance sandbox",
+    action: "Build compliance calendar",
+    explanation: "Combine registration, insurance, PUC and tax facts into a dated vehicle compliance plan.",
+    turnaround: "About 4 simulated checks",
+    dataShared: ["Registration and purchase dates", "Insurance validity", "PUC and tax status"],
+    stages: [
+      { key: "collect_records", title: "Vehicle records collected", detail: "Available VAHAN, policy and evidence facts were brought together.", progress: 24, state: "running" },
+      { key: "check_validity", title: "Validity dates checked", detail: "Insurance, PUC, tax and registration dates were normalised.", progress: 52, state: "waiting_external" },
+      { key: "calculate_actions", title: "Next actions calculated", detail: "Due and upcoming obligations were separated without assuming compliance.", progress: 78, state: "running" },
+      { key: "publish_calendar", title: "Calendar published", detail: "A synthetic compliance calendar and reminder plan are ready.", progress: 100, state: "completed" },
     ],
   },
 };

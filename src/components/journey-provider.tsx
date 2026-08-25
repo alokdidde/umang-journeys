@@ -3,14 +3,18 @@
 import { createContext, useCallback, useContext, useEffect, type Dispatch, type ReactNode } from "react";
 import { useEffectReducer } from "use-effect-reducer";
 import { appReducer, pristineState, type AppAction, type AppState, type ServerJourney } from "@/domain/app-state";
+import type { EvidenceType } from "@/domain/evidence";
 
 type JourneyContextValue = {
   state: AppState;
   dispatch: Dispatch<AppAction>;
-  createJourney: (facts: Record<string, string>) => Promise<string | null>;
+  createJourney: (facts: Record<string, string>, templateId?: string) => Promise<string | null>;
   loadJourney: (id: string) => Promise<boolean>;
   submitRegistration: (id: string) => Promise<boolean>;
   advanceService: (id: string, nodeKey: string) => Promise<boolean>;
+  completeVehicleDetails: (id: string, facts: Record<string, string>) => Promise<boolean>;
+  updateJourneyFacts: (id: string, facts: Record<string, string>) => Promise<boolean>;
+  addEvidence: (id: string, type: EvidenceType, file?: File) => Promise<boolean>;
   resetJourney: () => Promise<void>;
 };
 
@@ -40,19 +44,72 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
-  const createJourney = useCallback(async (facts: Record<string, string>) => {
+  const createJourney = useCallback(async (facts: Record<string, string>, templateId = "new-baby.india.v1") => {
     dispatch({ type: "operation_started" });
     try {
       const journey = await requestJson<ServerJourney>("/api/journeys", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ facts }),
+        body: JSON.stringify({ facts, templateId }),
       });
       dispatch({ type: "server_journey_loaded", journey });
       return journey.id;
     } catch (error) {
       dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Journey could not be created." });
       return null;
+    }
+  }, [dispatch]);
+
+  const updateJourneyFacts = useCallback(async (id: string, facts: Record<string, string>) => {
+    dispatch({ type: "operation_started" });
+    try {
+      const journey = await requestJson<ServerJourney>(`/api/journeys/${encodeURIComponent(id)}/facts`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ facts }),
+      });
+      dispatch({ type: "server_journey_loaded", journey });
+      return true;
+    } catch (error) {
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Journey details could not be saved." });
+      return false;
+    }
+  }, [dispatch]);
+
+  const completeVehicleDetails = useCallback(async (id: string, facts: Record<string, string>) => {
+    dispatch({ type: "operation_started" });
+    try {
+      const journey = await requestJson<ServerJourney>(`/api/journeys/${encodeURIComponent(id)}/nodes/vehicle_details/submit`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...facts, idempotencyKey: crypto.randomUUID() }),
+      });
+      dispatch({ type: "server_journey_loaded", journey });
+      return true;
+    } catch (error) {
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Vehicle details could not be confirmed." });
+      return false;
+    }
+  }, [dispatch]);
+
+  const addEvidence = useCallback(async (id: string, type: EvidenceType, file?: File) => {
+    dispatch({ type: "operation_started" });
+    try {
+      let init: RequestInit;
+      if (file) {
+        const form = new FormData();
+        form.set("type", type);
+        form.set("file", file);
+        init = { method: "POST", body: form };
+      } else {
+        init = { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type, sample: true }) };
+      }
+      const journey = await requestJson<ServerJourney>(`/api/journeys/${encodeURIComponent(id)}/evidence`, init);
+      dispatch({ type: "server_journey_loaded", journey });
+      return true;
+    } catch (error) {
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Evidence could not be added." });
+      return false;
     }
   }, [dispatch]);
 
@@ -100,7 +157,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
-  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, advanceService, resetJourney }}>{children}</JourneyContext.Provider>;
+  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, advanceService, completeVehicleDetails, updateJourneyFacts, addEvidence, resetJourney }}>{children}</JourneyContext.Provider>;
 }
 
 export function useJourney() {

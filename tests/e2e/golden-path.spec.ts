@@ -110,7 +110,7 @@ test("home prioritises the saved child journey and keeps starting another one av
   await expect(page.getByRole("progressbar", { name: "Aarav Sharma journey progress" })).toHaveAttribute("aria-valuenow", "17");
   await expect(page.getByRole("link", { name: /Start next step/i })).toHaveAttribute("href", `/journeys/${id}/services/birth_certificate`);
 
-  await page.getByRole("button", { name: /Another baby journey/i }).click();
+  await page.getByRole("button", { name: /Another: Having a Baby/i }).click();
   await expect(page).toHaveURL(/\/intake$/);
   await page.request.post("/api/demo/reset");
 });
@@ -133,6 +133,68 @@ test("journey CTA advances past a completed birth certificate", async ({ page })
     "href",
     `/journeys/${id}/services/child_health_record`,
   );
+  await page.request.post("/api/demo/reset");
+});
+
+test("a vehicle journey completes with real sample evidence while a baby journey keeps its own next action", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  const babyId = await seedJourney(page);
+  await page.request.post(`/api/journeys/${babyId}/nodes/birth_registration/submit`, {
+    data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "multi-registration" },
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: /Another: Buying a Vehicle/i }).click();
+  await expect(page.getByRole("heading", { name: "Is the registration certificate already in your name?" })).toBeVisible();
+  await page.getByRole("button", { name: "No", exact: true }).click();
+  await page.getByRole("button", { name: "Build My Journey" }).click();
+  await expect(page.getByRole("heading", { name: "Your vehicle journey is ready." })).toBeVisible();
+  const vehicleId = page.url().split("/").at(-1)!;
+
+  await page.getByRole("link", { name: /Confirm vehicle details/i }).click();
+  await page.getByRole("button", { name: /Confirm vehicle and continue/i }).click();
+  await expect(page.getByRole("heading", { name: "Your vehicle journey is ready." })).toBeVisible();
+
+  await page.goto("/");
+  await expect(page.getByText("2 journeys")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Start next step/i })).toHaveCount(2);
+
+  await page.goto(`/journeys/${vehicleId}/services/ownership_transfer`);
+  await expect(page.getByRole("heading", { name: "2 items needed before submission" })).toBeVisible();
+  for (let index = 0; index < 2; index += 1) {
+    await page.locator(".evidence-requirements article").nth(index).getByRole("button", { name: "Use sample evidence" }).click();
+    await expect(page.locator(".evidence-requirements article").nth(index)).toHaveClass(/verified/);
+  }
+  const evidenceLink = page.locator(".evidence-requirements article").first().getByRole("link", { name: "Preview" });
+  const evidenceResponse = await page.request.get(await evidenceLink.getAttribute("href") ?? "");
+  expect(evidenceResponse.headers()["content-type"]).toBe("application/pdf");
+  expect((await evidenceResponse.body()).subarray(0, 4).toString()).toBe("%PDF");
+  await page.getByLabel("I authorise this evaluation-only submission").check();
+  await page.getByRole("button", { name: "Submit transfer simulation" }).click();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
+
+  await page.goto(`/journeys/${vehicleId}/services/insurance_cover`);
+  await page.getByRole("button", { name: "Use sample evidence" }).click();
+  await page.getByLabel("I authorise this evaluation-only submission").check();
+  await page.getByRole("button", { name: "Verify insurance cover" }).click();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
+
+  await page.goto(`/journeys/${vehicleId}/services/fastag_setup`);
+  await page.getByLabel("I authorise this evaluation-only submission").check();
+  await page.getByRole("button", { name: "Activate sandbox FASTag" }).click();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
+
+  await page.goto(`/journeys/${vehicleId}/services/compliance_calendar`);
+  await page.getByLabel("I authorise this evaluation-only submission").check();
+  await page.getByRole("button", { name: "Build compliance calendar" }).click();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
+
+  await page.goto("/");
+  await expect(page.getByText("Journey complete")).toBeVisible();
+  await expect(page.getByText("Next for Aarav Sharma")).toBeVisible();
   await page.request.post("/api/demo/reset");
 });
 

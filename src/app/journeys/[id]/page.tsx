@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, CheckCircle2, LockKeyhole, MapPin, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, Car, CheckCircle2, FileCheck2, LockKeyhole, MapPin, Route, Users } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { journeyIcons } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
@@ -18,6 +18,7 @@ export default function JourneyRevealPage() {
   }, [id, loadJourney, state.journeyId]);
   if (state.pending && state.journeyId !== id) return <main className="page workflow-state"><p>Loading your journey…</p></main>;
   if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>We couldn’t load this journey.</h1><p>{state.error}</p><Link href="/intake" className="primary-cta">Start again</Link></main>;
+  if (state.projection.templateId === "vehicle-purchase.india.v1") return <VehicleJourney id={id} />;
   const [registration, certificate, ...downstream] = state.projection.nodes;
   const nextAction = selectJourneyNextAction({ id, projection: state.projection, facts: state.facts, serviceRuns: state.serviceRuns });
   return (
@@ -59,6 +60,35 @@ export default function JourneyRevealPage() {
       </div>
     </main>
   );
+}
+
+function VehicleJourney({ id }: { id: string }) {
+  const { state } = useJourney();
+  const nextAction = selectJourneyNextAction({ id, projection: state.projection, facts: state.facts, serviceRuns: state.serviceRuns });
+  const registration = state.facts["vehicle.registrationNumber"] ?? "Registration pending";
+  return <main className="page journey-page vehicle-journey-page">
+    <ScenicBackdrop />
+    <Link href="/" className="floating-back content-layer"><ArrowLeft />All journeys</Link>
+    <section className="journey-heading content-layer"><p className="eyebrow"><Car />Buying a Vehicle</p><h1>Your vehicle journey is ready.</h1><p>Confirm the vehicle once, provide evidence where it is genuinely required, and follow each provider action without losing your place.</p></section>
+    <section className="context-strip content-layer">
+      <article><span className="mini-icon blue"><Car /></span><div><small>Vehicle</small><strong>{state.facts["vehicle.makeModel"] ?? "Tata Nexon"}</strong><em>{registration}</em></div></article>
+      <article><span className="mini-icon purple"><Users /></span><div><small>Buyer</small><strong>Ananya Sharma</strong><em>Evaluation profile</em></div></article>
+      <article><span className="mini-icon amber"><CalendarDays /></span><div><small>Purchased</small><strong>{state.facts["vehicle.purchaseDate"] ?? "25 August 2026"}</strong><em>Used vehicle</em></div></article>
+      <article><span className="mini-icon green"><MapPin /></span><div><small>Transfer</small><strong>{state.facts["vehicle.transferScope"] === "interstate" ? "Interstate" : "Within Telangana"}</strong><em>India</em></div></article>
+    </section>
+    <section className="panel content-layer vehicle-journey-list" aria-label="Vehicle journey steps">
+      <header><div><p className="eyebrow"><Route />Your plan</p><h2>One vehicle, five coordinated outcomes</h2></div><span>{state.projection.nodes.filter((node) => node.status === "completed").length} of {state.projection.nodes.length} complete</span></header>
+      <ol>{state.projection.nodes.map((node, index) => {
+        const Icon = journeyIcons[node.icon];
+        const locked = node.status === "locked";
+        const href = node.key === "vehicle_details" ? `/journeys/${id}/vehicle-details` : `/journeys/${id}/services/${node.key}`;
+        const label = node.status === "completed" ? "Completed" : node.status === "in_progress" || node.status === "waiting_external" ? "In progress" : locked ? "Waiting for prerequisite" : "Ready to start";
+        const content = <><span className="vehicle-step-number">{index + 1}</span><span className={`event-icon tone-${index}`}><Icon /></span><div><strong>{node.title}</strong><p>{node.description}</p><small><CalendarDays />{node.timing}</small></div><em className={`status ${node.status}`}>{locked ? <LockKeyhole /> : node.status === "completed" ? <CheckCircle2 /> : null}{label}</em></>;
+        return <li key={node.key}>{locked ? <article>{content}</article> : <Link href={href}>{content}</Link>}</li>;
+      })}</ol>
+    </section>
+    <div className="primary-cta-wrap content-layer">{nextAction ? <Link href={nextAction.href} className="primary-cta"><FileCheck2 />{nextAction.nodeKey === "vehicle_details" ? "Confirm vehicle details" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : <p className="journey-complete-cta"><CheckCircle2 />All vehicle actions are complete</p>}<TrustNote>Every receipt and document in this vehicle journey is synthetic.</TrustNote></div>
+  </main>;
 }
 
 function GraphNode({ node, number, href }: { node: ReturnType<typeof useJourney>["state"]["projection"]["nodes"][number]; number: number; href?: string }) {

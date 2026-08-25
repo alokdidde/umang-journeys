@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Baby, Check, Clock3, FileText, Gift, HeartPulse, IdCard, LoaderCircle, Mic, Plus, Search, Sparkles, Syringe } from "lucide-react";
+import { ArrowRight, Baby, Car, Check, Clock3, CreditCard, FileText, Gift, HeartPulse, IdCard, LoaderCircle, Mic, Plus, Search, ShieldCheck, Sparkles, Syringe } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { lifeEvents } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
@@ -37,8 +37,8 @@ export default function HomePage() {
     return () => controller.abort();
   }, []);
 
-  function start() {
-    dispatch({ type: "set_statement", value: query.trim() || state.statement });
+  function start(statement?: string) {
+    dispatch({ type: "set_statement", value: (statement ?? query.trim()) || state.statement });
     router.push("/intake");
   }
 
@@ -51,25 +51,25 @@ export default function HomePage() {
     : <FirstVisitHome query={query} setQuery={setQuery} start={start} loadError={loadError} />;
 }
 
-function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: () => void; loadError: string | null }) {
+function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string) => void; loadError: string | null }) {
   const [primary, ...others] = journeys;
   return (
     <main className="page returning-home">
       <ScenicBackdrop />
       <section className="dashboard-intro content-layer">
         <div><p className="eyebrow"><Sparkles size={15} />Your UMANG journeys</p><h1>Welcome back, Ananya.</h1><p>Here’s what needs your attention next.</p></div>
-        <button className="secondary-button" type="button" onClick={start}><Plus />Start another journey</button>
+        <button className="secondary-button" type="button" onClick={() => start()}><Plus />Start another journey</button>
       </section>
       {loadError && <p className="workflow-error content-layer" role="alert">{loadError}</p>}
 
       <section className="active-journeys content-layer" aria-labelledby="active-journeys-heading">
-        <div className="dashboard-section-heading"><div><span>Continue where you left off</span><h2 id="active-journeys-heading">Your active journey</h2></div><small>{journeys.length} {journeys.length === 1 ? "journey" : "journeys"}</small></div>
+        <div className="dashboard-section-heading"><div><span>Continue where you left off</span><h2 id="active-journeys-heading">Your {journeys.length === 1 ? "active journey" : "journeys"}</h2></div><small>{journeys.length} {journeys.length === 1 ? "journey" : "journeys"}</small></div>
         <JourneyCard journey={primary} featured />
         {others.length > 0 && <div className="other-journeys">{others.map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>}
       </section>
 
       <section className="explore-journeys content-layer" aria-labelledby="explore-heading">
-        <div className="dashboard-section-heading"><div><span>Life keeps moving</span><h2 id="explore-heading">Start something new</h2></div><p>Your current baby journey stays exactly where it is.</p></div>
+        <div className="dashboard-section-heading"><div><span>Life keeps moving</span><h2 id="explore-heading">Start something new</h2></div><p>Your current journeys stay exactly where they are.</p></div>
         <LifeEventGrid start={start} returning />
       </section>
       <TrustNote>Your journeys are saved to this evaluation account using synthetic data.</TrustNote>
@@ -82,7 +82,9 @@ function JourneyCard({ journey, featured = false }: { journey: JourneySummary; f
   return (
     <article className={`home-journey-card panel ${featured ? "featured" : ""}`}>
       <header>
-        <span className="journey-avatar"><Baby /></span>
+        <span className={`journey-avatar ${journey.subject.type}`}>
+          {journey.subject.type === "vehicle" ? <Car /> : <Baby />}
+        </span>
         <div><p>{journey.title}</p><h3>{journey.subject.displayName}</h3><span><Clock3 />Updated {formatUpdatedAt(journey.updatedAt)}</span></div>
         <em className={`status ${journey.status === "completed" ? "completed" : "in_progress"}`}>{journey.status === "completed" ? "Journey complete" : "Active journey"}</em>
       </header>
@@ -97,7 +99,7 @@ function JourneyCard({ journey, featured = false }: { journey: JourneySummary; f
   );
 }
 
-function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; setQuery: (value: string) => void; start: () => void; loadError: string | null }) {
+function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; setQuery: (value: string) => void; start: (statement?: string) => void; loadError: string | null }) {
   return (
     <main className="page home-page">
       <ScenicBackdrop />
@@ -121,18 +123,18 @@ function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; 
           <article><span>3</span><div><strong>Follow one journey</strong><p>See exactly what to do, step by step.</p></div></article>
         </div>
       </section>
-      <div className="primary-cta-wrap content-layer"><button className="primary-cta" onClick={start} type="button"><span className="cta-baby"><Baby /></span>Start New Baby Journey<ArrowRight /></button><TrustNote /></div>
+      <div className="primary-cta-wrap content-layer"><button className="primary-cta" onClick={() => start()} type="button"><span className="cta-baby"><Baby /></span>Start New Baby Journey<ArrowRight /></button><TrustNote /></div>
     </main>
   );
 }
 
-function LifeEventGrid({ start, returning = false }: { start: () => void; returning?: boolean }) {
+function LifeEventGrid({ start, returning = false }: { start: (statement?: string) => void; returning?: boolean }) {
   return <section className={`event-grid content-layer ${returning ? "compact-event-grid" : ""}`} aria-label="Life events">
     {lifeEvents.map(({ key, label, Icon, active, tone }) => (
-      <button key={key} className={`event-card ${active ? "active" : ""}`} onClick={active ? start : undefined} type="button" aria-disabled={!active}>
+      <button key={key} className={`event-card ${active ? "active" : ""}`} onClick={active ? () => start(key === "vehicle" ? "I bought a used Tata Nexon in Hyderabad." : "We had a baby yesterday at Apollo Hospital in Hyderabad.") : undefined} type="button" aria-disabled={!active}>
         {active && <span className="selected-badge">{returning ? <Plus size={15} /> : <Check size={15} />}</span>}
         {!active && <span className="preview-badge">Preview</span>}
-        <span className={`event-icon ${tone}`}><Icon /></span><strong>{returning && active ? "Another baby journey" : label}</strong>
+        <span className={`event-icon ${tone}`}><Icon /></span><strong>{returning && active ? `Another: ${label}` : label}</strong>
       </button>
     ))}
   </section>;
@@ -144,6 +146,11 @@ function ActionIcon({ nodeKey }: { nodeKey: string }) {
   if (nodeKey === "vaccination_timeline") return <Syringe />;
   if (nodeKey === "child_identity") return <IdCard />;
   if (nodeKey === "eligible_benefits") return <Gift />;
+  if (nodeKey === "ownership_transfer") return <FileText />;
+  if (nodeKey === "insurance_cover") return <ShieldCheck />;
+  if (nodeKey === "fastag_setup") return <CreditCard />;
+  if (nodeKey === "compliance_calendar") return <Clock3 />;
+  if (nodeKey === "vehicle_details") return <Car />;
   return <Baby />;
 }
 

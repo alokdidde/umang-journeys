@@ -12,8 +12,15 @@ describe("deterministic intake fallback", () => {
     expect(result.clarification.choices).toEqual(["yes", "not_sure", "no"]);
   });
 
-  it("rejects unsupported life events clearly", () => {
-    expect(() => deterministicResolve("I bought a car.")).toThrow("currently supports Having a Baby");
+  it("extracts a used-vehicle purchase without treating it as a baby journey", () => {
+    const result = deterministicResolve("I bought a used Tata Nexon in Hyderabad.");
+
+    expect(result.lifeEvent.value).toBe("buying_a_vehicle");
+    expect(result.facts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: "vehicle.purchaseType", value: "used" }),
+      expect.objectContaining({ key: "vehicle.city", value: "Hyderabad" }),
+    ]));
+    expect(result.clarification.key).toBe("vehicle.ownershipTransferred");
   });
 
   it("prefers Vercel AI Gateway configuration when its key is available", () => {

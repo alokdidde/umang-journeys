@@ -11,7 +11,7 @@ export type ServiceNodeDefinition = {
   key: string;
   title: string;
   description: string;
-  icon: "baby" | "certificate" | "health" | "vaccine" | "identity" | "benefits";
+  icon: "baby" | "certificate" | "health" | "vaccine" | "identity" | "benefits" | "vehicle" | "transfer" | "insurance" | "fastag" | "calendar";
   timing: string;
   dependsOn?: string[];
 };
@@ -19,7 +19,7 @@ export type ServiceNodeDefinition = {
 export type JourneyTemplate = {
   id: string;
   version: number;
-  lifeEvent: "having_a_baby";
+  lifeEvent: "having_a_baby" | "buying_a_vehicle";
   title: string;
   nodes: ServiceNodeDefinition[];
 };
@@ -50,6 +50,26 @@ export const newBabyTemplate: JourneyTemplate = {
   ],
 };
 
+export const vehiclePurchaseTemplate: JourneyTemplate = {
+  id: "vehicle-purchase.india.v1",
+  version: 1,
+  lifeEvent: "buying_a_vehicle",
+  title: "Buying a Vehicle",
+  nodes: [
+    { key: "vehicle_details", title: "Confirm vehicle", description: "Match the vehicle and purchase details before any application is prepared.", icon: "vehicle", timing: "Start with the registration number" },
+    { key: "ownership_transfer", title: "Ownership transfer", description: "Prepare and simulate the VAHAN ownership-transfer application.", icon: "transfer", timing: "Within 14 days for an in-state sale", dependsOn: ["vehicle_details"] },
+    { key: "insurance_cover", title: "Insurance cover", description: "Check the policy and record the transfer or renewal action needed.", icon: "insurance", timing: "Before driving the vehicle", dependsOn: ["vehicle_details"] },
+    { key: "fastag_setup", title: "FASTag setup", description: "Validate the vehicle and prepare FASTag activation.", icon: "fastag", timing: "Before the first highway trip", dependsOn: ["ownership_transfer"] },
+    { key: "compliance_calendar", title: "Compliance calendar", description: "Track insurance, PUC, tax and registration milestones in one place.", icon: "calendar", timing: "Keep these dates current", dependsOn: ["ownership_transfer", "insurance_cover"] },
+  ],
+};
+
+export const journeyTemplates = [newBabyTemplate, vehiclePurchaseTemplate] as const;
+
+export function getJourneyTemplate(templateId: string) {
+  return journeyTemplates.find((template) => template.id === templateId);
+}
+
 function evaluateNodes(template: JourneyTemplate, completed: Set<string>): JourneyNode[] {
   const nodes: JourneyNode[] = template.nodes.map((node) => {
     const isComplete = completed.has(node.key);
@@ -74,11 +94,13 @@ export function compileJourney(template: JourneyTemplate): JourneyProjection {
 }
 
 export function completeNode(projection: JourneyProjection, nodeKey: string): JourneyProjection {
+  const template = getJourneyTemplate(projection.templateId);
+  if (!template) throw new Error(`Unknown journey template: ${projection.templateId}`);
   const completed = new Set(
     projection.nodes.filter((node) => node.status === "completed").map((node) => node.key),
   );
   completed.add(nodeKey);
-  return { ...projection, nodes: evaluateNodes(newBabyTemplate, completed) };
+  return { ...projection, nodes: evaluateNodes(template, completed) };
 }
 
 export function validateTemplate(template: JourneyTemplate): string[] {
