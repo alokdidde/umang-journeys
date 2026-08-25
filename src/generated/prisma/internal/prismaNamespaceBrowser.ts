@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   UserProfile: 'UserProfile',
+  JourneySubject: 'JourneySubject',
   JourneyTemplate: 'JourneyTemplate',
   JourneyInstance: 'JourneyInstance',
   JourneyNode: 'JourneyNode',
@@ -93,6 +94,19 @@ export const UserProfileScalarFieldEnum = {
 export type UserProfileScalarFieldEnum = (typeof UserProfileScalarFieldEnum)[keyof typeof UserProfileScalarFieldEnum]
 
 
+export const JourneySubjectScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  type: 'type',
+  displayName: 'displayName',
+  dateOfBirth: 'dateOfBirth',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type JourneySubjectScalarFieldEnum = (typeof JourneySubjectScalarFieldEnum)[keyof typeof JourneySubjectScalarFieldEnum]
+
+
 export const JourneyTemplateScalarFieldEnum = {
   id: 'id',
   version: 'version',
@@ -109,6 +123,7 @@ export const JourneyInstanceScalarFieldEnum = {
   profileId: 'profileId',
   templateId: 'templateId',
   templateVersion: 'templateVersion',
+  subjectId: 'subjectId',
   status: 'status',
   startedAt: 'startedAt',
   updatedAt: 'updatedAt'
@@ -235,6 +250,14 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -242,12 +265,4 @@ export const JsonNullValueFilter = {
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
-
-
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 

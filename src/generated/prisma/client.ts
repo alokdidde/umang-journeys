@@ -47,6 +47,11 @@ export { Prisma }
  */
 export type UserProfile = Prisma.UserProfileModel
 /**
+ * Model JourneySubject
+ * 
+ */
+export type JourneySubject = Prisma.JourneySubjectModel
+/**
  * Model JourneyTemplate
  * 
  */

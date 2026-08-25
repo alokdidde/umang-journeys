@@ -1,4 +1,4 @@
-import { newBabyTemplate, type JourneyProjection, type NodeStatus } from "@/domain/journey-engine";
+import { completeNode, newBabyTemplate, type JourneyProjection, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
 import type { JourneyRepository, StoredJourney } from "@/server/repositories/journey-repository";
 import { advanceSimulatedService, isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
@@ -20,6 +20,7 @@ function mapJourney(
     nodes: Array<{ nodeKey: string; status: string; recommended: boolean }>;
     facts: Array<{ key: string; valueJson: unknown }>;
     documents: Array<{ metadataJson: unknown }>;
+    subject: { id: string; type: string; displayName: string };
   },
   sessionId: string,
 ): StoredJourney {
@@ -60,13 +61,34 @@ function mapJourney(
     }
   }
 
-  return { id: journey.id, sessionId, projection, facts, serviceRuns, registrationId: registration?.registrationId };
+  return {
+    id: journey.id,
+    sessionId,
+    status: journey.status === "COMPLETED" ? "completed" : journey.status === "ABANDONED" ? "abandoned" : "active",
+    subject: { id: journey.subject.id, type: "child", displayName: journey.subject.displayName },
+    projection,
+    facts,
+    serviceRuns,
+    registrationId: registration?.registrationId,
+    createdAt: journey.startedAt.toISOString(),
+    updatedAt: journey.updatedAt.toISOString(),
+  };
 }
 
-const includeJourney = { nodes: true, facts: true, documents: true } as const;
+const includeJourney = { nodes: true, facts: true, documents: true, subject: true } as const;
+
+function validDate(value: string | undefined) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? undefined : date;
+}
+
+function projectionIsComplete(projection: JourneyProjection) {
+  return projection.nodes.every((node) => node.status === "completed" || node.status === "skipped");
+}
 
 export class PrismaJourneyRepository implements JourneyRepository {
-  async create(sessionId: string) {
+  async create(sessionId: string, facts: Record<string, string> = {}) {
     const prisma = getPrisma();
     const profile = await prisma.userProfile.upsert({
       where: { sessionId },
@@ -75,15 +97,9 @@ export class PrismaJourneyRepository implements JourneyRepository {
     });
     await prisma.journeyTemplate.upsert({
       where: { id: newBabyTemplate.id },
-      update: { version: 1, configJson: newBabyTemplate },
-      create: { id: newBabyTemplate.id, version: 1, lifeEvent: "new_baby", configJson: newBabyTemplate },
+      update: { version: 1, lifeEvent: newBabyTemplate.lifeEvent, configJson: newBabyTemplate },
+      create: { id: newBabyTemplate.id, version: 1, lifeEvent: newBabyTemplate.lifeEvent, configJson: newBabyTemplate },
     });
-
-    const existing = await prisma.journeyInstance.findFirst({
-      where: { profileId: profile.id, templateId: newBabyTemplate.id, status: { not: "ABANDONED" } },
-      include: includeJourney,
-    });
-    if (existing) return mapJourney(existing, sessionId);
 
     const initial = newBabyTemplate.nodes.map((node, index) => ({
       nodeKey: node.key,
@@ -92,11 +108,27 @@ export class PrismaJourneyRepository implements JourneyRepository {
     }));
     const journey = await prisma.journeyInstance.create({
       data: {
-        profileId: profile.id,
-        templateId: newBabyTemplate.id,
+        profile: { connect: { id: profile.id } },
+        template: { connect: { id: newBabyTemplate.id } },
         templateVersion: 1,
         status: "ACTIVE",
+        subject: {
+          create: {
+            type: "CHILD" as const,
+            displayName: facts["child.name"]?.trim() || "Your baby",
+            dateOfBirth: validDate(facts["child.dateOfBirth"]),
+            profile: { connect: { id: profile.id } },
+          },
+        },
         nodes: { create: initial },
+        facts: {
+          create: Object.entries(facts).map(([key, valueJson]) => ({
+            key,
+            valueJson,
+            sourceType: "USER_CONFIRMED" as const,
+            confirmed: true,
+          })),
+        },
         edges: {
           create: newBabyTemplate.nodes.flatMap((node) =>
             (node.dependsOn ?? []).map((fromNodeKey) => ({ fromNodeKey, toNodeKey: node.key })),
@@ -106,6 +138,15 @@ export class PrismaJourneyRepository implements JourneyRepository {
       include: includeJourney,
     });
     return mapJourney(journey, sessionId);
+  }
+
+  async list(sessionId: string) {
+    const journeys = await getPrisma().journeyInstance.findMany({
+      where: { profile: { sessionId }, status: { not: "ABANDONED" } },
+      orderBy: { updatedAt: "desc" },
+      include: includeJourney,
+    });
+    return journeys.map((journey) => mapJourney(journey, sessionId));
   }
 
   async get(sessionId: string, id: string) {
@@ -121,13 +162,18 @@ export class PrismaJourneyRepository implements JourneyRepository {
     if (!journey) return null;
     const prisma = getPrisma();
     await prisma.$transaction(
-      Object.entries(facts).map(([key, valueJson]) =>
+      [
+        ...Object.entries(facts).map(([key, valueJson]) =>
         prisma.fact.upsert({
           where: { journeyId_key: { journeyId: id, key } },
           update: { valueJson, sourceType: "USER_CONFIRMED", confirmed: true },
           create: { journeyId: id, key, valueJson, sourceType: "USER_CONFIRMED", confirmed: true },
-        }),
-      ),
+        })),
+        ...(facts["child.name"]?.trim()
+          ? [prisma.journeySubject.update({ where: { id: journey.subject.id }, data: { displayName: facts["child.name"].trim() } })]
+          : []),
+        prisma.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } }),
+      ],
     );
     return this.get(sessionId, id);
   }
@@ -145,6 +191,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       existing && existing.responseJson && typeof existing.responseJson === "object" && "registrationId" in existing.responseJson
         ? String(existing.responseJson.registrationId)
         : "BR-DEMO-2026-7429";
+    const nextProjection = completeNode(journey.projection, "birth_registration");
 
     await prisma.$transaction(async (tx) => {
       if (!existing) {
@@ -160,14 +207,16 @@ export class PrismaJourneyRepository implements JourneyRepository {
           },
         });
       }
-      await tx.journeyNode.update({
-        where: { id: node.id },
-        data: { status: "COMPLETED", recommended: false, completedAt: new Date() },
-      });
-      await tx.journeyNode.updateMany({
-        where: { journeyId: id, status: "LOCKED" },
-        data: { status: "AVAILABLE" },
-      });
+      for (const projectedNode of nextProjection.nodes) {
+        await tx.journeyNode.update({
+          where: { journeyId_nodeKey: { journeyId: id, nodeKey: projectedNode.key } },
+          data: {
+            status: toDatabaseStatus(projectedNode.status),
+            recommended: projectedNode.recommended,
+            completedAt: projectedNode.status === "completed" ? new Date() : null,
+          },
+        });
+      }
       const document = await tx.outputDocument.findFirst({ where: { journeyId: id, nodeId: node.id, type: "birth_certificate" } });
       if (!document) {
         await tx.outputDocument.create({
@@ -176,6 +225,10 @@ export class PrismaJourneyRepository implements JourneyRepository {
       }
       await tx.auditEvent.create({
         data: { journeyId: id, actorType: "demo_user", eventType: "birth_registration_completed", payloadJson: { registrationId } },
+      });
+      await tx.journeyInstance.update({
+        where: { id },
+        data: { status: projectionIsComplete(nextProjection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() },
       });
     });
     return this.get(sessionId, id);
@@ -193,6 +246,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey]);
     const result = simulateExternalService(id, nodeKey);
     const nodeStatus = run.status === "completed" ? "COMPLETED" : run.status === "waiting_external" ? "WAITING_EXTERNAL" : "IN_PROGRESS";
+    const nextProjection = run.status === "completed" ? completeNode(journey.projection, nodeKey) : null;
 
     await prisma.$transaction(async (tx) => {
       await tx.externalAction.create({
@@ -206,10 +260,25 @@ export class PrismaJourneyRepository implements JourneyRepository {
           responseJson: { progress: run.progress, state: run.status, receipt: run.receipt, synthetic: true },
         },
       });
-      await tx.journeyNode.update({
-        where: { id: node.id },
-        data: { status: nodeStatus, recommended: false, completedAt: run.completedAt ? new Date(run.completedAt) : null },
-      });
+      if (nextProjection) {
+        for (const projectedNode of nextProjection.nodes) {
+          await tx.journeyNode.update({
+            where: { journeyId_nodeKey: { journeyId: id, nodeKey: projectedNode.key } },
+            data: {
+              status: toDatabaseStatus(projectedNode.status),
+              recommended: projectedNode.recommended,
+              completedAt: projectedNode.status === "completed"
+                ? (projectedNode.key === nodeKey && run.completedAt ? new Date(run.completedAt) : undefined)
+                : null,
+            },
+          });
+        }
+      } else {
+        await tx.journeyNode.update({
+          where: { id: node.id },
+          data: { status: nodeStatus, recommended: false, completedAt: null },
+        });
+      }
       await tx.fact.upsert({
         where: { journeyId_key: { journeyId: id, key: `service.${nodeKey}.run` } },
         update: { valueJson: JSON.stringify(run), sourceType: "DERIVED", confirmed: true },
@@ -230,6 +299,10 @@ export class PrismaJourneyRepository implements JourneyRepository {
       const latest = run.events.at(-1);
       await tx.auditEvent.create({
         data: { journeyId: id, actorType: "sandbox_adapter", eventType: `${nodeKey}_${latest?.stageKey ?? "advanced"}`, payloadJson: { runId: run.runId, progress: run.progress, status: run.status } },
+      });
+      await tx.journeyInstance.update({
+        where: { id },
+        data: { status: nextProjection && projectionIsComplete(nextProjection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() },
       });
     });
     return this.get(sessionId, id);

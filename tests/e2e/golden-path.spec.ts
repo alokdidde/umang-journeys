@@ -9,7 +9,7 @@ async function login(page: Page) {
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in to the evaluation" }).click();
-  await expect(page.getByRole("heading", { name: "Life happens. We guide you." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Life happens\. We guide you\.|Welcome back, Ananya\./ })).toBeVisible();
 }
 
 async function seedJourney(page: Page) {
@@ -93,6 +93,26 @@ test("newborn journey persists, completes every sandbox integration, downloads a
   await expect(page.getByText("Completed", { exact: true })).toHaveCount(6);
   await page.request.post("/api/demo/reset");
   expect((await page.request.get(`/api/journeys/${id}`)).status()).toBe(404);
+});
+
+test("home prioritises the saved child journey and keeps starting another one available", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  const id = await seedJourney(page);
+  await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, {
+    data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "home-registration" },
+  });
+
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Welcome back, Ananya." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "Aarav Sharma journey progress" })).toHaveAttribute("aria-valuenow", "17");
+  await expect(page.getByRole("link", { name: /Start next step/i })).toHaveAttribute("href", `/journeys/${id}/services/birth_certificate`);
+
+  await page.getByRole("button", { name: /Another baby journey/i }).click();
+  await expect(page).toHaveURL(/\/intake$/);
+  await page.request.post("/api/demo/reset");
 });
 
 test("authenticated workflow pages have no serious accessibility violations", async ({ page }) => {

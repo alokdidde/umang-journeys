@@ -38,37 +38,56 @@ enum ExternalActionStatus {
   FAILED
 }
 
+enum JourneySubjectType {
+  CHILD
+}
+
 model UserProfile {
-  id           String @id @default(cuid())
-  sessionId    String @unique
-  displayName  String
-  locale       String @default("en-IN")
-  stateCode    String
-  demoProfile  Boolean @default(true)
-  journeys     JourneyInstance[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String            @id @default(cuid())
+  sessionId   String            @unique
+  displayName String
+  locale      String            @default("en-IN")
+  stateCode   String
+  demoProfile Boolean           @default(true)
+  journeys    JourneyInstance[]
+  subjects    JourneySubject[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model JourneySubject {
+  id          String             @id @default(cuid())
+  profileId   String
+  type        JourneySubjectType
+  displayName String
+  dateOfBirth DateTime?
+  profile     UserProfile        @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  journeys    JourneyInstance[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 }
 
 model JourneyTemplate {
-  id          String @id
-  version     Int
-  lifeEvent   String
-  status      String @default("active")
-  configJson  Json
-  journeys    JourneyInstance[]
+  id         String            @id
+  version    Int
+  lifeEvent  String
+  status     String            @default("active")
+  configJson Json
+  journeys   JourneyInstance[]
 }
 
 model JourneyInstance {
-  id              String @id @default(cuid())
+  id              String           @id @default(cuid())
   profileId       String
   templateId      String
   templateVersion Int
-  status          JourneyStatus @default(DRAFT)
-  startedAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  profile         UserProfile @relation(fields: [profileId], references: [id])
-  template        JourneyTemplate @relation(fields: [templateId], references: [id])
+  subjectId       String
+  status          JourneyStatus    @default(DRAFT)
+  startedAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  profile         UserProfile      @relation(fields: [profileId], references: [id])
+  template        JourneyTemplate  @relation(fields: [templateId], references: [id])
+  subject         JourneySubject   @relation(fields: [subjectId], references: [id])
   nodes           JourneyNode[]
   edges           JourneyEdge[]
   facts           Fact[]
@@ -78,42 +97,44 @@ model JourneyInstance {
 }
 
 model JourneyNode {
-  id          String @id @default(cuid())
+  id          String           @id @default(cuid())
   journeyId   String
   nodeKey     String
   status      NodeStatus
-  recommended Boolean @default(false)
+  recommended Boolean          @default(false)
   completedAt DateTime?
-  journey     JourneyInstance @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  journey     JourneyInstance  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
   actions     ExternalAction[]
   documents   OutputDocument[]
+
   @@unique([journeyId, nodeKey])
 }
 
 model JourneyEdge {
-  id          String @id @default(cuid())
+  id          String          @id @default(cuid())
   journeyId   String
   fromNodeKey String
   toNodeKey   String
-  edgeType    String @default("hard")
+  edgeType    String          @default("hard")
   journey     JourneyInstance @relation(fields: [journeyId], references: [id], onDelete: Cascade)
 }
 
 model Fact {
-  id         String @id @default(cuid())
+  id         String          @id @default(cuid())
   journeyId  String
   key        String
   valueJson  Json
   confidence Float?
   sourceType SourceType
   sourceRef  String?
-  confirmed  Boolean @default(false)
+  confirmed  Boolean         @default(false)
   journey    JourneyInstance @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
   @@unique([journeyId, key])
 }
 
 model Evidence {
-  id           String @id @default(cuid())
+  id           String          @id @default(cuid())
   journeyId    String
   type         String
   provider     String
@@ -122,35 +143,35 @@ model Evidence {
 }
 
 model ExternalAction {
-  id             String @id @default(cuid())
+  id             String               @id @default(cuid())
   nodeId         String
   adapterKey     String
   actionType     String
   status         ExternalActionStatus
-  idempotencyKey String @unique
+  idempotencyKey String               @unique
   requestJson    Json
   responseJson   Json?
-  createdAt      DateTime @default(now())
-  node           JourneyNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  createdAt      DateTime             @default(now())
+  node           JourneyNode          @relation(fields: [nodeId], references: [id], onDelete: Cascade)
 }
 
 model OutputDocument {
-  id           String @id @default(cuid())
+  id           String          @id @default(cuid())
   journeyId    String
   nodeId       String
   type         String
-  synthetic    Boolean @default(true)
+  synthetic    Boolean         @default(true)
   metadataJson Json
   journey      JourneyInstance @relation(fields: [journeyId], references: [id], onDelete: Cascade)
-  node         JourneyNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  node         JourneyNode     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
 }
 
 model AuditEvent {
-  id        String @id @default(cuid())
-  journeyId String
-  actorType String
-  eventType String
+  id          String          @id @default(cuid())
+  journeyId   String
+  actorType   String
+  eventType   String
   payloadJson Json
-  createdAt DateTime @default(now())
-  journey   JourneyInstance @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime        @default(now())
+  journey     JourneyInstance @relation(fields: [journeyId], references: [id], onDelete: Cascade)
 }

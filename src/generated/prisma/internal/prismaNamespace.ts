@@ -398,6 +398,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   UserProfile: 'UserProfile',
+  JourneySubject: 'JourneySubject',
   JourneyTemplate: 'JourneyTemplate',
   JourneyInstance: 'JourneyInstance',
   JourneyNode: 'JourneyNode',
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "userProfile" | "journeyTemplate" | "journeyInstance" | "journeyNode" | "journeyEdge" | "fact" | "evidence" | "externalAction" | "outputDocument" | "auditEvent"
+    modelProps: "userProfile" | "journeySubject" | "journeyTemplate" | "journeyInstance" | "journeyNode" | "journeyEdge" | "fact" | "evidence" | "externalAction" | "outputDocument" | "auditEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -497,6 +498,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserProfileCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserProfileCountAggregateOutputType> | number
+        }
+      }
+    }
+    JourneySubject: {
+      payload: Prisma.$JourneySubjectPayload<ExtArgs>
+      fields: Prisma.JourneySubjectFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.JourneySubjectFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.JourneySubjectFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload>
+        }
+        findFirst: {
+          args: Prisma.JourneySubjectFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.JourneySubjectFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload>
+        }
+        findMany: {
+          args: Prisma.JourneySubjectFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload>[]
+        }
+        create: {
+          args: Prisma.JourneySubjectCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload>
+        }
+        createMany: {
+          args: Prisma.JourneySubjectCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.JourneySubjectCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload>[]
+        }
+        delete: {
+          args: Prisma.JourneySubjectDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload>
+        }
+        update: {
+          args: Prisma.JourneySubjectUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload>
+        }
+        deleteMany: {
+          args: Prisma.JourneySubjectDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.JourneySubjectUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.JourneySubjectUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload>[]
+        }
+        upsert: {
+          args: Prisma.JourneySubjectUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JourneySubjectPayload>
+        }
+        aggregate: {
+          args: Prisma.JourneySubjectAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateJourneySubject>
+        }
+        groupBy: {
+          args: Prisma.JourneySubjectGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.JourneySubjectGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.JourneySubjectCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.JourneySubjectCountAggregateOutputType> | number
         }
       }
     }
@@ -1219,6 +1294,19 @@ export const UserProfileScalarFieldEnum = {
 export type UserProfileScalarFieldEnum = (typeof UserProfileScalarFieldEnum)[keyof typeof UserProfileScalarFieldEnum]
 
 
+export const JourneySubjectScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  type: 'type',
+  displayName: 'displayName',
+  dateOfBirth: 'dateOfBirth',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type JourneySubjectScalarFieldEnum = (typeof JourneySubjectScalarFieldEnum)[keyof typeof JourneySubjectScalarFieldEnum]
+
+
 export const JourneyTemplateScalarFieldEnum = {
   id: 'id',
   version: 'version',
@@ -1235,6 +1323,7 @@ export const JourneyInstanceScalarFieldEnum = {
   profileId: 'profileId',
   templateId: 'templateId',
   templateVersion: 'templateVersion',
+  subjectId: 'subjectId',
   status: 'status',
   startedAt: 'startedAt',
   updatedAt: 'updatedAt'
@@ -1361,6 +1450,14 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -1368,14 +1465,6 @@ export const JsonNullValueFilter = {
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
-
-
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 
@@ -1416,6 +1505,20 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
  * Reference to a field of type 'DateTime[]'
  */
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'JourneySubjectType'
+ */
+export type EnumJourneySubjectTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'JourneySubjectType'>
+    
+
+
+/**
+ * Reference to a field of type 'JourneySubjectType[]'
+ */
+export type ListEnumJourneySubjectTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'JourneySubjectType[]'>
     
 
 
@@ -1668,6 +1771,7 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   userProfile?: Prisma.UserProfileOmit
+  journeySubject?: Prisma.JourneySubjectOmit
   journeyTemplate?: Prisma.JourneyTemplateOmit
   journeyInstance?: Prisma.JourneyInstanceOmit
   journeyNode?: Prisma.JourneyNodeOmit

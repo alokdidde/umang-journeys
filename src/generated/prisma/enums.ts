@@ -50,3 +50,10 @@ export const ExternalActionStatus = {
 } as const
 
 export type ExternalActionStatus = (typeof ExternalActionStatus)[keyof typeof ExternalActionStatus]
+
+
+export const JourneySubjectType = {
+  CHILD: 'CHILD'
+} as const
+
+export type JourneySubjectType = (typeof JourneySubjectType)[keyof typeof JourneySubjectType]

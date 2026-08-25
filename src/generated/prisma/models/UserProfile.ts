@@ -207,6 +207,7 @@ export type UserProfileWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"UserProfile"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"UserProfile"> | Date | string
   journeys?: Prisma.JourneyInstanceListRelationFilter
+  subjects?: Prisma.JourneySubjectListRelationFilter
 }
 
 export type UserProfileOrderByWithRelationInput = {
@@ -219,6 +220,7 @@ export type UserProfileOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   journeys?: Prisma.JourneyInstanceOrderByRelationAggregateInput
+  subjects?: Prisma.JourneySubjectOrderByRelationAggregateInput
 }
 
 export type UserProfileWhereUniqueInput = Prisma.AtLeast<{
@@ -234,6 +236,7 @@ export type UserProfileWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"UserProfile"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"UserProfile"> | Date | string
   journeys?: Prisma.JourneyInstanceListRelationFilter
+  subjects?: Prisma.JourneySubjectListRelationFilter
 }, "id" | "sessionId">
 
 export type UserProfileOrderByWithAggregationInput = {
@@ -274,6 +277,7 @@ export type UserProfileCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   journeys?: Prisma.JourneyInstanceCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateInput = {
@@ -286,6 +290,7 @@ export type UserProfileUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   journeys?: Prisma.JourneyInstanceUncheckedCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUpdateInput = {
@@ -298,6 +303,7 @@ export type UserProfileUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeys?: Prisma.JourneyInstanceUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateInput = {
@@ -310,6 +316,7 @@ export type UserProfileUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeys?: Prisma.JourneyInstanceUncheckedUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileCreateManyInput = {
@@ -395,6 +402,20 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type UserProfileCreateNestedOneWithoutSubjectsInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutSubjectsInput, Prisma.UserProfileUncheckedCreateWithoutSubjectsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutSubjectsInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+}
+
+export type UserProfileUpdateOneRequiredWithoutSubjectsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutSubjectsInput, Prisma.UserProfileUncheckedCreateWithoutSubjectsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutSubjectsInput
+  upsert?: Prisma.UserProfileUpsertWithoutSubjectsInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutSubjectsInput, Prisma.UserProfileUpdateWithoutSubjectsInput>, Prisma.UserProfileUncheckedUpdateWithoutSubjectsInput>
+}
+
 export type UserProfileCreateNestedOneWithoutJourneysInput = {
   create?: Prisma.XOR<Prisma.UserProfileCreateWithoutJourneysInput, Prisma.UserProfileUncheckedCreateWithoutJourneysInput>
   connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutJourneysInput
@@ -409,6 +430,70 @@ export type UserProfileUpdateOneRequiredWithoutJourneysNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutJourneysInput, Prisma.UserProfileUpdateWithoutJourneysInput>, Prisma.UserProfileUncheckedUpdateWithoutJourneysInput>
 }
 
+export type UserProfileCreateWithoutSubjectsInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileUncheckedCreateWithoutSubjectsInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileCreateOrConnectWithoutSubjectsInput = {
+  where: Prisma.UserProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutSubjectsInput, Prisma.UserProfileUncheckedCreateWithoutSubjectsInput>
+}
+
+export type UserProfileUpsertWithoutSubjectsInput = {
+  update: Prisma.XOR<Prisma.UserProfileUpdateWithoutSubjectsInput, Prisma.UserProfileUncheckedUpdateWithoutSubjectsInput>
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutSubjectsInput, Prisma.UserProfileUncheckedCreateWithoutSubjectsInput>
+  where?: Prisma.UserProfileWhereInput
+}
+
+export type UserProfileUpdateToOneWithWhereWithoutSubjectsInput = {
+  where?: Prisma.UserProfileWhereInput
+  data: Prisma.XOR<Prisma.UserProfileUpdateWithoutSubjectsInput, Prisma.UserProfileUncheckedUpdateWithoutSubjectsInput>
+}
+
+export type UserProfileUpdateWithoutSubjectsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileUncheckedUpdateWithoutSubjectsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedUpdateManyWithoutProfileNestedInput
+}
+
 export type UserProfileCreateWithoutJourneysInput = {
   id?: string
   sessionId: string
@@ -418,6 +503,7 @@ export type UserProfileCreateWithoutJourneysInput = {
   demoProfile?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  subjects?: Prisma.JourneySubjectCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateWithoutJourneysInput = {
@@ -429,6 +515,7 @@ export type UserProfileUncheckedCreateWithoutJourneysInput = {
   demoProfile?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  subjects?: Prisma.JourneySubjectUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileCreateOrConnectWithoutJourneysInput = {
@@ -456,6 +543,7 @@ export type UserProfileUpdateWithoutJourneysInput = {
   demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subjects?: Prisma.JourneySubjectUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateWithoutJourneysInput = {
@@ -467,6 +555,7 @@ export type UserProfileUncheckedUpdateWithoutJourneysInput = {
   demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subjects?: Prisma.JourneySubjectUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 
@@ -476,10 +565,12 @@ export type UserProfileUncheckedUpdateWithoutJourneysInput = {
 
 export type UserProfileCountOutputType = {
   journeys: number
+  subjects: number
 }
 
 export type UserProfileCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   journeys?: boolean | UserProfileCountOutputTypeCountJourneysArgs
+  subjects?: boolean | UserProfileCountOutputTypeCountSubjectsArgs
 }
 
 /**
@@ -499,6 +590,13 @@ export type UserProfileCountOutputTypeCountJourneysArgs<ExtArgs extends runtime.
   where?: Prisma.JourneyInstanceWhereInput
 }
 
+/**
+ * UserProfileCountOutputType without action
+ */
+export type UserProfileCountOutputTypeCountSubjectsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.JourneySubjectWhereInput
+}
+
 
 export type UserProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -510,6 +608,7 @@ export type UserProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   createdAt?: boolean
   updatedAt?: boolean
   journeys?: boolean | Prisma.UserProfile$journeysArgs<ExtArgs>
+  subjects?: boolean | Prisma.UserProfile$subjectsArgs<ExtArgs>
   _count?: boolean | Prisma.UserProfileCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userProfile"]>
 
@@ -549,6 +648,7 @@ export type UserProfileSelectScalar = {
 export type UserProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "displayName" | "locale" | "stateCode" | "demoProfile" | "createdAt" | "updatedAt", ExtArgs["result"]["userProfile"]>
 export type UserProfileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   journeys?: boolean | Prisma.UserProfile$journeysArgs<ExtArgs>
+  subjects?: boolean | Prisma.UserProfile$subjectsArgs<ExtArgs>
   _count?: boolean | Prisma.UserProfileCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserProfileIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -558,6 +658,7 @@ export type $UserProfilePayload<ExtArgs extends runtime.Types.Extensions.Interna
   name: "UserProfile"
   objects: {
     journeys: Prisma.$JourneyInstancePayload<ExtArgs>[]
+    subjects: Prisma.$JourneySubjectPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -963,6 +1064,7 @@ readonly fields: UserProfileFieldRefs;
 export interface Prisma__UserProfileClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   journeys<T extends Prisma.UserProfile$journeysArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$journeysArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JourneyInstancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  subjects<T extends Prisma.UserProfile$subjectsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$subjectsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JourneySubjectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1414,6 +1516,30 @@ export type UserProfile$journeysArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.JourneyInstanceScalarFieldEnum | Prisma.JourneyInstanceScalarFieldEnum[]
+}
+
+/**
+ * UserProfile.subjects
+ */
+export type UserProfile$subjectsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the JourneySubject
+   */
+  select?: Prisma.JourneySubjectSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the JourneySubject
+   */
+  omit?: Prisma.JourneySubjectOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.JourneySubjectInclude<ExtArgs> | null
+  where?: Prisma.JourneySubjectWhereInput
+  orderBy?: Prisma.JourneySubjectOrderByWithRelationInput | Prisma.JourneySubjectOrderByWithRelationInput[]
+  cursor?: Prisma.JourneySubjectWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.JourneySubjectScalarFieldEnum | Prisma.JourneySubjectScalarFieldEnum[]
 }
 
 /**

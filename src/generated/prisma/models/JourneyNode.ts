@@ -410,10 +410,6 @@ export type EnumNodeStatusFieldUpdateOperationsInput = {
   set?: $Enums.NodeStatus
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type JourneyNodeCreateNestedOneWithoutActionsInput = {
   create?: Prisma.XOR<Prisma.JourneyNodeCreateWithoutActionsInput, Prisma.JourneyNodeUncheckedCreateWithoutActionsInput>
   connectOrCreate?: Prisma.JourneyNodeCreateOrConnectWithoutActionsInput

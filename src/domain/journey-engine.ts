@@ -12,6 +12,7 @@ export type ServiceNodeDefinition = {
   title: string;
   description: string;
   icon: "baby" | "certificate" | "health" | "vaccine" | "identity" | "benefits";
+  timing: string;
   dependsOn?: string[];
 };
 
@@ -40,12 +41,12 @@ export const newBabyTemplate: JourneyTemplate = {
   lifeEvent: "having_a_baby",
   title: "Having a Baby",
   nodes: [
-    { key: "birth_registration", title: "Birth registration", description: "Register your baby's birth with the local authority.", icon: "baby" },
-    { key: "birth_certificate", title: "Birth certificate", description: "Receive the child's synthetic birth record.", icon: "certificate", dependsOn: ["birth_registration"] },
-    { key: "child_health_record", title: "Child health record", description: "Create your child's digital health record.", icon: "health", dependsOn: ["birth_registration"] },
-    { key: "vaccination_timeline", title: "Vaccination timeline", description: "Plan and track essential vaccinations.", icon: "vaccine", dependsOn: ["birth_registration"] },
-    { key: "child_identity", title: "Child identity", description: "Preview identity-document next steps.", icon: "identity", dependsOn: ["birth_registration"] },
-    { key: "eligible_benefits", title: "Eligible benefits", description: "Discover relevant family benefits.", icon: "benefits", dependsOn: ["birth_registration"] },
+    { key: "birth_registration", title: "Birth registration", description: "Register your baby's birth with the local authority.", icon: "baby", timing: "Complete as soon as possible" },
+    { key: "birth_certificate", title: "Birth certificate", description: "Receive the child's synthetic birth record.", icon: "certificate", timing: "Ready after registration", dependsOn: ["birth_registration"] },
+    { key: "child_health_record", title: "Child health record", description: "Create your child's digital health record.", icon: "health", timing: "Recommended in the first weeks", dependsOn: ["birth_registration"] },
+    { key: "vaccination_timeline", title: "Vaccination timeline", description: "Plan and track essential vaccinations.", icon: "vaccine", timing: "Next milestone at 6 weeks", dependsOn: ["birth_registration"] },
+    { key: "child_identity", title: "Child identity", description: "Preview identity-document next steps.", icon: "identity", timing: "Prepare after birth registration", dependsOn: ["birth_registration"] },
+    { key: "eligible_benefits", title: "Eligible benefits", description: "Discover relevant family benefits.", icon: "benefits", timing: "Review within the first 90 days", dependsOn: ["birth_registration"] },
   ],
 };
 
