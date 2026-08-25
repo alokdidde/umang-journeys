@@ -53,7 +53,7 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Demo controls stay visually secondary to citizen tasks.
 
 ## Screen structure
-- The signed-out front door is one illustrated Poster Fold: one promise, one short explanation, and one pre-filled demo sign-in form in a single vertical gateway. It must not become an editorial split, feature grid, or long marketing page.
+- The signed-out front door is one illustrated Poster Fold: one promise, one short explanation, and one pre-filled demo sign-in form on a shared foreground axis. The background scenery may stay asymmetric, but the headline and form share a left edge and width. It must not become an editorial split, feature grid, or long marketing page.
 - Home shows one saved journey and its next action before anything else.
 - Home ignores completed journeys when choosing the next action; when all work is done, it shows one “all caught up” state linked to the archive.
 - Starting another journey is collapsed by default.

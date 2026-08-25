@@ -1,6 +1,6 @@
 /* tastemaker · macrostructure: Guided Citizen Lane (app) + Poster Fold (signed-out) · mood: calm, clear, humane · page: complete product
  * arc: signed-out promise -> stakes -> one-step solution -> demo access; app next action -> optional detail -> record history
- * nav: N1 signed-out + familiar app top bar · hero: H5 · close: C1 · knobs: single-fold/illustration-bleed/focused-form
+ * nav: N1 signed-out + familiar app top bar · hero: H5 · close: C1 · knobs: single-fold/illustration-bleed/shared-foreground-axis
  * palette: locked UMANG · contrast: pass
  * critique: ShowTell 4 · Phil 5 · Hier 5 · Spec 5 · Restr 5 · Var 5 */
 @import "tailwindcss";
@@ -1301,12 +1301,12 @@ button,a,summary { touch-action:manipulation; }
 .login-header .prototype-pill { color:var(--text); background:var(--soft-blue); border-color:var(--line); }
 .login-page { min-height:calc(100svh - 72px); display:grid; place-items:center; padding:46px 24px 58px; background:var(--soft-blue); }
 .login-scene { inset:0; opacity:.52; background-position:center bottom; }
-.signed-out-gateway { position:relative; z-index:1; width:min(680px,100%); display:grid; gap:28px; }
-.login-promise { max-width:650px; padding-left:28px; border-left:3px solid var(--blue); animation:welcome-rise 240ms cubic-bezier(.23,1,.32,1) both; }
+.signed-out-gateway { position:relative; z-index:1; width:min(620px,100%); display:grid; gap:24px; }
+.login-promise { width:100%; animation:welcome-rise 240ms cubic-bezier(.23,1,.32,1) both; }
 .login-promise > p:first-child { margin:0 0 12px; color:var(--text); font-size:12px; font-weight:750; letter-spacing:.055em; text-transform:uppercase; }
 .login-promise h1 { max-width:640px; margin:0; color:var(--navy); font-size:clamp(42px,4.5vw,58px); line-height:1.04; letter-spacing:-.052em; text-wrap:balance; }
 .login-promise > p:last-child { max-width:610px; margin:16px 0 0; color:var(--text); font-size:16px; line-height:1.65; }
-.login-card { justify-self:end; width:min(520px,calc(100% - 28px)); padding:28px; text-align:left; border-color:var(--line); background:rgba(255,255,255,.96); box-shadow:0 18px 54px rgba(27,52,87,.13); animation:welcome-rise 260ms 60ms cubic-bezier(.23,1,.32,1) both; }
+.login-card { justify-self:start; width:100%; padding:28px; text-align:left; border-color:var(--line); background:rgba(255,255,255,.96); box-shadow:0 18px 54px rgba(27,52,87,.13); animation:welcome-rise 260ms 60ms cubic-bezier(.23,1,.32,1) both; }
 .login-card-heading { display:grid; grid-template-columns:44px minmax(0,1fr); gap:14px; align-items:start; margin-bottom:22px; }
 .login-card-heading .login-lock { width:44px; height:44px; margin:0; border-radius:12px; color:#fff; background:var(--blue); box-shadow:0 7px 16px rgba(24,88,214,.2); }
 .login-card-heading .login-lock svg { width:20px; }
@@ -1361,7 +1361,7 @@ button,a,summary { touch-action:manipulation; }
   .login-page { min-height:calc(100svh - 64px); align-items:start; padding:28px 14px 38px; }
   .login-scene { opacity:.24; background-size:960px auto; background-position:left -90px bottom; }
   .signed-out-gateway { gap:20px; }
-  .login-promise { padding-left:16px; }
+  .login-promise { padding-left:0; }
   .login-promise > p:first-child { margin-bottom:9px; font-size:10px; }
   .login-promise h1 { font-size:38px; line-height:1.06; }
   .login-promise > p:last-child { margin-top:12px; font-size:14px; line-height:1.55; }

@@ -68,5 +68,15 @@
     "footer": "none",
     "knobs": "low-density/two-part-forms/progressive-disclosure/one-action-completion",
     "brief": "UMANG Journeys · simplify every entry, detail, evidence, service, and completion screen without removing inspectability"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "signed-out homepage alignment refinement",
+    "macrostructure": "Poster Fold",
+    "nav": "N1 minimal wordmark with one evaluation-status label",
+    "hero": "H5 asymmetric scenery framing one shared foreground axis",
+    "footer": "none; C1 sign-in form is the close",
+    "knobs": "single-fold/illustration-bleed/shared-axis/left-aligned-content/low-motion",
+    "brief": "UMANG Journeys · preserve the illustrated welcome while making the promise and demo form read as one stable composition"
   }
 ]
