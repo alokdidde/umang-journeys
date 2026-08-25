@@ -180,6 +180,74 @@ test("home prioritises the saved child journey and keeps starting another one av
   await page.request.post("/api/demo/reset");
 });
 
+test("Show my steps accepts either a description or a document with context", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  await page.reload();
+
+  await page.getByLabel("Tell us what happened").fill("We moved to a rented home in Hyderabad.");
+  await page.getByRole("button", { name: "Show my steps" }).click();
+  await expect(page).toHaveURL(/\/intake$/);
+
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "What do you need help with?" })).toBeVisible();
+  const created = await page.request.post("/api/journeys", {
+    data: {
+      templateId: "vehicle-purchase.india.v1",
+      facts: { "vehicle.registrationNumber": "TS09EV4321", "vehicle.makeModel": "Tata Nexon EV" },
+    },
+  });
+  const { id } = await created.json() as { id: string };
+  let analysisPayload = "";
+
+  await page.route("**/api/assistant/documents", async (route) => {
+    analysisPayload = route.request().postData() ?? "";
+    await route.fulfill({
+      contentType: "application/json",
+      status: 201,
+      body: JSON.stringify({
+        document: {
+          id: "home-composer-document",
+          status: "proposed",
+          fileName: "registration-certificate.pdf",
+          mimeType: "application/pdf",
+          size: 28,
+          source: "user_upload",
+          analysis: { kind: "vehicle_rc", confidence: 0.97, fields: { registrationNumber: "TS09EV4321", makeModel: "Tata Nexon EV" } },
+          proposal: {
+            action: "update_vehicle_journey",
+            canApply: true,
+            targetJourneyId: id,
+            title: "Update Tata Nexon EV",
+            description: "Attach this RC and update the matching vehicle details.",
+            toolName: "updateVehicleFromRC",
+            changes: [{ label: "Registration number", value: "TS09EV4321" }, { label: "Vehicle", value: "Tata Nexon EV" }],
+          },
+          appliedJourneyId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      }),
+    });
+  });
+  await page.route("**/api/assistant/documents/home-composer-document/decision", async (route) => {
+    await route.fulfill({ contentType: "application/json", status: 200, body: JSON.stringify({ journeyId: id, message: "The RC was attached." }) });
+  });
+
+  await page.getByLabel("Tell us what happened").fill("This is the registration certificate for the car I just bought.");
+  await page.locator('.journey-composer input[type="file"]').setInputFiles({
+    name: "registration-certificate.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n%%EOF"),
+  });
+  await page.getByRole("button", { name: "Show my steps" }).click();
+  await expect(page.getByRole("heading", { name: "Update Tata Nexon EV" })).toBeVisible();
+  expect(analysisPayload).toContain("This is the registration certificate for the car I just bought.");
+  await page.getByRole("button", { name: "Approve and show my steps" }).click();
+  await expect(page).toHaveURL(new RegExp(`/journeys/${id}$`));
+  await page.request.post("/api/demo/reset");
+});
+
 test("journey CTA advances past a completed birth certificate", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");

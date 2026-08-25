@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Activity, ArrowRight, CheckCircle2, Files, LoaderCircle, Plus, Route, Search, Sparkles } from "lucide-react";
+import { Activity, ArrowRight, CheckCircle2, Files, LoaderCircle, Plus, Route, Sparkles } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { lifeEvents } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
 import type { JourneySummary } from "@/domain/journey-summary";
 import { JourneyCard } from "@/components/journey-card";
+import { JourneyStarterComposer } from "@/components/journey-starter-composer";
 
 type JourneyListResponse = { journeys: JourneySummary[] };
 
@@ -97,11 +98,7 @@ function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; 
         <div className="eyebrow"><Sparkles size={16} /> Citizen services, reorganised around you</div>
         <h1>What do you need help with?</h1>
         <p>Describe a life event, and we’ll show the government services and steps that apply.</p>
-        <form className="life-search" onSubmit={(event) => { event.preventDefault(); start(); }}>
-          <Search aria-hidden="true" />
-          <input aria-label="Describe your life event" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="I had a baby, we moved home, I bought a vehicle…" />
-          <button type="submit" className="life-search-submit">Show my steps<ArrowRight /></button>
-        </form>
+        <JourneyStarterComposer query={query} setQuery={setQuery} start={start} />
         {loadError && <p className="workflow-error" role="alert">{loadError}</p>}
       </section>
       <p className="event-grid-label content-layer">Or choose a life event</p>

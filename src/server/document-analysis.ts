@@ -79,6 +79,7 @@ export async function analyzeUploadedDocument(file: {
   fileName: string;
   mimeType: string;
   bytes: Uint8Array;
+  context?: string;
 }): Promise<DocumentAnalysis> {
   validateDocumentFile(file);
   if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) return filenameFallback(file.fileName);
@@ -92,7 +93,7 @@ export async function analyzeUploadedDocument(file: {
         content: [
           {
             type: "text",
-            text: "Classify this Indian citizen-service document. Extract only visibly supported fields. Return vehicle_rc, vaccination_receipt, insurance_policy for motor cover, health_insurance_policy for personal health cover, hospital_discharge_summary, residence_proof for address evidence, business_premises_proof for a commercial premises document, retirement_account_statement for EPFO/EPS/NPS records, or unknown. Dates must use YYYY-MM-DD. Never invent an identifier, person, vaccine, policy, date, provider, diagnosis, entitlement, eligibility, or confidence.",
+            text: `Classify this Indian citizen-service document. Extract only visibly supported fields. Return vehicle_rc, vaccination_receipt, insurance_policy for motor cover, health_insurance_policy for personal health cover, hospital_discharge_summary, residence_proof for address evidence, business_premises_proof for a commercial premises document, retirement_account_statement for EPFO/EPS/NPS records, or unknown. Dates must use YYYY-MM-DD. Never invent an identifier, person, vaccine, policy, date, provider, diagnosis, entitlement, eligibility, or confidence.${file.context ? ` The citizen added this context: "${file.context}". Use it only to understand the intended document category; do not treat it as evidence and do not extract facts unless they are visible in the document.` : ""}`,
           },
           { type: "file", mediaType: file.mimeType, data: file.bytes, filename: file.fileName },
         ],

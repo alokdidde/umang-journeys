@@ -28,6 +28,7 @@ export async function POST(request: Request) {
   try {
     const form = await request.formData();
     const sampleType = String(form.get("sampleType") ?? "");
+    const context = String(form.get("context") ?? "").trim().slice(0, 300);
     let fileName: string;
     let mimeType: string;
     let bytes: Uint8Array;
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
       mimeType = file.type;
       bytes = new Uint8Array(await file.arrayBuffer());
       source = "user_upload";
-      analysis = await analyzeUploadedDocument({ fileName, mimeType, bytes });
+      analysis = await analyzeUploadedDocument({ fileName, mimeType, bytes, context });
     }
 
     const record = await documentAssistant.propose(sessionId, { fileName, mimeType, bytes, source, analysis });

@@ -31,6 +31,7 @@ describe("document analysis boundary", () => {
       fileName: "vaccination-receipt.pdf",
       mimeType: "application/pdf",
       bytes: new Uint8Array(Buffer.from("%PDF synthetic")),
+      context: "This is for Aarav and was given yesterday.",
     });
 
     expect(result).toEqual({ kind: "vaccination_receipt", confidence: 0.55, fields: {} });
