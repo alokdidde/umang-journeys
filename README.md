@@ -14,8 +14,8 @@ Open <http://localhost:3000>. The typed path and deterministic resolver work wit
 Sign in with the single local evaluation account:
 
 ```text
-Email: ananya@umang.local
-Password: UmangDemo!2026
+Email: demo@umang.com
+Password: demo1234
 ```
 
 There is deliberately no registration flow. For a shared deployment, set `EVALUATION_USER_EMAIL`, `EVALUATION_USER_PASSWORD_HASH`, and a strong `SESSION_SECRET`; do not use the local password. Generate a scrypt hash with:

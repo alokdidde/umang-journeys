@@ -22,7 +22,7 @@ export function getEvaluationAccount(): EvaluationAccount {
     throw new Error("EVALUATION_USER_EMAIL and EVALUATION_USER_PASSWORD_HASH are required in production.");
   }
   return {
-    email: "ananya@umang.local",
-    passwordHash: createPasswordHash("UmangDemo!2026", "umang-local-evaluation-account"),
+    email: "demo@umang.com",
+    passwordHash: createPasswordHash("demo1234", "umang-local-evaluation-account"),
   };
 }

@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const email = "ananya@umang.local";
-const password = "UmangDemo!2026";
+const email = "demo@umang.com";
+const password = "demo1234";
 
 async function login(page: Page) {
   await page.goto("/login");
