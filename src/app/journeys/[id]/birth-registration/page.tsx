@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowRight,
   Baby,
@@ -24,16 +25,25 @@ const wards = [
 ];
 
 export default function RegistrationPage() {
-  const { state, dispatch } = useJourney();
+  const { state, dispatch, loadJourney, submitRegistration } = useJourney();
   const router = useRouter();
+  const { id } = useParams<{ id: string }>();
   const answered = Number(Boolean(state.form.childName.trim())) + Number(Boolean(state.form.localWard));
 
-  function submit(event: React.FormEvent) {
+  useEffect(() => {
+    if (id && state.journeyId !== id) void loadJourney(id);
+  }, [id, loadJourney, state.journeyId]);
+
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     const valid = state.form.childName.trim() && state.form.localWard.trim();
     dispatch({ type: "submit_registration" });
-    if (valid) router.push("/journeys/demo-new-baby/success");
+    if (!valid) return;
+    if (await submitRegistration(id)) router.push(`/journeys/${id}/success`);
   }
+
+  if (state.pending && state.journeyId !== id) return <main className="page workflow-state"><p>Loading the prepared application…</p></main>;
+  if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>We couldn’t load this application.</h1><p>{state.error}</p></main>;
 
   return (
     <main className="page ai-registration-page">
@@ -124,10 +134,11 @@ export default function RegistrationPage() {
               <span><strong>{answered} of 2</strong> answers added</span>
               <span className="meter-track"><i data-ready={answered} /></span>
             </div>
-            <button type="submit" className="primary-cta" aria-label="Submit Demo Registration">
-              Review &amp; create demo record <ArrowRight />
+            <button type="submit" className="primary-cta" aria-label="Submit Sandbox Registration" disabled={state.pending}>
+              {state.pending ? "Contacting registry sandbox…" : "Review & create sandbox record"} <ArrowRight />
             </button>
           </div>
+          {state.error && <p className="workflow-error in-panel" role="alert">{state.error}</p>}
           <p className="nothing-sent"><ShieldCheck /> Nothing has been submitted. This prototype uses synthetic data only.</p>
         </form>
 

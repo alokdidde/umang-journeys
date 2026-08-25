@@ -12,14 +12,25 @@ const choices = [
 ];
 
 export default function IntakePage() {
-  const { state, dispatch } = useJourney();
+  const { state, dispatch, createJourney } = useJourney();
   const router = useRouter();
   async function buildJourney() {
     if (!state.hospitalRegistered) return;
     try {
-      await fetch("/api/intake/resolve", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ statement: state.statement }) });
-    } finally {
-      router.push("/journeys/demo-new-baby");
+      const response = await fetch("/api/intake/resolve", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ statement: state.statement }) });
+      const resolved = await response.json() as { facts?: Array<{ key: string; value: string }>; message?: string; resolver?: string };
+      if (!response.ok) throw new Error(resolved.message ?? "We could not understand that life event.");
+      const facts = Object.fromEntries((resolved.facts ?? []).map((fact) => [fact.key, fact.value]));
+      const journeyId = await createJourney({
+        ...facts,
+        "intake.statement": state.statement,
+        "birth.registeredByHospital": state.hospitalRegistered,
+        "intake.resolver": resolved.resolver ?? "deterministic",
+        "hospital.name": /apollo/i.test(state.statement) ? "Apollo Hospital" : "Hospital record",
+      });
+      if (journeyId) router.push(`/journeys/${journeyId}`);
+    } catch (error) {
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Journey could not be created." });
     }
   }
   return (
@@ -54,7 +65,8 @@ export default function IntakePage() {
             </div>
           </div>
           {!state.hospitalRegistered && <p className="inline-prompt">Choose one answer to continue.</p>}
-          <div className="right-cta"><button type="button" className="primary-cta" disabled={!state.hospitalRegistered} onClick={buildJourney}>Build My Journey<ArrowRight /></button><small>We’ll use your answers to build the right journey for you.</small></div>
+          {state.error && <p className="workflow-error" role="alert">{state.error}</p>}
+          <div className="right-cta"><button type="button" className="primary-cta" disabled={!state.hospitalRegistered || state.pending} onClick={buildJourney}>{state.pending ? "Building your journey…" : "Build My Journey"}<ArrowRight /></button><small>We’ll use your answers to build the right journey for you.</small></div>
         </section>
       </div>
     </main>

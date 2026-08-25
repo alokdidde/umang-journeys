@@ -1,5 +1,6 @@
 import { completeNode, compileJourney, newBabyTemplate, type JourneyProjection } from "@/domain/journey-engine";
 import { PrismaJourneyRepository } from "@/server/repositories/prisma-journey-repository";
+import { isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
 
 export type StoredJourney = { id: string; sessionId: string; projection: JourneyProjection; facts: Record<string, string>; registrationId?: string };
 
@@ -8,6 +9,7 @@ export interface JourneyRepository {
   get(sessionId: string, id: string): Promise<StoredJourney | null>;
   updateFacts(sessionId: string, id: string, facts: Record<string, string>): Promise<StoredJourney | null>;
   completeRegistration(sessionId: string, id: string, idempotencyKey: string): Promise<StoredJourney | null>;
+  completeService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string): Promise<StoredJourney | null>;
   reset(sessionId: string): Promise<void>;
 }
 
@@ -35,6 +37,25 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const registrationId = idempotency.get(scopedKey) ?? "BR-DEMO-2026-7429";
     idempotency.set(scopedKey, registrationId);
     const updated = { ...journey, registrationId, projection: completeNode(journey.projection, "birth_registration") };
+    journeys.set(`${sessionId}:${id}`, updated);
+    return updated;
+  }
+  async completeService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
+    const journey = await this.get(sessionId, id);
+    const node = journey?.projection.nodes.find((candidate) => candidate.key === nodeKey);
+    if (!journey || !node || node.status === "locked" || !isSandboxServiceKey(nodeKey)) return null;
+    const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
+    const result = simulateExternalService(id, nodeKey);
+    idempotency.set(scopedKey, result.receipt);
+    const updated = {
+      ...journey,
+      projection: completeNode(journey.projection, nodeKey),
+      facts: {
+        ...journey.facts,
+        [`service.${nodeKey}.receipt`]: idempotency.get(scopedKey) ?? result.receipt,
+        [`service.${nodeKey}.summary`]: result.summary,
+      },
+    };
     journeys.set(`${sessionId}:${id}`, updated);
     return updated;
   }

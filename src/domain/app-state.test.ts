@@ -2,18 +2,51 @@ import { describe, expect, it } from "vitest";
 import { appReducer, pristineState } from "./app-state";
 
 describe("demo journey state", () => {
+  it("hydrates the active journey from the server projection", () => {
+    const serverProjection = {
+      ...pristineState.projection,
+      nodes: pristineState.projection.nodes.map((node) =>
+        node.key === "birth_registration" ? { ...node, status: "completed" as const } : node,
+      ),
+    };
+    const state = appReducer(pristineState, {
+      type: "server_journey_loaded",
+      journey: {
+        id: "journey-123",
+        projection: serverProjection,
+        facts: { "child.name": "Aarav Sharma", "birth.place.ward": "Ward 72 — Serilingampally" },
+        registrationId: "BR-2026-1234",
+      },
+    });
+
+    expect(state.journeyId).toBe("journey-123");
+    expect(state.form).toEqual({ childName: "Aarav Sharma", localWard: "Ward 72 — Serilingampally" });
+    expect(state.registrationId).toBe("BR-2026-1234");
+    expect(state.projection.nodes[0]?.status).toBe("completed");
+  });
+
   it("blocks registration when the two required fields are missing", () => {
     const state = appReducer(pristineState, { type: "submit_registration" });
     expect(state.formErrors).toEqual({ childName: "Enter the child's name", localWard: "Select a ward or area" });
     expect(state.registrationId).toBeNull();
   });
 
-  it("completes registration once the two fields are present", () => {
+  it("waits for server confirmation after validating the two fields", () => {
     const withName = appReducer(pristineState, { type: "set_field", field: "childName", value: "Aarav Sharma" });
     const complete = appReducer(withName, { type: "set_field", field: "localWard", value: "Ward 72 — Serilingampally" });
     const submitted = appReducer(complete, { type: "submit_registration" });
 
-    expect(submitted.registrationId).toBe("BR-DEMO-2026-7429");
-    expect(submitted.projection.nodes.find((node) => node.key === "birth_registration")?.status).toBe("completed");
+    expect(submitted.registrationId).toBeNull();
+    expect(submitted.projection.nodes.find((node) => node.key === "birth_registration")?.status).toBe("in_progress");
+    expect(submitted.formErrors).toEqual({});
+  });
+
+  it("exposes recoverable server failures without discarding answers", () => {
+    const withName = appReducer(pristineState, { type: "set_field", field: "childName", value: "Aarav Sharma" });
+    const failed = appReducer(withName, { type: "operation_failed", message: "Registry sandbox is temporarily unavailable." });
+
+    expect(failed.error).toBe("Registry sandbox is temporarily unavailable.");
+    expect(failed.pending).toBe(false);
+    expect(failed.form.childName).toBe("Aarav Sharma");
   });
 });

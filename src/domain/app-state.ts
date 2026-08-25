@@ -1,16 +1,27 @@
-import { compileJourney, completeNode, newBabyTemplate, type JourneyProjection } from "./journey-engine";
+import { compileJourney, newBabyTemplate, type JourneyProjection } from "./journey-engine";
 
 export type RegistrationForm = { childName: string; localWard: string };
 export type FormErrors = Partial<Record<keyof RegistrationForm, string>>;
 
 export type AppState = {
   hydrated: boolean;
+  journeyId: string | null;
+  pending: boolean;
+  error: string | null;
   statement: string;
   hospitalRegistered: "yes" | "not_sure" | "no" | null;
   projection: JourneyProjection;
   form: RegistrationForm;
+  facts: Record<string, string>;
   formErrors: FormErrors;
   registrationId: string | null;
+};
+
+export type ServerJourney = {
+  id: string;
+  projection: JourneyProjection;
+  facts: Record<string, string>;
+  registrationId?: string;
 };
 
 export type AppAction =
@@ -19,16 +30,23 @@ export type AppAction =
   | { type: "set_hospital_registered"; value: "yes" | "not_sure" | "no" }
   | { type: "set_field"; field: keyof RegistrationForm; value: string }
   | { type: "submit_registration" }
+  | { type: "server_journey_loaded"; journey: ServerJourney }
+  | { type: "operation_started" }
+  | { type: "operation_failed"; message: string }
   | { type: "reset" };
 
 export const goldenStatement = "We had a baby yesterday at Apollo Hospital in Hyderabad.";
 
 export const pristineState: AppState = {
   hydrated: false,
+  journeyId: null,
+  pending: false,
+  error: null,
   statement: goldenStatement,
   hospitalRegistered: null,
   projection: compileJourney(newBabyTemplate),
   form: { childName: "", localWard: "" },
+  facts: {},
   formErrors: {},
   registrationId: null,
 };
@@ -55,10 +73,27 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         formErrors: {},
-        registrationId: "BR-DEMO-2026-7429",
-        projection: completeNode(state.projection, "birth_registration"),
       };
     }
+    case "server_journey_loaded":
+      return {
+        ...state,
+        hydrated: true,
+        pending: false,
+        error: null,
+        journeyId: action.journey.id,
+        projection: action.journey.projection,
+        facts: action.journey.facts,
+        form: {
+          childName: action.journey.facts["child.name"] ?? state.form.childName,
+          localWard: action.journey.facts["birth.place.ward"] ?? state.form.localWard,
+        },
+        registrationId: action.journey.registrationId ?? null,
+      };
+    case "operation_started":
+      return { ...state, pending: true, error: null };
+    case "operation_failed":
+      return { ...state, pending: false, error: action.message };
     case "reset":
       return { ...pristineState, hydrated: true };
   }

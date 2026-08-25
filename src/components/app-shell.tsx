@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { CircleHelp, RotateCcw, ShieldCheck } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { CircleHelp, LogOut, RotateCcw, ShieldCheck } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useJourney } from "./journey-provider";
 
 export function Brand() {
@@ -15,20 +15,28 @@ export function Brand() {
 }
 
 export function AppHeader() {
-  const { dispatch } = useJourney();
+  const { resetJourney } = useJourney();
   const router = useRouter();
-  function reset() {
-    dispatch({ type: "reset" });
+  const pathname = usePathname();
+  async function reset() {
+    await resetJourney();
     router.push("/");
+  }
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
   }
   return (
     <header className="app-header">
       <Brand />
       <div className="header-actions">
-        <span className="prototype-pill"><ShieldCheck size={15} /> Prototype</span>
-        <button className="header-button" type="button" onClick={reset}><RotateCcw size={17} /> Reset demo</button>
-        <button className="header-button" type="button"><CircleHelp size={18} /> Help</button>
-        <span className="avatar" aria-label="Synthetic demo profile">AS</span>
+        {pathname === "/login" ? <span className="prototype-pill"><ShieldCheck size={15} /> Evaluation access</span> : <>
+          <span className="prototype-pill"><ShieldCheck size={15} /> Sandbox</span>
+          <button className="header-button" type="button" onClick={reset}><RotateCcw size={17} /> Reset journey</button>
+          <button className="header-button" type="button"><CircleHelp size={18} /> Help</button>
+          <button className="avatar avatar-button" type="button" onClick={logout} aria-label="Sign out Ananya Sharma"><span>AS</span><LogOut /></button>
+        </>}
       </div>
     </header>
   );

@@ -1,13 +1,21 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, LockKeyhole, MapPin, Users } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { journeyIcons } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
 
 export default function JourneyRevealPage() {
-  const { state } = useJourney();
+  const { state, loadJourney } = useJourney();
+  const { id } = useParams<{ id: string }>();
+  useEffect(() => {
+    if (id && state.journeyId !== id) void loadJourney(id);
+  }, [id, loadJourney, state.journeyId]);
+  if (state.pending && state.journeyId !== id) return <main className="page workflow-state"><p>Loading your journey…</p></main>;
+  if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>We couldn’t load this journey.</h1><p>{state.error}</p><Link href="/intake" className="primary-cta">Start again</Link></main>;
   const [registration, certificate, ...downstream] = state.projection.nodes;
   return (
     <main className="page journey-page">
@@ -30,17 +38,21 @@ export default function JourneyRevealPage() {
           <div className="downstream-list">
             {downstream.map((node, index) => {
               const Icon = journeyIcons[node.icon];
-              return <article key={node.key} className="compact-node" title={node.status === "locked" ? "Complete birth registration first" : undefined}><span className="node-number">{index + 3}</span><span className={`event-icon tone-${index}`}><Icon /></span><div><strong>{node.title}</strong><p>{node.description}</p></div><span className="status locked"><LockKeyhole />Locked</span></article>;
+              const contents = <><span className="node-number">{index + 3}</span><span className={`event-icon tone-${index}`}><Icon /></span><div><strong>{node.title}</strong><p>{node.description}</p></div><span className={`status ${node.status}`}>{node.status === "locked" && <LockKeyhole />}{node.status === "locked" ? "Locked" : node.status === "completed" ? "Completed" : "Available"}</span></>;
+              return node.status === "locked"
+                ? <article key={node.key} className="compact-node" title="Complete birth registration first">{contents}</article>
+                : <Link key={node.key} href={`/journeys/${id}/services/${node.key}`} className="compact-node service-node-link">{contents}</Link>;
             })}
           </div>
         </div>
       </section>
-      <div className="primary-cta-wrap content-layer"><Link href="/journeys/demo-new-baby/birth-registration" className="primary-cta"><Baby />Review Birth Registration<ArrowRight /></Link><TrustNote>Your information is synthetic and encrypted in this demo.</TrustNote></div>
+      <div className="primary-cta-wrap content-layer"><Link href={`/journeys/${id}/birth-registration`} className="primary-cta"><Baby />Review Birth Registration<ArrowRight /></Link><TrustNote>Your information stays within this evaluation sandbox.</TrustNote></div>
     </main>
   );
 }
 
 function GraphNode({ node, number }: { node: ReturnType<typeof useJourney>["state"]["projection"]["nodes"][number]; number: number }) {
   const Icon = journeyIcons[node.icon];
-  return <article className={`graph-node ${node.status}`}><span className="node-number">{number}</span><span className="event-icon rose"><Icon /></span><strong>{node.title}</strong><p>{node.description}</p><span className={`status ${node.status}`}>{node.status === "locked" ? <LockKeyhole /> : null}{node.status === "in_progress" ? "In progress" : "Complete registration first"}</span></article>;
+  const label = node.status === "locked" ? "Complete registration first" : node.status === "completed" ? "Completed" : node.status === "in_progress" ? "In progress" : "Available";
+  return <article className={`graph-node ${node.status}`}><span className="node-number">{number}</span><span className="event-icon rose"><Icon /></span><strong>{node.title}</strong><p>{node.description}</p><span className={`status ${node.status}`}>{node.status === "locked" ? <LockKeyhole /> : null}{label}</span></article>;
 }

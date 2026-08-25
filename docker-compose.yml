@@ -24,8 +24,10 @@ services:
       DATABASE_URL: postgresql://umang:umang@postgres:5432/umang
       PERSISTENCE_MODE: postgres
       SESSION_SECRET: local-docker-demo-secret-change-before-public-use
+      EVALUATION_USER_EMAIL: ${EVALUATION_USER_EMAIL:-ananya@umang.local}
+      EVALUATION_USER_PASSWORD_HASH: ${EVALUATION_USER_PASSWORD_HASH:-umang-local-evaluation-account:7cdaaf3f0d9be60c9110be7b3f91f261fd0c3e0b9516e7cca0742b263329562117c9fa209c2970b3a922fdcfbabad9a0f79372dca3a00895e1404f3242e41515}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_INTAKE_MODEL: ${OPENAI_INTAKE_MODEL:-gpt-5.6-terra}
     ports:
       - "3000:3000"
 

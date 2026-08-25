@@ -17,7 +17,25 @@ export const intakeSchema = z.object({
   }),
 });
 
-export type IntakeResult = z.infer<typeof intakeSchema> & { resolver: "openai" | "deterministic" };
+export type IntakeResult = z.infer<typeof intakeSchema> & { resolver: "ai_gateway" | "openai" | "deterministic" };
+
+type IntakeEnvironment = Partial<Record<"AI_GATEWAY_API_KEY" | "VERCEL_OIDC_TOKEN" | "OPENAI_API_KEY" | "AI_INTAKE_MODEL", string>>;
+
+export function createIntakeClientConfig(environment: IntakeEnvironment) {
+  const gatewayKey = environment.AI_GATEWAY_API_KEY ?? environment.VERCEL_OIDC_TOKEN;
+  if (gatewayKey) return {
+    apiKey: gatewayKey,
+    baseURL: "https://ai-gateway.vercel.sh/v1",
+    model: environment.AI_INTAKE_MODEL ?? "openai/gpt-5.5",
+    resolver: "ai_gateway" as const,
+  };
+  if (environment.OPENAI_API_KEY) return {
+    apiKey: environment.OPENAI_API_KEY,
+    model: environment.AI_INTAKE_MODEL ?? "gpt-5.5",
+    resolver: "openai" as const,
+  };
+  return null;
+}
 
 export function deterministicResolve(statement: string): IntakeResult {
   const normalized = statement.toLowerCase();
@@ -39,11 +57,17 @@ export function deterministicResolve(statement: string): IntakeResult {
 }
 
 export async function resolveIntake(statement: string): Promise<IntakeResult> {
-  if (!process.env.OPENAI_API_KEY) return deterministicResolve(statement);
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 5_000, maxRetries: 1 });
+  const config = createIntakeClientConfig({
+    AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+    VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    AI_INTAKE_MODEL: process.env.AI_INTAKE_MODEL,
+  });
+  if (!config) return deterministicResolve(statement);
+  const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL, timeout: 5_000, maxRetries: 1 });
   try {
     const response = await client.responses.parse({
-      model: process.env.OPENAI_INTAKE_MODEL ?? "gpt-5.6-terra",
+      model: config.model,
       input: [
         { role: "developer", content: "Extract only facts explicitly stated or safely normalized. This prototype supports the Having a Baby life event. Never infer official status, eligibility, approval, or identity data. Resolve relative dates against 2026-08-25." },
         { role: "user", content: statement },
@@ -51,7 +75,7 @@ export async function resolveIntake(statement: string): Promise<IntakeResult> {
       text: { format: zodTextFormat(intakeSchema, "umang_intake") },
     });
     if (!response.output_parsed) return deterministicResolve(statement);
-    return { ...response.output_parsed, resolver: "openai" };
+    return { ...response.output_parsed, resolver: config.resolver };
   } catch {
     return deterministicResolve(statement);
   }

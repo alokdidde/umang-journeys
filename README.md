@@ -1,6 +1,6 @@
 # UMANG Journeys
 
-A citizen-first prototype that reorganises services around life events. Round 1 implements a complete, synthetic **Having a Baby** journey.
+A citizen-first evaluation app that reorganises services around life events. It implements a complete, synthetic **Having a Baby** journey with persisted workflow state and simulated external-service adapters.
 
 ## Run locally
 
@@ -9,7 +9,33 @@ pnpm install
 pnpm dev
 ```
 
-Open <http://localhost:3000>. The typed path and deterministic resolver work without credentials. Add `OPENAI_API_KEY` to `.env.local` to enable structured AI intake; the app falls back automatically after five seconds or any invalid response.
+Open <http://localhost:3000>. The typed path and deterministic resolver work without AI credentials. Add `AI_GATEWAY_API_KEY` to `.env.local` to enable structured AI intake; the app falls back automatically after five seconds or any invalid response.
+
+Sign in with the single local evaluation account:
+
+```text
+Email: ananya@umang.local
+Password: UmangDemo!2026
+```
+
+There is deliberately no registration flow. For a shared deployment, set `EVALUATION_USER_EMAIL`, `EVALUATION_USER_PASSWORD_HASH`, and a strong `SESSION_SECRET`; do not use the local password. Generate a scrypt hash with:
+
+```bash
+node -e "const {randomBytes,scryptSync}=require('node:crypto');const p=process.argv[1],s=randomBytes(16).toString('hex');console.log(s+':'+scryptSync(p,s,64).toString('hex'))" 'replace-with-a-strong-password'
+```
+
+## AI intake
+
+The preferred configuration is Vercel AI Gateway:
+
+```text
+AI_GATEWAY_API_KEY=...
+AI_INTAKE_MODEL=openai/gpt-5.5
+```
+
+`VERCEL_OIDC_TOKEN` is also recognized on Vercel. A direct `OPENAI_API_KEY` remains supported; omit `AI_INTAKE_MODEL` to use the provider-appropriate default. Never commit API keys. If a key has been pasted into a chat or log, rotate it before deployment.
+
+Without AI credentials, the constrained deterministic resolver keeps the evaluation workflow usable.
 
 ## Run the Docker handoff
 
@@ -17,7 +43,11 @@ Open <http://localhost:3000>. The typed path and deterministic resolver work wit
 docker compose up --build
 ```
 
-This starts PostgreSQL, applies the Prisma schema, and runs the API with the PostgreSQL repository. The demo UI also keeps a browser projection so the no-login golden path remains instant and resettable.
+This starts PostgreSQL, applies the Prisma schema, and runs the app with the PostgreSQL repository. Journey facts, node completions, sandbox receipts, audit events, and generated-document metadata are server-authoritative and survive refreshes.
+
+## Simulated integrations
+
+The evaluation executes explicit sandbox adapters for civil registration, birth certificate issuance, ABDM-style health records, U-WIN-style vaccination planning, identity guidance, and benefit matching. Every result is clearly marked synthetic, receives a deterministic `SBX-…` receipt, is persisted, and can be reset. No government or third-party production system is contacted.
 
 ## Verify
 

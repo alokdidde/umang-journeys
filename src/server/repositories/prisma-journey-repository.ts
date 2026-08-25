@@ -1,6 +1,7 @@
 import { newBabyTemplate, type JourneyProjection, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
 import type { JourneyRepository, StoredJourney } from "@/server/repositories/journey-repository";
+import { isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
 
 type DatabaseJourney = Awaited<ReturnType<ReturnType<typeof getPrisma>["journeyInstance"]["findFirst"]>>;
 
@@ -162,6 +163,51 @@ export class PrismaJourneyRepository implements JourneyRepository {
       }
       await tx.auditEvent.create({
         data: { journeyId: id, actorType: "demo_user", eventType: "birth_registration_completed", payloadJson: { registrationId } },
+      });
+    });
+    return this.get(sessionId, id);
+  }
+
+  async completeService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
+    const journey = await this.get(sessionId, id);
+    const projectedNode = journey?.projection.nodes.find((candidate) => candidate.key === nodeKey);
+    if (!journey || !projectedNode || projectedNode.status === "locked" || !isSandboxServiceKey(nodeKey)) return null;
+    const prisma = getPrisma();
+    const node = await prisma.journeyNode.findUniqueOrThrow({ where: { journeyId_nodeKey: { journeyId: id, nodeKey } } });
+    const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
+    const existing = await prisma.externalAction.findUnique({ where: { idempotencyKey: scopedKey } });
+    const result = simulateExternalService(id, nodeKey);
+
+    await prisma.$transaction(async (tx) => {
+      if (!existing) {
+        await tx.externalAction.create({
+          data: {
+            nodeId: node.id,
+            adapterKey: result.adapterKey,
+            actionType: result.actionType,
+            status: "SUCCEEDED",
+            idempotencyKey: scopedKey,
+            requestJson: { synthetic: true },
+            responseJson: { receipt: result.receipt, summary: result.summary, synthetic: true },
+          },
+        });
+      }
+      await tx.journeyNode.update({
+        where: { id: node.id },
+        data: { status: "COMPLETED", recommended: false, completedAt: new Date() },
+      });
+      for (const [key, valueJson] of [
+        [`service.${nodeKey}.receipt`, result.receipt],
+        [`service.${nodeKey}.summary`, result.summary],
+      ]) {
+        await tx.fact.upsert({
+          where: { journeyId_key: { journeyId: id, key } },
+          update: { valueJson, sourceType: "DERIVED", confirmed: true },
+          create: { journeyId: id, key, valueJson, sourceType: "DERIVED", confirmed: true },
+        });
+      }
+      await tx.auditEvent.create({
+        data: { journeyId: id, actorType: "demo_user", eventType: `${nodeKey}_completed`, payloadJson: { receipt: result.receipt } },
       });
     });
     return this.get(sessionId, id);

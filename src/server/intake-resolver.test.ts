@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deterministicResolve } from "./intake-resolver";
+import { createIntakeClientConfig, deterministicResolve } from "./intake-resolver";
 
 describe("deterministic intake fallback", () => {
   it("extracts the golden Hyderabad newborn fixture", () => {
@@ -14,5 +14,14 @@ describe("deterministic intake fallback", () => {
 
   it("rejects unsupported life events clearly", () => {
     expect(() => deterministicResolve("I bought a car.")).toThrow("currently supports Having a Baby");
+  });
+
+  it("prefers Vercel AI Gateway configuration when its key is available", () => {
+    expect(createIntakeClientConfig({ AI_GATEWAY_API_KEY: "gateway-key", OPENAI_API_KEY: "direct-key" })).toEqual({
+      apiKey: "gateway-key",
+      baseURL: "https://ai-gateway.vercel.sh/v1",
+      model: "openai/gpt-5.5",
+      resolver: "ai_gateway",
+    });
   });
 });
