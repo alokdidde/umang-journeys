@@ -152,6 +152,58 @@ test("journey CTA advances past a completed birth certificate", async ({ page })
   await page.request.post("/api/demo/reset");
 });
 
+test("every new life event starts the correct journey and opens its profile step", async ({ page }) => {
+  await login(page);
+  const scenarios = [
+    {
+      lifeEvent: /Moving Home/i,
+      question: "Do you have a document for the new address?",
+      journeyHeading: "New home in Hyderabad",
+      profileLink: "Confirm your move",
+      profileHeading: "Where are you moving?",
+      templateId: "moving-home.india.v1",
+      firstNode: "move_profile",
+    },
+    {
+      lifeEvent: /Starting a Business/i,
+      question: "Do you have a document for the principal place of business?",
+      journeyHeading: "Ananya Design Studio",
+      profileLink: "Confirm the business",
+      profileHeading: "What business are you starting?",
+      templateId: "business-setup.india.v1",
+      firstNode: "business_profile",
+    },
+    {
+      lifeEvent: /Retirement/i,
+      question: "Do you have a provident-fund, NPS, or pension statement?",
+      journeyHeading: "Ananya Sharma",
+      profileLink: "Confirm your retirement",
+      profileHeading: "What does retirement look like for you?",
+      templateId: "retirement.india.v1",
+      firstNode: "retirement_profile",
+    },
+  ] as const;
+
+  for (const scenario of scenarios) {
+    await page.request.post("/api/demo/reset");
+    await page.goto("/");
+    await page.getByRole("button", { name: scenario.lifeEvent }).click();
+    await expect(page.getByRole("heading", { name: scenario.question })).toBeVisible();
+    await page.getByRole("button", { name: "Not sure" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
+    const id = page.url().split("/").at(-1)!;
+    const saved = await (await page.request.get(`/api/journeys/${id}`)).json() as {
+      projection: { templateId: string; nodes: Array<{ key: string; status: string }> };
+    };
+    expect(saved.projection.templateId).toBe(scenario.templateId);
+    expect(saved.projection.nodes[0]).toMatchObject({ key: scenario.firstNode, status: "in_progress" });
+    await page.getByRole("link", { name: scenario.profileLink, exact: true }).click();
+    await expect(page.getByRole("heading", { name: scenario.profileHeading })).toBeVisible();
+  }
+  await page.request.post("/api/demo/reset");
+});
+
 test("a vehicle journey completes with real sample evidence while a baby journey keeps its own next action", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");
