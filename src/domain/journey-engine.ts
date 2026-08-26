@@ -178,7 +178,7 @@ export const vehiclePurchaseTemplate: JourneyTemplate = {
   lifeEvent: "buying_a_vehicle",
   title: "Buying a Vehicle",
   branches: [
-    { key: "vehicle_record", title: "Vehicle record", description: "Confirm the vehicle that this journey follows.", requirement: "required" },
+    { key: "vehicle_record", title: "Vehicle record", description: "Confirm which vehicle these steps are for.", requirement: "required" },
     { key: "ownership", title: "Ownership", description: "Prepare the ownership transfer.", requirement: "required" },
     { key: "protection", title: "Insurance", description: "Confirm the cover needed before driving.", requirement: "required" },
     { key: "road_readiness", title: "Road readiness", description: "Keep recurring compliance dates together.", requirement: "required" },
@@ -221,7 +221,7 @@ export const healthInsuranceTemplate: JourneyTemplate = {
   lifeEvent: "managing_health_cover",
   title: "Health & Insurance",
   branches: [
-    { key: "person_profile", title: "Person", description: "Confirm whose cover and care this journey follows.", requirement: "required" },
+    { key: "person_profile", title: "Person", description: "Confirm whose cover and care these steps are for.", requirement: "required" },
     { key: "cover_readiness", title: "Cover readiness", description: "Understand current cover and prepare for cashless care.", requirement: "required" },
     { key: "public_cover", title: "Public schemes", description: "Check a possible government cover pathway.", requirement: "optional" },
     { key: "digital_records", title: "Digital records", description: "Prepare ABHA and consent-aware record linking.", requirement: "optional" },

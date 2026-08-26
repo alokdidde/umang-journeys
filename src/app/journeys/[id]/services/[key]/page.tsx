@@ -101,9 +101,9 @@ export default function SandboxServicePage() {
   }, [run?.status]);
 
   if (state.journeyId !== id && !state.error) return <main className="page workflow-state"><LoaderCircle className="service-spinner" /><p>Loading service workspace…</p></main>;
-  if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>Unable to load this service.</h1><p>{state.error}</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
-  if (!definition || !validKey || !node || node.action === "none") return <main className="page workflow-state"><h1>Service not found</h1><p>This journey does not include that service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
-  if (node?.status === "locked") return <main className="page workflow-state"><LockKeyhole /><h1>This service is still locked.</h1><p>Complete the previous journey step before using this service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
+  if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>Unable to load this service.</h1><p>{state.error}</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to overview</Link></main>;
+  if (!definition || !validKey || !node || node.action === "none") return <main className="page workflow-state"><h1>Service not found</h1><p>This record does not include that service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to overview</Link></main>;
+  if (node?.status === "locked") return <main className="page workflow-state"><LockKeyhole /><h1>This service is still locked.</h1><p>Complete the previous step before using this service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to overview</Link></main>;
 
   const completed = run?.status === "completed";
   const guidance = guidanceLinks[validKey] ?? (node.source ? { label: `Open ${node.source.authority} guidance`, href: node.source.href } : undefined);
@@ -117,7 +117,7 @@ export default function SandboxServicePage() {
     <main className="page service-page">
       <div className="service-shell">
         <nav className="service-navigation" aria-label="Service navigation">
-          <Link href={`/journeys/${id}`} className="floating-back"><ArrowLeft />Back to journey</Link>
+          <Link href={`/journeys/${id}`} className="floating-back"><ArrowLeft />Back to overview</Link>
           <span><Bot />AI-reviewed synthetic agency</span>
         </nav>
 
@@ -194,7 +194,7 @@ export default function SandboxServicePage() {
         {completed ? (
           <div className="service-footer-actions">
             <Link className="primary-cta" href={`/api/journeys/${id}/services/${validKey}/download`} prefetch={false}><FileDown />Download service record</Link>
-            <Link className="secondary-button" href={`/journeys/${id}`}><Check />Continue journey</Link>
+            <Link className="secondary-button" href={`/journeys/${id}`}><Check />Return to overview</Link>
           </div>
         ) : null}
       </div>

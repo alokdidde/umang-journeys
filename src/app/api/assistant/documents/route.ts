@@ -111,7 +111,7 @@ export async function POST(request: Request) {
     if (journeyDocumentKinds.has(expectedKind) && analysis.kind !== expectedKind) {
       return NextResponse.json({
         code: "DOCUMENT_KIND_MISMATCH",
-        message: `AI identified ${documentKindLabels[analysis.kind] ?? "a different document"}. Add ${documentKindLabels[expectedKind]} for this journey, or go back and choose the matching journey. Nothing was saved.`,
+        message: `AI identified ${documentKindLabels[analysis.kind] ?? "a different document"}. Add ${documentKindLabels[expectedKind]} here, or go back and choose the matching person or thing. Nothing was saved.`,
       }, { status: 422 });
     }
 

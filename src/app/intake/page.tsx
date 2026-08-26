@@ -58,14 +58,14 @@ function apiError(value: unknown) {
   if (typeof value === "object" && value !== null) {
     const message = "message" in value && typeof value.message === "string" ? value.message : null;
     const code = "code" in value && typeof value.code === "string" ? value.code : null;
-    if (code === "AI_GATEWAY_NOT_CONFIGURED") return "The AI assistant is not available in this demo right now. Nothing was saved and no journey was created.";
+    if (code === "AI_GATEWAY_NOT_CONFIGURED") return "The AI assistant is not available in this demo right now. Nothing was saved or added to My life.";
     if (message) return message;
   }
   return "AI could not analyse that request. Please try again.";
 }
 
 export default function IntakePage() {
-  return <Suspense fallback={<main className="page workflow-state"><LoaderCircle className="service-spinner" /><p>Opening your journey…</p></main>}><IntakeFlow /></Suspense>;
+  return <Suspense fallback={<main className="page workflow-state"><LoaderCircle className="service-spinner" /><p>Getting things ready…</p></main>}><IntakeFlow /></Suspense>;
 }
 
 function IntakeFlow() {
@@ -174,7 +174,7 @@ function IntakeFlow() {
       }, meta.templateId);
       if (journeyId) router.push(`/journeys/${journeyId}`);
     } catch (caught) {
-      dispatch({ type: "operation_failed", message: caught instanceof Error ? caught.message : "Journey could not be created." });
+      dispatch({ type: "operation_failed", message: caught instanceof Error ? caught.message : "This could not be added to My life." });
     }
   }
 
@@ -189,9 +189,9 @@ function IntakeFlow() {
       <section className="intake-content">
         <div className="intake-topline"><Link href="/" className="back-link"><ArrowLeft />Back</Link></div>
         <header className="screen-heading intake-heading">
-          <p className="eyebrow"><HeadingIcon />{experience ? `${experience.label} journey` : "Find the right journey"}</p>
+          <p className="eyebrow"><HeadingIcon />{experience ? experience.label : "Tell us what changed"}</p>
           <h1>{analysis.phase === "ready" && meta ? `Check the ${meta.shortLabel} details` : title}</h1>
-          <p>{analysis.phase === "ready" ? "We found these details in your description. Check them, then answer one question before the journey is created." : description}</p>
+          <p>{analysis.phase === "ready" ? "We found these details in your description. Check them, then answer one question before this is added to My life." : description}</p>
         </header>
 
         {analysis.phase === "idle" && !waitingForAutomaticAnalysis ? <JourneyStarterComposer
@@ -229,7 +229,7 @@ function IntakeFlow() {
           </section>
 
           <section className="panel intake-next-question" aria-labelledby="intake-question-title">
-            <div className="question-title"><span><ShieldCheck /></span><div><p>One detail needed</p><h2 id="intake-question-title">{resolution.clarification.question}</h2><small>{asksForParents ? "Each parent will get a separate journey, evidence record and eligibility check." : "Choose “Not sure” if you do not have the document with you."}</small></div></div>
+            <div className="question-title"><span><ShieldCheck /></span><div><p>One detail needed</p><h2 id="intake-question-title">{resolution.clarification.question}</h2><small>{asksForParents ? "Each parent will keep a separate record, evidence and eligibility check." : "Choose “Not sure” if you do not have the document with you."}</small></div></div>
             <div className="choice-row">
               {resolution.clarification.key === "health.subjects"
                 ? resolution.clarification.choices.map((value) => <button type="button" className={parentSelection === value ? "selected" : ""} aria-pressed={parentSelection === value} onClick={() => setParentSelection(value)} key={value}><UserRound />{choiceLabels[value]}</button>)
@@ -240,7 +240,7 @@ function IntakeFlow() {
             </div>
           </section>
           {state.error ? <p className="workflow-error" role="alert">{state.error}</p> : null}
-          <div className="intake-create-action"><button type="button" className="primary-cta" disabled={!clarificationAnswer || state.pending} onClick={buildJourney}>{state.pending ? "Creating your journey…" : `Create ${meta.shortLabel} journey`}{state.pending ? <LoaderCircle className="service-spinner" /> : <ArrowRight />}</button><small><Check />You will review every service step before anything is sent.</small></div>
+          <div className="intake-create-action"><button type="button" className="primary-cta" disabled={!clarificationAnswer || state.pending} onClick={buildJourney}>{state.pending ? "Adding to My life…" : `Add ${meta.shortLabel} to My life`}{state.pending ? <LoaderCircle className="service-spinner" /> : <ArrowRight />}</button><small><Check />You will review every service step before anything is sent.</small></div>
         </> : null}
       </section>
     </div>

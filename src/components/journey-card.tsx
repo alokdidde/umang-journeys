@@ -13,12 +13,12 @@ export function JourneyCard({ journey }: { journey: JourneySummary }) {
         <div><p>{journey.title}</p><h3>{journey.subject.displayName}</h3></div>
       </header>
       <div className="home-progress-copy"><span>{journey.progress.completed} of {journey.progress.total} steps complete</span><strong>{journey.progress.percent}%</strong></div>
-      <div className="home-progress-track" role="progressbar" aria-label={`${journey.subject.displayName} journey progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={journey.progress.percent}><span style={{ width: `${journey.progress.percent}%` }} /></div>
+      <div className="home-progress-track" role="progressbar" aria-label={`${journey.subject.displayName} progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={journey.progress.percent}><span style={{ width: `${journey.progress.percent}%` }} /></div>
       {action ? <div className="next-action-block">
         <span className={`next-action-icon ${action.status}`}><ActionIcon nodeKey={action.nodeKey} /></span>
         <div><small>Next step</small><h4>{action.title}</h4><p>{action.description}</p></div>
         <Link className="primary-cta" href={action.href}>{action.status === "available" ? "Start" : "Continue"}<ArrowRight /></Link>
-      </div> : <div className="next-action-block complete"><span className="next-action-icon completed"><Check /></span><div><small>All caught up</small><h4>This journey is complete</h4><p>Your records remain available whenever you need them.</p></div><Link className="secondary-button" href={`/journeys/${journey.id}`}>View journey<ArrowRight /></Link></div>}
+      </div> : <div className="next-action-block complete"><span className="next-action-icon completed"><Check /></span><div><small>All caught up</small><h4>Nothing required right now</h4><p>Your records and future responsibilities remain available.</p></div><Link className="secondary-button" href={`/journeys/${journey.id}`}>Open {journey.subject.displayName}<ArrowRight /></Link></div>}
     </article>
   );
 }

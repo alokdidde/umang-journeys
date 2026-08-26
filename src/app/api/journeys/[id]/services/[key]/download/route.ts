@@ -19,7 +19,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   page.drawRectangle({ x: 36, y: 52, width: 523, height: 738, borderColor: rgb(0.16, 0.38, 0.78), borderWidth: 1.2 });
-  page.drawText("UMANG JOURNEYS · SYNTHETIC SERVICE RECORD", { x: 58, y: 752, size: 9, font: bold, color: rgb(0.72, 0.17, 0.2) });
+  page.drawText("UMANG LIFE · SYNTHETIC SERVICE RECORD", { x: 58, y: 752, size: 9, font: bold, color: rgb(0.72, 0.17, 0.2) });
   page.drawText(run.artifact.title, { x: 58, y: 716, size: 19, font: bold, color: rgb(0.06, 0.13, 0.27) });
   page.drawText(run.artifact.subtitle.slice(0, 86), { x: 58, y: 692, size: 9, font: regular, color: rgb(0.34, 0.4, 0.5) });
   page.drawText(`${run.artifact.referenceLabel}: ${run.artifact.referenceValue}`, { x: 58, y: 655, size: 11, font: bold, color: rgb(0.1, 0.28, 0.57) });

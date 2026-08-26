@@ -1,6 +1,6 @@
-# UMANG Journeys
+# UMANG Life
 
-UMANG Journeys organises public services around a person’s life event and preserves their progress across the services involved.
+UMANG Life organises public services around the people, things and responsibilities in a person’s life, and preserves progress across the services involved. `Journey` remains the internal domain term for one persisted service-coordination record; citizen-facing copy names the concrete person or thing instead.
 
 ## Language
 

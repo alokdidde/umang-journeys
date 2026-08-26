@@ -9,9 +9,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 
 export function Brand() {
   return (
-    <Link href="/" className="brand" aria-label="UMANG Journeys home">
+    <Link href="/" className="brand" aria-label="UMANG Life home">
       <span className="brand-mark" aria-hidden="true"><i /><b /></span>
-      <span><strong>UMANG</strong><small>Journeys</small></span>
+      <span><strong>UMANG</strong><small>Life</small></span>
     </Link>
   );
 }
@@ -70,9 +70,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     utterance.lang = locale;
     window.speechSynthesis.speak(utterance);
   }
-  const labels = locale === "hi-IN" ? { home: "होम", journeys: "यात्राएँ", documents: "दस्तावेज़", activity: "काम", reset: "रीसेट", help: "सहायता", signOut: "साइन आउट" } : { home: "Home", journeys: "Journeys", documents: "Documents", activity: "Activity", reset: "Reset", help: "Help", signOut: "Sign out" };
+  const labels = locale === "hi-IN" ? { home: "होम", life: "मेरा जीवन", documents: "दस्तावेज़", activity: "काम", reset: "रीसेट", help: "सहायता", signOut: "साइन आउट" } : { home: "Home", life: "My life", documents: "Documents", activity: "Activity", reset: "Reset", help: "Help", signOut: "Sign out" };
   if (pathname === "/login") {
-    return <><header className="login-header"><Brand /><nav className="public-header-nav" aria-label="On this page"><a href="#why-umang">Why UMANG</a><a href="#how-it-works">How it works</a><a href="#journeys">Journeys</a></nav><div className="public-header-actions"><span className="prototype-pill"><ShieldCheck size={15} /> Evaluation demo</span><a className="public-header-action" href="#demo-access"><span>Open demo</span><ArrowRight size={16} /></a></div></header><div id="main-content" tabIndex={-1}>{children}</div></>;
+    return <><header className="login-header"><Brand /><nav className="public-header-nav" aria-label="On this page"><a href="#why-umang">Why UMANG</a><a href="#how-it-works">How it works</a><a href="#journeys">What it covers</a></nav><div className="public-header-actions"><span className="prototype-pill"><ShieldCheck size={15} /> Evaluation demo</span><a className="public-header-action" href="#demo-access"><span>Open demo</span><ArrowRight size={16} /></a></div></header><div id="main-content" tabIndex={-1}>{children}</div></>;
   }
 
   return (
@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Brand />
         <nav className="primary-navigation" aria-label="Primary navigation">
           <NavLink href="/" label={labels.home} icon={<House />} active={pathname === "/"} />
-          <NavLink href="/journeys" label={labels.journeys} icon={<Route />} active={pathname.startsWith("/journeys")} />
+          <NavLink href="/journeys" label={labels.life} icon={<Route />} active={pathname.startsWith("/journeys")} />
           <NavLink href="/documents" label={labels.documents} icon={<Files />} active={pathname.startsWith("/documents")} />
           <NavLink href="/activity" label={labels.activity} icon={<Activity />} active={pathname.startsWith("/activity")} />
         </nav>
@@ -106,7 +106,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div id="main-content" tabIndex={-1}>{children}</div>
       <nav className="mobile-navigation" aria-label="Primary navigation">
         <NavLink href="/" label={labels.home} icon={<House />} active={pathname === "/"} />
-        <NavLink href="/journeys" label={labels.journeys} icon={<Route />} active={pathname.startsWith("/journeys")} />
+        <NavLink href="/journeys" label={labels.life} icon={<Route />} active={pathname.startsWith("/journeys")} />
         <NavLink href="/documents" label={labels.documents} icon={<Files />} active={pathname.startsWith("/documents")} />
         <NavLink href="/activity" label={labels.activity} icon={<Activity />} active={pathname.startsWith("/activity")} />
       </nav>

@@ -115,7 +115,7 @@ export function buildJourneySummary(journey: SummarizableJourney): JourneySummar
   return {
     id: journey.id,
     templateId: journey.projection.templateId,
-    title: getJourneyTemplate(journey.projection.templateId)?.title ?? "UMANG Journey",
+    title: getJourneyTemplate(journey.projection.templateId)?.title ?? "UMANG Life record",
     status: isJourneyComplete(journey.projection) ? "completed" : journey.status,
     subject: journey.subject,
     progress: {

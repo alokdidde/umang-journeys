@@ -43,7 +43,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "server_journey_loaded", journey });
       return true;
     } catch (error) {
-      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Journey could not be loaded." });
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "This record could not be loaded." });
       return false;
     }
   }, [dispatch]);
@@ -59,7 +59,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "server_journey_loaded", journey });
       return journey.id;
     } catch (error) {
-      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Journey could not be created." });
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "This could not be added to My life." });
       return null;
     }
   }, [dispatch]);
@@ -75,7 +75,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "server_journey_loaded", journey });
       return true;
     } catch (error) {
-      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Journey details could not be saved." });
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "These details could not be saved." });
       return false;
     }
   }, [dispatch]);
@@ -87,7 +87,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "server_journey_loaded", journey });
       return true;
     } catch (error) {
-      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "This branch could not be added to your journey." });
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "These optional steps could not be added." });
       return false;
     }
   }, [dispatch]);
@@ -135,7 +135,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "server_journey_loaded", journey });
       return true;
     } catch (error) {
-      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Journey details could not be confirmed." });
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "These details could not be confirmed." });
       return false;
     }
   }, [dispatch]);

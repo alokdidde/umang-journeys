@@ -18,7 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => ({})));
-  if (!parsed.success) return NextResponse.json({ code: "INVALID_FACTS", message: "The journey facts are invalid." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ code: "INVALID_FACTS", message: "The supplied details are invalid." }, { status: 400 });
   const sessionId = await getDemoSession();
   if (!sessionId) return NextResponse.json({ code: "UNAUTHENTICATED", message: "Sign in to continue." }, { status: 401 });
   const journey = await journeyRepository.create(sessionId, parsed.data.facts, parsed.data.templateId);

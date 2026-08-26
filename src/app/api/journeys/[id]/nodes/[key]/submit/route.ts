@@ -120,7 +120,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const profileSchema = key === "move_profile" ? moveProfileSchema : key === "business_profile" ? businessProfileSchema : key === "retirement_profile" ? retirementProfileSchema : null;
   if (profileSchema) {
     const parsed = profileSchema.safeParse(payload);
-    if (!parsed.success) return NextResponse.json({ code: "MISSING_REQUIREMENTS", message: "Complete each required journey detail using the requested format." }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ code: "MISSING_REQUIREMENTS", message: "Complete each required detail using the requested format." }, { status: 400 });
     const { idempotencyKey, ...facts } = parsed.data;
     await journeyRepository.updateFacts(sessionId, id, facts);
     const journey = await journeyRepository.completeStep(sessionId, id, key, idempotencyKey);
@@ -133,7 +133,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const serviceNode = current.projection.nodes.find((node) => node.key === key);
   if (!serviceNode || serviceNode.action === "none") return NextResponse.json({ code: "NODE_NOT_FOUND", message: "This service does not exist." }, { status: 404 });
   if (serviceNode.status === "locked" || serviceNode.status === "skipped") {
-    return NextResponse.json({ code: "NODE_LOCKED", message: "Complete the prerequisite journey steps before using this service." }, { status: 409 });
+    return NextResponse.json({ code: "NODE_LOCKED", message: "Complete the prerequisite steps before using this service." }, { status: 409 });
   }
   const missing = missingEvidence(key, current.evidence);
   if (missing.length > 0) return NextResponse.json({ code: "MISSING_EVIDENCE", message: "Add and verify the required evidence before starting this service.", missing }, { status: 409 });

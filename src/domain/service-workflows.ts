@@ -237,7 +237,7 @@ export const serviceWorkflowDefinitions: Record<SandboxServiceKey, ServiceWorkfl
     dataShared: ["Insured person and policy reference", "Cover and validity details", "Waiting periods, limits, and network terms"],
     stages: [
       { key: "read_cover", title: "Cover document read", detail: "The sandbox extracted the person, policy reference, validity, and sum insured.", progress: 24, state: "running" },
-      { key: "match_person", title: "Insured person matched", detail: "The supplied name and date of birth matched this health journey.", progress: 52, state: "waiting_external" },
+      { key: "match_person", title: "Insured person matched", detail: "The supplied name and date of birth matched this person’s health record.", progress: 52, state: "waiting_external" },
       { key: "explain_terms", title: "Important terms explained", detail: "Waiting periods, room limits, co-pay, exclusions, and cashless terms were separated for review.", progress: 78, state: "running" },
       { key: "publish_cover", title: "Cover summary prepared", detail: "A synthetic, plain-language coverage summary is ready.", progress: 100, state: "completed" },
     ],
@@ -293,7 +293,7 @@ export const serviceWorkflowDefinitions: Record<SandboxServiceKey, ServiceWorkfl
     dataShared: ["Resident name", "New address and PIN code", "Document type and date"],
     stages: [
       { key: "read_document", title: "Address document read", detail: "The sandbox extracted the resident, complete address, document type, and date.", progress: 24, state: "running" },
-      { key: "match_address", title: "New address matched", detail: "The extracted address matched the move details supplied for this journey.", progress: 52, state: "waiting_external" },
+      { key: "match_address", title: "New address matched", detail: "The extracted address matched the move details supplied for this home.", progress: 52, state: "waiting_external" },
       { key: "compare_rules", title: "Authority rules compared", detail: "UIDAI, ECI, and vehicle-record evidence routes were kept separate.", progress: 78, state: "running" },
       { key: "publish_evidence", title: "Evidence summary prepared", detail: "A synthetic evidence summary and gaps list are ready.", progress: 100, state: "completed" },
     ],
@@ -405,7 +405,7 @@ export const serviceWorkflowDefinitions: Record<SandboxServiceKey, ServiceWorkfl
     dataShared: ["Member and account type", "Service or contribution record", "Retirement date"],
     stages: [
       { key: "read_statement", title: "Retirement statement read", detail: "The member, account type, reference, and service record were extracted.", progress: 24, state: "running" },
-      { key: "match_member", title: "Member details matched", detail: "The statement matched the person confirmed for this journey.", progress: 52, state: "waiting_external" },
+      { key: "match_member", title: "Member details matched", detail: "The statement matched the person confirmed for this retirement record.", progress: 52, state: "waiting_external" },
       { key: "identify_gaps", title: "Record gaps identified", detail: "Nominee, bank, identity, and employment-history checks were separated.", progress: 78, state: "running" },
       { key: "publish_record_review", title: "Record review prepared", detail: "A synthetic reconciliation summary is ready.", progress: 100, state: "completed" },
     ],
@@ -473,9 +473,9 @@ export function serviceDefinitionFor(node: { key: string; title: string; descrip
     agency: `${node.source?.authority ?? "Public service"} synthetic agency`,
     agencyShort: `${node.source?.authority ?? "Public service"} · synthetic`,
     action: `Send ${node.title.toLocaleLowerCase("en-IN")} for AI review`,
-    explanation: `${node.description} The synthetic agency will decide from the facts and verified evidence currently in this journey.`,
+    explanation: `${node.description} The synthetic agency will decide from the relevant details and verified evidence currently saved here.`,
     turnaround: "One input-driven AI review",
-    dataShared: ["Journey facts relevant to this step", "Verified evidence already attached", "Your clarification or appeal, when provided"],
+    dataShared: ["Details relevant to this step", "Verified evidence already attached", "Your clarification or appeal, when provided"],
     stages: [],
   };
 }

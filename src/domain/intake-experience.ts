@@ -45,7 +45,7 @@ export const intakeExperiences: Record<IntakeJourneyKey, IntakeExperience> = {
     lifeEvent: "managing_health_cover",
     label: "Health & Insurance",
     title: "Who needs help with health cover?",
-    description: "Add a health policy, or explain who needs cover. Each person will keep a separate journey and record.",
+    description: "Add a health policy, or explain who needs cover. Each person will keep a separate record.",
     promptLabel: "Tell us who needs health cover",
     placeholder: "For example: I need to arrange health insurance for both of my parents…",
     documentLabel: "Add a health policy or scheme card",

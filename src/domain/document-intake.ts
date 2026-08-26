@@ -40,10 +40,10 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
       action: existing ? "update_vehicle_journey" : "create_vehicle_journey",
       canApply: analysis.confidence >= 0.8 && Boolean(registration),
       targetJourneyId: existing?.id ?? null,
-      title: existing ? `Update ${existing.subject.displayName}` : `Start a journey for ${name}`,
+      title: existing ? `Update ${existing.subject.displayName}` : `Add ${name} to My life`,
       description: existing
         ? "Attach this RC and update the matching vehicle details."
-        : "Create a vehicle journey, pre-fill the verified RC details, and keep purchase details for your review.",
+        : "Add this vehicle to My life, fill the verified RC details, and keep the purchase details ready for review.",
       toolName: existing ? "updateVehicleFromRC" : "createVehicleJourneyFromRC",
       changes: vehicleChanges(analysis.fields),
     };
@@ -65,7 +65,7 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
       title: match ? `Record ${vaccine} for ${match.subject.displayName}` : "Choose the child for this vaccination",
       description: match
         ? "Attach the receipt, record the administered dose, and refresh the child’s vaccination timeline."
-        : "We could not match the name on this receipt to exactly one child journey.",
+        : "We could not match the name on this receipt to exactly one child in My life.",
       toolName: match ? "recordVaccination" : null,
       changes: [
         { label: "Vaccine", value: analysis.fields.vaccine },
@@ -88,7 +88,7 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
       title: match ? `Add insurance for ${match.subject.displayName}` : "Choose the vehicle for this policy",
       description: match
         ? "Attach the policy, record its validity, and make it available to the insurance step."
-        : "We could not match the registration number to exactly one vehicle journey.",
+        : "We could not match the registration number to exactly one vehicle in My life.",
       toolName: match ? "recordVehicleInsurance" : null,
       changes: [
         { label: "Registration number", value: analysis.fields.registrationNumber },
@@ -112,8 +112,8 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
       action: match ? "record_health_insurance" : "create_health_journey",
       canApply: analysis.confidence >= 0.8 && complete && matches.length <= 1,
       targetJourneyId: match?.id ?? null,
-      title: match ? `Add health cover for ${match.subject.displayName}` : `Start a health journey for ${insuredName || "this person"}`,
-      description: match ? "Attach the policy and make it available to the coverage review." : "Create a Health & Insurance journey and pre-fill the supported policy details for review.",
+      title: match ? `Add health cover for ${match.subject.displayName}` : `Add ${insuredName || "this person"} to My life`,
+      description: match ? "Attach the policy and make it available to the coverage review." : "Add a separate health record and fill the supported policy details for review.",
       toolName: match ? "recordHealthInsurance" : "createHealthJourneyFromPolicy",
       changes: [
         { label: "Insured person", value: insuredName },
@@ -138,10 +138,10 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
       action: match ? "update_child_journey" : "create_child_journey",
       canApply: analysis.confidence >= 0.8 && complete && matches.length <= 1,
       targetJourneyId: match?.id ?? null,
-      title: match ? `Update ${match.subject.displayName} from the hospital record` : `Start a journey for ${childName || "this child"}`,
+      title: match ? `Update ${match.subject.displayName} from the hospital record` : `Add ${childName || "this child"} to My life`,
       description: match
         ? "Attach the discharge summary and update supported birth and hospital details."
-        : "Create a child journey with the supported birth and hospital details ready for review.",
+        : "Add this child with the supported birth and hospital details ready for review.",
       toolName: match ? "updateChildFromDischargeSummary" : "createChildJourneyFromDischargeSummary",
       changes: [
         { label: "Child", value: childName },
@@ -162,8 +162,8 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
       action: match ? "update_move_journey" : "create_move_journey",
       canApply: analysis.confidence >= 0.8 && Boolean(address),
       targetJourneyId: match?.id ?? null,
-      title: match ? `Add address evidence to ${match.subject.displayName}` : `Start a moving-home journey for ${analysis.fields.city || "this address"}`,
-      description: match ? "Attach this document and refresh the new-address details." : "Create a Moving Home journey and pre-fill the supported address details for review.",
+      title: match ? `Add address evidence to ${match.subject.displayName}` : `Add ${analysis.fields.city || "this address"} home to My life`,
+      description: match ? "Attach this document and refresh the new-address details." : "Add this home and fill the supported address details for review.",
       toolName: match ? "updateMoveFromResidenceProof" : "createMoveJourneyFromResidenceProof",
       changes: [
         { label: "Resident", value: analysis.fields.residentName },
@@ -180,8 +180,8 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
       action: match ? "update_business_journey" : "create_business_journey",
       canApply: analysis.confidence >= 0.8 && Boolean(businessName && analysis.fields.address),
       targetJourneyId: match?.id ?? null,
-      title: match ? `Add premises evidence to ${match.subject.displayName}` : `Start a business journey for ${businessName || "this business"}`,
-      description: match ? "Attach this document and refresh the principal-place details." : "Create a Starting a Business journey and pre-fill the supported premises details for review.",
+      title: match ? `Add premises evidence to ${match.subject.displayName}` : `Add ${businessName || "this business"} to My life`,
+      description: match ? "Attach this document and refresh the principal-place details." : "Add this business and fill the supported premises details for review.",
       toolName: match ? "updateBusinessFromPremisesProof" : "createBusinessJourneyFromPremisesProof",
       changes: [
         { label: "Business", value: businessName },
@@ -199,8 +199,8 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
       action: match ? "update_retirement_journey" : "create_retirement_journey",
       canApply: analysis.confidence >= 0.8 && Boolean(memberName && analysis.fields.retirementAccountType) && matches.length <= 1,
       targetJourneyId: match?.id ?? null,
-      title: match ? `Add retirement records for ${match.subject.displayName}` : `Start a retirement journey for ${memberName || "this member"}`,
-      description: match ? "Attach this statement and refresh the retirement-record details." : "Create a Retirement journey and pre-fill the supported account details for review.",
+      title: match ? `Add retirement records for ${match.subject.displayName}` : `Add ${memberName || "this member"} to My life`,
+      description: match ? "Attach this statement and refresh the retirement-record details." : "Add a retirement record and fill the supported account details for review.",
       toolName: match ? "updateRetirementFromStatement" : "createRetirementJourneyFromStatement",
       changes: [
         { label: "Member", value: memberName },
@@ -215,7 +215,7 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
     canApply: false,
     targetJourneyId: null,
     title: "We need a little help with this document",
-    description: "Choose the journey this document belongs to or upload a clearer copy.",
+    description: "Choose the person or thing this document belongs to, or upload a clearer copy.",
     toolName: null,
     changes: [],
   };

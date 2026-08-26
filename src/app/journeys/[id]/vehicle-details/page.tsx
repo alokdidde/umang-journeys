@@ -51,7 +51,7 @@ export default function VehicleDetailsPage() {
 
   return <main className="page vehicle-details-page">
     <div className="service-shell">
-      <Link href={`/journeys/${id}`} className="floating-back"><ArrowLeft />Back to journey</Link>
+      <Link href={`/journeys/${id}`} className="floating-back"><ArrowLeft />Back to vehicle</Link>
       <header className="vehicle-form-heading">
         <span><Car /></span><div><p className="eyebrow">Step 1 · Confirm the subject</p><h1>Which vehicle did you buy?</h1><p>These details become the trusted anchor for every later check. Review them before we prepare any application.</p></div>
       </header>

@@ -65,7 +65,7 @@ export function JourneyProfileForm({ kind }: { kind: ProfileKind }) {
 
   return <main className="page vehicle-details-page journey-profile-page">
     <div className="service-shell">
-      <Link href={`/journeys/${id}`} className="floating-back"><ArrowLeft />Back to journey</Link>
+      <Link href={`/journeys/${id}`} className="floating-back"><ArrowLeft />Back to overview</Link>
       <header className="vehicle-form-heading"><span><Icon /></span><div><p className="eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p>{copy.intro}</p></div></header>
       <div className="vehicle-form-layout">
         <form ref={formRef} className="panel vehicle-details-form" onSubmit={submit}>

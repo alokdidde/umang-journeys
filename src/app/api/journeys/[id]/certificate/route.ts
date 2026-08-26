@@ -24,7 +24,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const pale = rgb(0.93, 0.96, 1);
   page.drawRectangle({ x: 28, y: 28, width: 786, height: 539, borderColor: blue, borderWidth: 2, color: rgb(1, 1, 1) });
   page.drawRectangle({ x: 45, y: 445, width: 752, height: 92, color: pale });
-  page.drawText("UMANG JOURNEYS", { x: 68, y: 505, size: 13, font: bold, color: blue });
+  page.drawText("UMANG LIFE", { x: 68, y: 505, size: 13, font: bold, color: blue });
   page.drawText("SYNTHETIC BIRTH RECORD", { x: 68, y: 470, size: 26, font: bold, color: navy });
   page.drawText("DEMO / NOT OFFICIAL", { x: 185, y: 225, size: 55, font: bold, color: rgb(0.87, 0.9, 0.96), rotate: degrees(22) });
   const fields = [

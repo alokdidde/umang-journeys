@@ -1,6 +1,6 @@
-# UMANG Journeys
+# UMANG Life
 
-A citizen-first evaluation app that reorganises services around life events. It implements six complete synthetic journeys with persisted workflow state and simulated external-service adapters.
+A citizen-first evaluation app that keeps the public-service work for the people and things in your life together. It supports six complete synthetic scenarios with persistent state and simulated external-service adapters.
 
 ## Run locally
 
@@ -26,9 +26,9 @@ node -e "const {randomBytes,scryptSync}=require('node:crypto');const p=process.a
 
 ## AI intake and document assistant
 
-Returning users see a compact document assistant above **Your journeys**. It accepts PDF, PNG, and JPEG files up to 5 MB, extracts a typed proposal, and always asks for approval before changing journey data. The included synthetic samples demonstrate two end-to-end tool paths:
+Returning users see a compact document assistant above **My life**. It accepts PDF, PNG, and JPEG files up to 5 MB, extracts a typed proposal, and always asks for approval before changing saved data. The included synthetic samples demonstrate two end-to-end tool paths:
 
-- a vehicle registration certificate creates and pre-fills a vehicle journey;
+- a vehicle registration certificate adds and pre-fills a vehicle record;
 - a vaccination receipt matches the child, stores the evidence, and updates the vaccination timeline and artifact.
 
 The interface uses the official Vercel AI Elements prompt input, attachment, and confirmation primitives. Sample documents are generated as explicit synthetic fixtures; real uploaded documents require successful structured Vercel AI SDK analysis and are never classified from their filenames.

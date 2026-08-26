@@ -30,7 +30,7 @@ async function login(page: Page, options: { mockIntake?: boolean } = {}) {
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Open the guided demo" }).click();
-  await expect(page.getByRole("heading", { name: /Continue where you left off|What do you need help with\?|Your journeys are up to date/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Continue where you left off|What do you need help with\?|Everything is up to date/ })).toBeVisible();
 }
 
 async function seedJourney(page: Page) {
@@ -137,8 +137,8 @@ test("newborn journey persists, completes every synthetic agency review, downloa
   await page.getByRole("button", { name: "Use this description" }).click();
   await expect(page.getByRole("heading", { name: "Has the hospital already registered the birth?" })).toBeVisible();
   await page.getByRole("button", { name: "Not sure" }).click();
-  await page.getByRole("button", { name: "Create baby journey" }).click();
-  await expect(page.getByRole("heading", { name: "Aarav’s journey" })).toBeVisible();
+  await page.getByRole("button", { name: "Add baby to My life" }).click();
+  await expect(page.getByRole("heading", { name: "Aarav" })).toBeVisible();
   const id = page.url().split("/").at(-1)!;
   const locked = await page.request.post(`/api/journeys/${id}/nodes/child_health_record/submit`, { data: { idempotencyKey: "locked-service" } });
   expect(locked.status()).toBe(409);
@@ -181,20 +181,20 @@ test("newborn journey persists, completes every synthetic agency review, downloa
 
   await page.goto(`/journeys/${id}`);
   await expectJourneyNodesComplete(page, id, 6);
-  await expect(page.getByText("All services in this journey are complete")).toBeVisible();
-  await expect(page.getByText("Every required step is complete. Records and optional routes remain available below.")).toBeVisible();
+  await expect(page.getByText("All caught up for now")).toBeVisible();
+  await expect(page.getByText("Everything required is done for now. Records and future responsibilities remain available below.")).toBeVisible();
   await page.reload();
   await expectJourneyNodesComplete(page, id, 6);
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Your journeys are up to date" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Everything is up to date" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Nothing needs your attention." })).toBeVisible();
   await expect(page.getByRole("region", { name: "Next for you" })).toHaveCount(0);
-  await page.getByRole("link", { name: /My journeys/i }).click();
+  await page.getByRole("link", { name: "My life", exact: true }).click();
   await expect(page).toHaveURL(/\/journeys$/);
-  await expect(page.getByRole("heading", { name: "Completed journeys" })).toBeVisible();
-  await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
-  await expect(page.locator("#completed-journeys").getByText("This journey is complete", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "All caught up" })).toBeVisible();
+  await expect(page.locator("#all-caught-up").getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
+  await expect(page.locator("#all-caught-up").getByText("Nothing required right now", { exact: true })).toBeVisible();
   await expect(page.getByText("Hospital birth report", { exact: true })).toHaveCount(0);
 
   await page.request.post("/api/demo/reset");
@@ -213,10 +213,10 @@ test("home prioritises the saved child journey and keeps starting another one av
   await expect(page.getByRole("heading", { name: "Continue where you left off" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
-  await expect(page.getByRole("progressbar", { name: "Aarav Sharma journey progress" })).toHaveAttribute("aria-valuenow", "25");
+  await expect(page.getByRole("progressbar", { name: "Aarav Sharma progress" })).toHaveAttribute("aria-valuenow", "25");
   await expect(page.getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${id}/services/birth_certificate`);
 
-  await page.getByText("Start another journey", { exact: true }).click();
+  await page.getByText("Tell us what changed", { exact: true }).click();
   await page.getByRole("button", { name: /Another: Having a Baby/i }).click();
   await expect(page).toHaveURL(/\/intake\?journey=baby$/);
   await expect(page.getByRole("heading", { name: "Tell us about the baby’s birth" })).toBeVisible();
@@ -307,7 +307,7 @@ test("a request for both parents creates one health journey for each parent", as
   await expect(page.getByRole("button", { name: "My father" })).toBeVisible();
 
   await page.getByRole("button", { name: "Both parents" }).click();
-  await page.getByRole("button", { name: "Create health journey" }).click();
+  await page.getByRole("button", { name: "Add health to My life" }).click();
   await expect(page).toHaveURL(/\/journeys$/);
 
   const response = await page.request.get("/api/journeys");
@@ -416,7 +416,7 @@ test("the vehicle intake starts in context and offers a reviewable sample RC", a
   expect(resolveCalls).toBe(0);
 
   await page.getByRole("button", { name: "Try a sample registration certificate" }).click();
-  await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Tata Nexon EV to My life" })).toBeVisible();
   await expect(page.getByText("TS09EV4321", { exact: true })).toBeVisible();
   await expect(page.getByText("Nothing changes until you approve.", { exact: true })).toBeVisible();
   expect(resolveCalls).toBe(0);
@@ -456,13 +456,13 @@ test("every journey exposes its dependency map and persists an optional branch c
   const id = await seedJourney(page);
 
   await page.goto(`/journeys/${id}`);
-  await page.getByRole("button", { name: "View journey map" }).click();
-  const map = page.getByRole("dialog", { name: "Your complete journey map" });
+  await page.getByRole("button", { name: "See all steps" }).click();
+  const map = page.getByRole("dialog", { name: "All steps" });
   await expect(map).toBeVisible();
   expect(await map.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(900);
   await expect(map.getByRole("heading", { name: "Birth records", exact: true })).toBeVisible();
   await expect(map.getByRole("heading", { name: "Child identity" })).toHaveCount(0);
-  await map.getByRole("button", { name: "Entire journey" }).click();
+  await map.getByRole("button", { name: "All steps", exact: true }).click();
   await expect(map.getByRole("heading", { name: "Child identity" }).first()).toBeVisible();
   await expect(map.locator(".journey-map-canvas .journey-map-node-icon svg")).toHaveCount(17);
   await expect(map).toHaveScreenshot("journey-map-desktop.png", { animations: "disabled" });
@@ -473,7 +473,7 @@ test("every journey exposes its dependency map and persists an optional branch c
   expect(saved.projection.branches.find((branch) => branch.key === "child_identity")?.active).toBe(true);
   const mapA11y = await new AxeBuilder({ page }).include(".journey-map-drawer").withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(mapA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
-  await map.getByRole("button", { name: "Close journey map" }).click();
+  await map.getByRole("button", { name: "Close all steps" }).click();
   await expect(map).toBeHidden();
 
   const otherMaps = [
@@ -488,16 +488,20 @@ test("every journey exposes its dependency map and persists an optional branch c
     expect(created.ok()).toBeTruthy();
     const journey = await created.json() as { id: string };
     await page.goto(`/journeys/${journey.id}?view=map`);
-    const otherMap = page.getByRole("dialog", { name: "Your complete journey map" });
+    const otherMap = page.getByRole("dialog", { name: "All steps" });
     await expect(otherMap).toBeVisible();
-    await otherMap.getByRole("button", { name: "Entire journey" }).click();
+    await otherMap
+      .getByRole("button", { name: "All steps", exact: true })
+      .click();
     await expect(page.locator(".journey-map-canvas").getByRole("heading", { name: optionalBranch, exact: true })).toBeVisible();
   }
 
   const conditional = await page.request.post("/api/journeys", { data: { templateId: "vehicle-purchase.india.v1", facts: { "vehicle.acquisitionRoute": "sale", "vehicle.transferScope": "interstate" } } });
   const conditionalJourney = await conditional.json() as { id: string };
   await page.goto(`/journeys/${conditionalJourney.id}?view=map`);
-  await page.getByRole("button", { name: "Entire journey" }).click();
+  await page
+    .getByRole("button", { name: "All steps", exact: true })
+    .click();
   await expect(page.locator('.journey-map-lane[aria-label="Used-vehicle transfer branch"]')).toHaveClass(/applicability-applicable/);
   await expect(page.locator('.journey-map-lane[aria-label="New-vehicle registration branch"]')).toHaveClass(/applicability-not_applicable/);
   await expect(page.locator('.journey-map-lane[aria-label="Interstate requirements branch"]')).toHaveClass(/applicability-applicable/);
@@ -505,7 +509,7 @@ test("every journey exposes its dependency map and persists an optional branch c
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/journeys/${id}?view=map`);
   await expect(page.locator(".journey-map-mobile-list")).toBeVisible();
-  await expect(page.getByRole("dialog", { name: "Your complete journey map" })).toHaveScreenshot("journey-map-mobile.png", { animations: "disabled" });
+  await expect(page.getByRole("dialog", { name: "All steps" })).toHaveScreenshot("journey-map-mobile.png", { animations: "disabled" });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.request.post("/api/demo/reset");
 });
@@ -563,7 +567,7 @@ test("every new life event starts the correct journey and opens its profile step
     await page.getByRole("button", { name: "Use this description" }).click();
     await expect(page.getByRole("heading", { name: scenario.question })).toBeVisible();
     await page.getByRole("button", { name: "Not sure" }).click();
-    await page.getByRole("button", { name: /^Create .+ journey$/ }).click();
+    await page.getByRole("button", { name: /^Add .+ to My life$/ }).click();
     await expect(page.getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
     const id = page.url().split("/").at(-1)!;
     const saved = await (await page.request.get(`/api/journeys/${id}`)).json() as {
@@ -587,13 +591,13 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   });
 
   await page.goto("/");
-  await page.getByText("Start another journey", { exact: true }).click();
+  await page.getByText("Tell us what changed", { exact: true }).click();
   await page.getByRole("button", { name: /Another: Buying a Vehicle/i }).click();
   await page.getByLabel("Tell us about the vehicle purchase").fill("I bought a used Tata Nexon in Hyderabad.");
   await page.getByRole("button", { name: "Use this description" }).click();
   await expect(page.getByRole("heading", { name: "Is the registration certificate already in your name?" })).toBeVisible();
   await page.getByRole("button", { name: "No", exact: true }).click();
-  await page.getByRole("button", { name: "Create vehicle journey" }).click();
+  await page.getByRole("button", { name: "Add vehicle to My life" }).click();
   await expect(page).toHaveURL(/\/journeys\/[^/]+$/);
   await expect(page.getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
   const vehicleId = new URL(page.url()).pathname.split("/").at(-1)!;
@@ -642,15 +646,15 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await page.goto("/activity");
   await expect(page.getByText("Match policy and RC owner", { exact: true })).toBeVisible();
   await page.goto(`/journeys/${vehicleId}`);
-  await expect(page.getByText("Every required vehicle step is complete. Records and optional routes remain available below.")).toBeVisible();
+  await expect(page.getByText("Everything required for this vehicle is done for now. Records and future responsibilities remain available below.")).toBeVisible();
   await page.goto("/");
   await expect(page.getByText("Match policy and RC owner", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
   await page.goto("/journeys");
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
-  await expect(page.getByLabel("In progress").getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${babyId}/services/birth_certificate`);
-  await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
+  await expect(page.getByLabel("Needs attention").getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${babyId}/services/birth_certificate`);
+  await expect(page.locator("#all-caught-up").getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
   await page.request.post("/api/demo/reset");
 });
 
@@ -664,10 +668,10 @@ test("the document assistant creates a vehicle journey from an approved sample R
 
   await openDocumentAssistant(page);
   await page.getByRole("button", { name: "Registration certificate" }).click();
-  await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Tata Nexon EV to My life" })).toBeVisible();
   await expect(page.locator('input[value="TS09EV4321"]')).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
-  await expect(page.getByText("The RC was attached and the vehicle journey is ready for review.")).toBeVisible();
+  await expect(page.getByText("The RC was attached and the vehicle is ready for review.")).toBeVisible();
 
   const journeysResponse = await page.request.get("/api/journeys");
   const journeysBody = await journeysResponse.json() as { journeys: Array<{ id: string; subject: { type: string }; nextAction: { nodeKey: string } | null }> };
@@ -712,11 +716,11 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
 
   await openDocumentAssistant(page);
   await page.getByRole("button", { name: "Health policy" }).click();
-  await expect(page.getByRole("heading", { name: "Start a health journey for Ananya Sharma" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Ananya Sharma to My life" })).toBeVisible();
   await expect(page.locator('input[value="HLT-SBX-502781"]')).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
-  await expect(page.getByText("The health policy was added and the health journey is ready for review.")).toBeVisible();
-  await page.getByRole("link", { name: "Open updated journey" }).click();
+  await expect(page.getByText("The health policy was added and this person’s cover is ready for review.")).toBeVisible();
+  await page.getByRole("link", { name: "Open updated record" }).click();
   await expect(page.getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
   const healthId = page.url().split("/").at(-1)!;
 
@@ -757,9 +761,9 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   await page.goto(`/journeys/${healthId}`);
   await expectJourneyNodesComplete(page, healthId, 5);
   await expect(page.getByText("Coverage pack is ready")).toBeVisible();
-  await expect(page.getByText("Every required coverage step is complete. Records and optional routes remain available below.")).toBeVisible();
+  await expect(page.getByText("Everything required for health cover is done for now. Records and future responsibilities remain available below.")).toBeVisible();
   await page.goto("/journeys");
-  await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
+  await expect(page.locator("#all-caught-up").getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
   await page.goto("/documents");
   await expect(page.getByText("Health insurance policy", { exact: true })).toBeVisible();
   await expect(page.getByText("Synthetic Prepare for cashless care result", { exact: true })).toBeVisible();
@@ -769,8 +773,8 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
 const extendedJourneyScenarios = [
     {
       sample: "Address proof",
-      proposal: "Start a moving-home journey for this address",
-      applied: "The residence evidence was added and the moving-home journey is ready for review.",
+      proposal: "Add this address home to My life",
+      applied: "The residence evidence was added and the new home is ready for review.",
       profileLink: "Confirm your move",
       profileHeading: "Where are you moving?",
       profileSubmit: "Confirm move and continue",
@@ -782,14 +786,14 @@ const extendedJourneyScenarios = [
         ["move_completion_pack", "Build move checklist", "Move completion pack"],
       ],
       completed: "Your move pack is ready",
-      completedIntro: "Every required moving-home step is complete. Records and optional routes remain available below.",
-      activity: "Moving Home journey started",
+      completedIntro: "Everything required for the move is done for now. Records and future responsibilities remain available below.",
+      activity: "Moving Home added",
       optionalBranch: "identity_updates",
     },
     {
       sample: "Business premises",
-      proposal: "Start a business journey for Ananya Design Studio",
-      applied: "The premises evidence was added and the business journey is ready for review.",
+      proposal: "Add Ananya Design Studio to My life",
+      applied: "The premises evidence was added and the business is ready for review.",
       profileLink: "Confirm the business",
       profileHeading: "What business are you starting?",
       profileSubmit: "Confirm business and continue",
@@ -801,14 +805,14 @@ const extendedJourneyScenarios = [
         ["business_launch_pack", "Build business launch pack", "Business launch pack"],
       ],
       completed: "Your business launch pack is ready",
-      completedIntro: "Every required business-setup step is complete. Records and optional routes remain available below.",
-      activity: "Starting a Business journey started",
+      completedIntro: "Everything required for the business setup is done for now. Records and future responsibilities remain available below.",
+      activity: "Starting a Business added",
       optionalBranch: "formal_registrations",
     },
     {
       sample: "Retirement statement",
-      proposal: "Start a retirement journey for Ananya Sharma",
-      applied: "The statement was added and the retirement journey is ready for review.",
+      proposal: "Add Ananya Sharma to My life",
+      applied: "The statement was added and the retirement record is ready for review.",
       profileLink: "Confirm your retirement",
       profileHeading: "What does retirement look like for you?",
       profileSubmit: "Confirm retirement and continue",
@@ -820,8 +824,8 @@ const extendedJourneyScenarios = [
         ["retirement_pack", "Build retirement pack", "Retirement transition pack"],
       ],
       completed: "Your retirement pack is ready",
-      completedIntro: "Every required retirement step is complete. Records and optional routes remain available below.",
-      activity: "Retirement journey started",
+      completedIntro: "Everything required for retirement is done for now. Records and future responsibilities remain available below.",
+      activity: "Retirement added",
       optionalBranch: "ongoing_pension",
     },
   ] as const;
@@ -836,7 +840,7 @@ for (const scenario of extendedJourneyScenarios) {
     await expect(page.getByRole("heading", { name: scenario.proposal })).toBeVisible();
     await page.getByRole("button", { name: /Approve update/i }).click();
     await expect(page.getByText(scenario.applied)).toBeVisible();
-    await page.getByRole("link", { name: "Open updated journey" }).click();
+    await page.getByRole("link", { name: "Open updated record" }).click();
     await expect(page.getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
     const id = page.url().split("/").at(-1)!;
 
@@ -866,7 +870,7 @@ for (const scenario of extendedJourneyScenarios) {
     await expect(page.getByText(scenario.completed)).toBeVisible();
     await expect(page.getByText(scenario.completedIntro)).toBeVisible();
     await page.goto("/journeys");
-    await expect(page.locator("#completed-journeys").getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
+    await expect(page.locator("#all-caught-up").getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
     await page.goto("/documents");
     await expect(page.getByText(/^Synthetic .+ result$/).last()).toBeVisible();
     await page.goto("/activity");
@@ -886,9 +890,9 @@ test("document tools create and enrich journeys while the library and activity l
   await page.getByText("Add a document", { exact: true }).click();
   await page.getByText("More sample documents", { exact: true }).click();
   await page.getByRole("button", { name: "Discharge summary" }).click();
-  await expect(page.getByRole("heading", { name: "Start a journey for Mira Sharma" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Mira Sharma to My life" })).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
-  await expect(page.getByText("The hospital record was added and the child journey was pre-filled for review.")).toBeVisible();
+  await expect(page.getByText("The hospital record was added and the child’s details are ready for review.")).toBeVisible();
   await expect(page.getByText("Hospital discharge summary", { exact: true })).toBeVisible();
   const hospitalFileHref = await page.getByRole("link", { name: "View file" }).first().getAttribute("href");
   const hospitalFile = await page.request.get(hospitalFileHref ?? "");
@@ -898,16 +902,16 @@ test("document tools create and enrich journeys while the library and activity l
 
   await page.getByRole("button", { name: "Use another document" }).click();
   await page.getByRole("button", { name: "Registration certificate" }).click();
-  await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Tata Nexon EV to My life" })).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
-  await expect(page.getByText("The RC was attached and the vehicle journey is ready for review.")).toBeVisible();
+  await expect(page.getByText("The RC was attached and the vehicle is ready for review.")).toBeVisible();
 
   await page.getByRole("button", { name: "Use another document" }).click();
   await page.getByText("More sample documents", { exact: true }).click();
   await page.getByRole("button", { name: "Insurance policy" }).click();
   await expect(page.getByRole("heading", { name: "Add insurance for Tata Nexon EV" })).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
-  await expect(page.getByText("The policy was added to the matching vehicle journey.")).toBeVisible();
+  await expect(page.getByText("The policy was added to the matching vehicle.")).toBeVisible();
   await expect(page.getByText("Motor insurance policy", { exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "Activity", exact: true }).click();
@@ -915,11 +919,11 @@ test("document tools create and enrich journeys while the library and activity l
   await page.getByRole("tab", { name: "History" }).click();
   await expect(page.getByRole("heading", { name: "What needs your attention", exact: true })).toBeVisible();
   await expect(page.getByText("Document update approved")).toHaveCount(3);
-  await expect(page.getByText("Having a Baby journey started")).toBeVisible();
-  await expect(page.getByText("Buying a Vehicle journey started")).toBeVisible();
+  await expect(page.getByText("Having a Baby added")).toBeVisible();
+  await expect(page.getByText("Buying a Vehicle added")).toBeVisible();
 
-  await page.getByRole("link", { name: "Journeys", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Your journeys" })).toBeVisible();
+  await page.getByRole("link", { name: "My life", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "People and things in your life" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Mira Sharma" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tata Nexon EV" })).toBeVisible();
   await page.request.post("/api/demo/reset");
@@ -931,9 +935,9 @@ test("rejecting a document proposal leaves every journey unchanged", async ({ pa
   await seedJourney(page);
   await openDocumentAssistant(page);
   await page.getByRole("button", { name: "Registration certificate" }).click();
-  await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Tata Nexon EV to My life" })).toBeVisible();
   await page.getByRole("button", { name: "Don’t update" }).click();
-  await expect(page.getByText("No journey data was changed.")).toBeVisible();
+  await expect(page.getByText("Nothing in My life was changed.")).toBeVisible();
   const body = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
   expect(body.journeys).toHaveLength(1);
   await page.request.post("/api/demo/reset");
@@ -951,7 +955,7 @@ test("an invalid uploaded document fails safely without mutating a journey", asy
   });
   await page.getByRole("button", { name: "Analyse document" }).click();
   await expect(page.getByText("The file contents do not match the selected file type.")).toBeVisible();
-  await expect(page.getByText("No journey data was changed.")).toBeVisible();
+  await expect(page.getByText("Nothing in My life was changed.")).toBeVisible();
   const body = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
   expect(body.journeys).toHaveLength(1);
   await page.request.post("/api/demo/reset");
@@ -1000,7 +1004,7 @@ test("failed AI document analysis is visible and leaves every journey unchanged"
   });
   await page.getByRole("button", { name: "Analyse document" }).click();
   await expect(page.getByText("AI could not analyse that document. Please try again or upload a clearer copy.")).toBeVisible();
-  await expect(page.getByText("No journey data was changed.")).toBeVisible();
+  await expect(page.getByText("Nothing in My life was changed.")).toBeVisible();
   const body = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
   expect(body.journeys).toHaveLength(1);
   await page.request.post("/api/demo/reset");

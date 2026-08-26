@@ -197,8 +197,8 @@ export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; do
     activity.push({
       id: `journey-created:${journey.id}`,
       type: "journey",
-      title: `${journey.title} journey started`,
-      detail: `Journey created for ${journey.subject.displayName}.`,
+      title: `${journey.title} added`,
+      detail: `${journey.subject.displayName} was added to My life.`,
       occurredAt: journey.createdAt,
       journeyId: journey.id,
       journeyName: journey.subject.displayName,
@@ -327,7 +327,7 @@ export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; do
       if (next) tasks.push({
         id: `next-step:${journey.id}:${next.key}`,
         title: next.status === "waiting_external" ? `Waiting: ${next.title}` : next.title,
-        detail: next.status === "waiting_external" ? "The synthetic agency is still reviewing this case. Check when you are ready." : "This is the next useful step in the journey.",
+        detail: next.status === "waiting_external" ? "The synthetic agency is still reviewing this case. Check when you are ready." : `This is the next useful step for ${journey.subject.displayName}.`,
         priority: next.status === "waiting_external" ? "waiting" : "soon",
         dueAt: next.status === "waiting_external" ? null : new Date(Date.parse(journey.updatedAt) + 7 * 24 * 60 * 60 * 1000).toISOString(),
         journeyName: journey.subject.displayName,

@@ -8,8 +8,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "UMANG Journeys — Government services for life events",
-  description: "Find and organise government services for important life events.",
+  title: "UMANG Life — Public services organised around your life",
+  description: "Keep the services, documents, and responsibilities for the people and things in your life together.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

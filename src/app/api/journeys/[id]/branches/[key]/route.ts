@@ -9,5 +9,5 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   const journey = await journeyRepository.activateBranch(sessionId, id, key);
   return journey
     ? NextResponse.json(journey)
-    : NextResponse.json({ code: "BRANCH_NOT_AVAILABLE", message: "This optional branch is not available for this journey." }, { status: 404 });
+    : NextResponse.json({ code: "BRANCH_NOT_AVAILABLE", message: "These optional steps are not available here." }, { status: 404 });
 }

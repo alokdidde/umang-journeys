@@ -177,8 +177,8 @@ function JourneyGraph({ id, projection }: { id: string; projection: JourneyProje
   const layout = graphLayout(projection);
   const positions = new Map(layout.nodes.map((item) => [item.node.key, item]));
   const titleByKey = new Map(projection.nodes.map((node) => [node.key, node.title]));
-  if (!projection.nodes.length) return <div className="journey-map-empty"><Search aria-hidden="true" /><h2>No matching steps</h2><p>Try a broader search or show the entire journey.</p></div>;
-  return <section className="journey-map-viewport" aria-label="Journey dependency map">
+  if (!projection.nodes.length) return <div className="journey-map-empty"><Search aria-hidden="true" /><h2>No matching steps</h2><p>Try a broader search or show all steps.</p></div>;
+  return <section className="journey-map-viewport" aria-label="All service steps">
     {desktop ? <div className="journey-map-canvas" style={{ width: layout.width, height: layout.height }}>
       {layout.lanes.map(({ branch, x, y, width, height }) => <section className={`journey-map-lane requirement-${branch.requirement} applicability-${branch.applicability}`} style={{ transform: `translate(${x}px, ${y}px)`, width, height }} key={branch.key} aria-label={`${branch.title} branch`}>
         <div className="journey-map-lane-label"><span className={`journey-branch-kind ${branch.requirement}`}>{branchKindLabel(branch)}</span><h2>{branch.title}</h2><p>{branch.description}</p></div>
@@ -234,20 +234,20 @@ export function JourneyMapDrawer({ id, title }: { id: string; title: string }) {
   }
 
   return <div className="journey-map-launch content-layer">
-    <button type="button" className="secondary-button" onClick={() => setOpen(true)}><Route aria-hidden="true" />View journey map</button>
+    <button type="button" className="secondary-button" onClick={() => setOpen(true)}><Route aria-hidden="true" />See all steps</button>
     <p><strong>{completed} of {progressNodes.length} current steps done</strong><span>{contextCount > 0 ? `${contextCount} ${contextCount === 1 ? "route needs" : "routes need"} more details` : optionalCount > 0 ? `${optionalCount} optional ${optionalCount === 1 ? "route" : "routes"} available` : "Your current routes are shown"}</span></p>
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="journey-map-overlay" />
         <DialogPrimitive.Content className="journey-map-drawer" aria-describedby="journey-map-description">
           <header className="journey-map-header">
-            <div><p><GitBranch aria-hidden="true" />{title}</p><DialogPrimitive.Title className="journey-map-title">Your complete journey map</DialogPrimitive.Title><DialogPrimitive.Description className="journey-map-description" id="journey-map-description">See required work, routes that depend on your details, optional services, future duties and official decisions in one place.</DialogPrimitive.Description></div>
-            <DialogPrimitive.Close className="journey-map-close" aria-label="Close journey map"><X aria-hidden="true" /></DialogPrimitive.Close>
+            <div><p><GitBranch aria-hidden="true" />{title}</p><DialogPrimitive.Title className="journey-map-title">All steps</DialogPrimitive.Title><DialogPrimitive.Description className="journey-map-description" id="journey-map-description">See required work, steps that depend on your details, optional services, future duties and official decisions in one place.</DialogPrimitive.Description></div>
+            <DialogPrimitive.Close className="journey-map-close" aria-label="Close all steps"><X aria-hidden="true" /></DialogPrimitive.Close>
           </header>
-          <div className="journey-map-legend" aria-label="Journey map legend"><span><i className="required" />Required</span><span><i className="conditional" />Depends on details</span><span><i className="optional" />Optional</span><span><b className="edge-line hard" />Must happen first</span><span><b className="edge-line alternative" />Alternative or related</span></div>
+          <div className="journey-map-legend" aria-label="Step legend"><span><i className="required" />Required</span><span><i className="conditional" />Depends on details</span><span><i className="optional" />Optional</span><span><b className="edge-line hard" />Must happen first</span><span><b className="edge-line alternative" />Alternative or related</span></div>
           <div className="journey-map-tools">
-            <label><Search aria-hidden="true" /><span className="sr-only">Search journey steps</span><input type="search" name="mapQuery" value={query} onChange={(event) => setMapFilter({ query: event.target.value })} placeholder="Search steps or authorities…" /></label>
-            <div role="group" aria-label="Journey map scope"><button type="button" aria-pressed={scope === "relevant"} onClick={() => setMapFilter({ scope: "relevant" })}>Relevant now</button><button type="button" aria-pressed={scope === "all"} onClick={() => setMapFilter({ scope: "all" })}>Entire journey</button></div>
+            <label><Search aria-hidden="true" /><span className="sr-only">Search service steps</span><input type="search" name="mapQuery" value={query} onChange={(event) => setMapFilter({ query: event.target.value })} placeholder="Search steps or authorities…" /></label>
+            <div role="group" aria-label="Step scope"><button type="button" aria-pressed={scope === "relevant"} onClick={() => setMapFilter({ scope: "relevant" })}>Needs attention</button><button type="button" aria-pressed={scope === "all"} onClick={() => setMapFilter({ scope: "all" })}>All steps</button></div>
             <small>{visibleProjection.nodes.length} of {state.projection.nodes.length} steps shown</small>
           </div>
           {state.error ? <p className="journey-map-error" role="status">{state.error}</p> : null}

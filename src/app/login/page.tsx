@@ -138,7 +138,7 @@ function LoginForm() {
             <p className={styles.kicker} data-hero-context><Sparkles aria-hidden="true" /> Public services, organised around your life</p>
             <h1 id="signed-out-heading" data-hero-title>Find the government services you need</h1>
             <div className={styles.heroSupport} data-hero-support>
-              <p>Tell UMANG what changed. It brings the right services into one guided journey and keeps the next useful step clear.</p>
+              <p>Tell UMANG what changed—or what you need to take care of. It keeps the right services, documents and future responsibilities together.</p>
               <div className={styles.heroActions}>
                 <a className={styles.primaryLink} href="#demo-access">Open the demo <ArrowRight aria-hidden="true" /></a>
                 <a className={styles.secondaryLink} href="#how-it-works">See how it works <ArrowDown aria-hidden="true" /></a>
@@ -146,7 +146,7 @@ function LoginForm() {
             </div>
           </div>
 
-          <div className={styles.journeyPreview} data-hero-visual aria-label="Example having a baby journey">
+          <div className={styles.journeyPreview} data-hero-visual aria-label="Example steps for a new baby">
             <header className={styles.previewHeader}>
               <div><span className={styles.previewAvatar}><Baby aria-hidden="true" /></span><div><small>Ananya’s family</small><strong>Having a baby</strong></div></div>
               <p><span>2 of 6</span> steps complete</p>
@@ -176,8 +176,8 @@ function LoginForm() {
         <div className={styles.sectionInner} data-reveal>
           <header className={styles.sectionHeading}>
             <span>Why this matters</span>
-            <h2 id="problem-heading">A life event is rarely one form.</h2>
-            <p>People experience a birth, a move or a health need. Government systems often present separate departments, rules and evidence requests.</p>
+            <h2 id="problem-heading">Government work does not end with one form.</h2>
+            <p>A child needs certificates and vaccinations. A vehicle needs transfer, insurance and renewals. Today, those responsibilities are scattered across departments.</p>
           </header>
           <div className={styles.beforeAfter}>
             <article className={styles.agencyView} aria-label="Separate agency services">
@@ -191,7 +191,7 @@ function LoginForm() {
               </div>
             </article>
             <div className={styles.transformMark} aria-hidden="true"><ArrowRight /></div>
-            <article className={styles.lifeView} aria-label="One guided life event journey">
+            <article className={styles.lifeView} aria-label="One organised set of steps">
               <header><small>Life event first</small><strong>See one path, in the right order</strong></header>
               <ol>
                 <li><span><Check /></span><div><strong>Register the birth</strong><small>Done</small></div></li>
@@ -208,7 +208,7 @@ function LoginForm() {
           <div className={styles.howCopy}>
             <p className={styles.kicker}><Route aria-hidden="true" /> A guided conversation</p>
             <h2 id="how-heading">Start with what happened. Not a department name.</h2>
-            <p>UMANG asks for one useful detail at a time, confirms who the journey is for, and turns the answer into a visible next step.</p>
+            <p>UMANG asks for one useful detail at a time, confirms who or what it is about, and makes the next useful step visible.</p>
             <div className={styles.progressRail} aria-hidden="true"><span data-progress-path /></div>
           </div>
           <div className={styles.storySteps}>
@@ -245,7 +245,7 @@ function LoginForm() {
         <div className={styles.sectionInner} data-reveal>
           <header className={styles.sectionHeading}>
             <span>Documents that move work forward</span>
-            <h2 id="document-heading">Upload evidence once. Let it find the right journey.</h2>
+            <h2 id="document-heading">Upload evidence once. Let it find the right person or thing.</h2>
           </header>
           <div className={styles.documentFlow}>
             <article className={styles.documentSheet}>
@@ -254,7 +254,7 @@ function LoginForm() {
             </article>
             <div className={styles.scanStage} aria-label="AI checks the document"><ScanLine aria-hidden="true" /><strong>Read and match</strong><small>AI identifies the document, extracts the details and asks before updating anything.</small></div>
             <article className={styles.matchedJourney}>
-              <header><CarFront aria-hidden="true" /><div><small>Matched journey</small><strong>Tata Nexon</strong></div><CheckCircle2 aria-hidden="true" /></header>
+              <header><CarFront aria-hidden="true" /><div><small>Matched vehicle</small><strong>Tata Nexon</strong></div><CheckCircle2 aria-hidden="true" /></header>
               <div><span>Next</span><strong>Transfer ownership</strong><ArrowRight aria-hidden="true" /></div>
             </article>
           </div>
@@ -265,7 +265,7 @@ function LoginForm() {
         <div className={styles.sectionInner} data-reveal>
           <div className={styles.scopeIntro}>
             <span className={styles.scopeNumber}>6</span>
-            <div><small>Journey families in this evaluation</small><h2 id="scope-heading">A common experience for very different moments in life.</h2></div>
+            <div><small>Six ways to begin</small><h2 id="scope-heading">One place for the people and things that matter.</h2></div>
           </div>
           <div className={styles.journeyRunway}>
             {journeyFamilies.map(({ label, Icon, tone }) => (
@@ -275,8 +275,8 @@ function LoginForm() {
             ))}
           </div>
           <div className={styles.truthLedger}>
-            <div><Route aria-hidden="true" /><span><strong>Branching journey maps</strong><small>Mandatory and optional paths stay visible.</small></span></div>
-            <div><FileCheck2 aria-hidden="true" /><span><strong>Documents and activity history</strong><small>Evidence and decisions remain attached to the journey.</small></span></div>
+            <div><Route aria-hidden="true" /><span><strong>Every step in view</strong><small>Required, optional and future responsibilities stay visible.</small></span></div>
+            <div><FileCheck2 aria-hidden="true" /><span><strong>Documents and activity history</strong><small>Evidence and decisions remain attached to the right person or thing.</small></span></div>
             <div><ShieldCheck aria-hidden="true" /><span><strong>Explicit synthetic boundary</strong><small>External agencies are simulated for evaluation and labelled as such.</small></span></div>
           </div>
         </div>
@@ -287,10 +287,10 @@ function LoginForm() {
         <div className={`${styles.sectionInner} ${styles.accessLayout}`} data-reveal>
           <div className={styles.accessCopy}>
             <p className={styles.kicker}><Sparkles aria-hidden="true" /> Evaluation access</p>
-            <h2>Try the journey from the citizen’s side.</h2>
-            <p>Continue as Ananya to start, pause and complete realistic life-event workflows with synthetic records.</p>
+            <h2>Try it from the citizen’s side.</h2>
+            <p>Continue as Ananya to add a person or thing, complete a task and see what UMANG remembers next.</p>
             <ul>
-              <li><Check aria-hidden="true" /> 6 end-to-end journey families</li>
+              <li><Check aria-hidden="true" /> 6 complete citizen examples</li>
               <li><Check aria-hidden="true" /> Sample evidence for every document step</li>
               <li><Check aria-hidden="true" /> No registration or real government contact</li>
             </ul>
@@ -314,8 +314,8 @@ function LoginForm() {
       </section>
 
       <footer className={styles.statementFooter}>
-        <p>Public services should feel like one journey—even when many systems are involved.</p>
-        <div><span>UMANG Journeys · Evaluation demo</span><a href="#top">Back to top <ArrowDown aria-hidden="true" /></a></div>
+        <p>Keep the public-service work for your family, vehicles, home and business together.</p>
+        <div><span>UMANG Life · Evaluation demo</span><a href="#top">Back to top <ArrowDown aria-hidden="true" /></a></div>
       </footer>
     </main>
   );

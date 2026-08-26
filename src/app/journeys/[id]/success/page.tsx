@@ -28,7 +28,7 @@ export default function SuccessPage() {
           <Link href={`/journeys/${id}/services/birth_certificate`} className="primary-cta"><Download />Generate birth certificate<ArrowRight /></Link>
         </article>
       </section>
-      <div className="success-actions content-layer"><Link href={`/journeys/${id}`} className="secondary-button">View the whole journey<ArrowRight /></Link></div>
+      <div className="success-actions content-layer"><Link href={`/journeys/${id}`} className="secondary-button">See all steps<ArrowRight /></Link></div>
       <p className="simulation-banner content-layer">Synthetic evaluation record — no government system was contacted.</p>
     </main>
   );

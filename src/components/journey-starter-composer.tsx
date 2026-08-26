@@ -83,7 +83,7 @@ export function JourneyStarterComposer({
     const blob = await fetch(attachment.url).then((response) => response.blob());
     const form = new FormData();
     form.set("file", new File([blob], attachment.filename ?? "document", { type: attachment.mediaType ?? blob.type }));
-    const context = statement || (experience ? `This document is for the ${experience.label} journey.` : "");
+    const context = statement || (experience ? `This document is for ${experience.label.toLowerCase()}.` : "");
     if (context) form.set("context", context);
     if (experience) form.set("expectedKind", experience.sampleType);
     await analyseDocument(form);
@@ -94,7 +94,7 @@ export function JourneyStarterComposer({
     const form = new FormData();
     form.set("sampleType", experience.sampleType);
     form.set("expectedKind", experience.sampleType);
-    form.set("context", `This sample is for the ${experience.label} journey.`);
+    form.set("context", `This sample is for ${experience.label.toLowerCase()}.`);
     try {
       await analyseDocument(form);
     } catch {
@@ -121,7 +121,7 @@ export function JourneyStarterComposer({
         return;
       }
 
-      if (!body.journeyId) throw new Error("The document was saved, but no journey was available to open.");
+      if (!body.journeyId) throw new Error("The document was saved, but no matching person or thing was available to open.");
       if (query.trim()) {
         await fetch(`/api/journeys/${encodeURIComponent(body.journeyId)}/facts`, {
           method: "PATCH",
@@ -176,7 +176,7 @@ export function JourneyStarterComposer({
 
     {phase === "analysing" || phase === "applying" ? <div className="journey-composer-working" role="status" aria-live="polite">
       <LoaderCircle />
-      <div><strong>{phase === "analysing" ? "Reading your document…" : "Updating your journey…"}</strong><span>{phase === "analysing" ? "Checking supported facts and finding where they belong." : "Applying only the change you approved."}</span></div>
+      <div><strong>{phase === "analysing" ? "Reading your document…" : "Updating My life…"}</strong><span>{phase === "analysing" ? "Checking supported facts and finding where they belong." : "Applying only the change you approved."}</span></div>
     </div> : null}
 
     {phase === "proposal" && document ? <DocumentSuggestion document={document} decide={decide} /> : null}
@@ -205,7 +205,7 @@ function DocumentSuggestion({ document, decide }: { document: DocumentDeskRecord
       <span><ShieldCheck />Nothing changes until you approve.</span>
       <div><button type="button" className="secondary-button" onClick={() => void decide(false)}>Don’t use this</button><button type="button" className="life-search-submit" onClick={() => void decide(true)}>Approve and show my steps<ArrowRight /></button></div>
     </footer> : <footer className="needs-review">
-      <span><FileText />We need a clearer document before we can update a journey.</span>
+      <span><FileText />We need a clearer document before we can update anything.</span>
       <button type="button" className="secondary-button" onClick={() => void decide(false)}>Try another document</button>
     </footer>}
   </section>;

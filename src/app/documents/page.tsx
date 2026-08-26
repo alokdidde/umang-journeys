@@ -37,15 +37,15 @@ export default function DocumentsPage() {
       {loading ? <div className="collection-state" role="status"><LoaderCircle className="service-spinner" /><p>Loading your documents…</p></div> : snapshot.documents.length ? <>
       <header>
         <div><p className="eyebrow"><Filter />Your files</p><h2 id="library-heading">{filter === "all" ? "All documents" : filter === "uploaded" ? "Uploaded documents" : filter === "issued" ? "Issued records" : "Documents needing review"}</h2></div>
-        <label className="library-search"><Search /><span className="sr-only">Search documents</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search documents or journeys" /></label>
+        <label className="library-search"><Search /><span className="sr-only">Search documents</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search documents, people or things" /></label>
       </header>
       <div className="library-filter-row" aria-label="Filter documents">
         {(["all", "uploaded", "issued", "needs_review"] as const).map((value) => <button type="button" aria-pressed={filter === value} onClick={() => setFilter(value)} key={value}>{value === "needs_review" ? "Needs review" : value.charAt(0).toUpperCase() + value.slice(1)}</button>)}
       </div>
       {visible.length ? <div className="document-list">{visible.map((document) => <DocumentRow document={document} key={document.id} />)}</div> : <div className="collection-state"><Files /><h3>{query ? `No documents match “${query}”` : "No documents in this view"}</h3><p>{query ? "Clear the search or choose another filter." : "Choose another filter to find your records."}</p>{query ? <button type="button" className="secondary-button" onClick={() => setQuery("")}>Clear search</button> : null}</div>}
-      </> : <div className="collection-state document-empty-state"><Files /><h2 id="library-heading">No documents yet</h2><p>Add a document above, or finish a journey step that creates a record.</p></div>}
+      </> : <div className="collection-state document-empty-state"><Files /><h2 id="library-heading">No documents yet</h2><p>Add a document above, or finish a service step that creates a record.</p></div>}
     </section>
-    <details className="data-controls content-layer"><summary>Export or delete my evaluation data</summary><div><p>Uploads are retained for 30 days in this demo unless you reset or delete them sooner. Exported JSON excludes binary file contents.</p><a className="secondary-button" href="/api/account/data"><Download />Export account data</a><button type="button" disabled={deleting} onClick={() => { if (!window.confirm("Delete all synthetic journeys and documents? This cannot be undone.")) return; setDeleting(true); void fetch("/api/account/data", { method: "DELETE" }).then(() => { router.push("/"); router.refresh(); }); }}><Trash2 />{deleting ? "Deleting…" : "Delete all demo data"}</button></div></details>
+    <details className="data-controls content-layer"><summary>Export or delete my evaluation data</summary><div><p>Uploads are retained for 30 days in this demo unless you reset or delete them sooner. Exported JSON excludes binary file contents.</p><a className="secondary-button" href="/api/account/data"><Download />Export account data</a><button type="button" disabled={deleting} onClick={() => { if (!window.confirm("Delete all synthetic people, things and documents? This cannot be undone.")) return; setDeleting(true); void fetch("/api/account/data", { method: "DELETE" }).then(() => { router.push("/"); router.refresh(); }); }}><Trash2 />{deleting ? "Deleting…" : "Delete all demo data"}</button></div></details>
   </main>;
 }
 
@@ -54,7 +54,7 @@ function DocumentRow({ document }: { document: DocumentLibraryItem }) {
   return <article className="document-row">
     <span className={`library-document-icon ${document.category}`}>{icon}</span>
     <div className="document-row-primary"><strong>{document.title}</strong><span>{document.fileName ?? "Interactive service record"}</span><small>{document.sourceLabel} · {formatDate(document.createdAt)}</small></div>
-    <div className="document-row-journey">{document.journeyName ? <><small>Journey</small><Link href={`/journeys/${document.journeyId}`}>{document.journeyName}</Link></> : <><small>Journey</small><span>Not linked</span></>}</div>
+    <div className="document-row-journey">{document.journeyName ? <><small>For</small><Link href={`/journeys/${document.journeyId}`}>{document.journeyName}</Link></> : <><small>For</small><span>Not linked</span></>}</div>
     <em className={`document-library-status ${document.status}`}><ShieldCheck />{document.status === "available" ? "Available" : document.status === "applied" ? "Applied" : document.status === "rejected" ? "Dismissed" : "Needs review"}</em>
     <div className="document-row-actions">
       {document.downloadHref ? <a className="icon-action" href={document.downloadHref} target="_blank" rel="noreferrer" aria-label={`Download ${document.title}`}><Download /></a> : null}

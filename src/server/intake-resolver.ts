@@ -24,7 +24,7 @@ const lifeEventLabels: Record<LifeEventValue, string> = {
 };
 
 function intakeSystemPrompt(now: Date, expectedLifeEvent?: LifeEventValue) {
-  return `Interpret one citizen statement for UMANG Journeys.
+  return `Interpret one citizen statement for UMANG Life.
 
 Supported Life Events are Having a Baby, Buying a Vehicle, Managing Health Cover, Moving Home, Starting a Business, and Retirement.
 ${expectedLifeEvent ? `The citizen has already selected ${lifeEventLabels[expectedLifeEvent]}. Interpret the statement only within that Life Event. If it clearly describes a different Life Event, set supported to false rather than changing their selection.` : "The citizen has not selected a Life Event yet, so identify it from the statement."}

@@ -130,12 +130,12 @@ export class DocumentAssistantService {
         documentId,
         status: "rejected",
         journeyId: null,
-        message: "This proposal was already rejected. No journey data was changed.",
+        message: "This proposal was already rejected. Nothing in My life was changed.",
       };
     }
     if (!approved) {
       await this.documents.setDecision(sessionId, documentId, "rejected");
-      return { documentId, status: "rejected", journeyId: null, message: "No journey data was changed." };
+      return { documentId, status: "rejected", journeyId: null, message: "Nothing in My life was changed." };
     }
     const manualTool = options?.targetJourneyId ? ({
       vehicle_rc: "updateVehicleFromRC",
@@ -153,7 +153,7 @@ export class DocumentAssistantService {
     }
 
     let journeyId = options?.targetJourneyId ?? intake.proposal.targetJourneyId;
-    if (journeyId && !(await this.journeys.get(sessionId, journeyId))) throw Object.assign(new Error("Choose a journey from this account."), { code: "JOURNEY_NOT_FOUND" });
+    if (journeyId && !(await this.journeys.get(sessionId, journeyId))) throw Object.assign(new Error("Choose a person or thing from this account."), { code: "JOURNEY_NOT_FOUND" });
     const analysis = { ...intake.analysis, fields: options?.fields ?? intake.analysis.fields };
     const facts = compactFacts(documentFacts(analysis));
     if (toolName === "createVehicleJourneyFromRC") {
@@ -177,9 +177,9 @@ export class DocumentAssistantService {
     } else if (journeyId) {
       await this.journeys.updateFacts(sessionId, journeyId, facts, { source: "document", sourceRef: documentId });
     }
-    if (!journeyId) throw Object.assign(new Error("The matching journey is no longer available."), { code: "JOURNEY_NOT_FOUND" });
+    if (!journeyId) throw Object.assign(new Error("The matching person or thing is no longer available."), { code: "JOURNEY_NOT_FOUND" });
 
-    if (!isEvidenceType(intake.analysis.kind)) throw Object.assign(new Error("This document type cannot be attached as journey evidence."), { code: "PROPOSAL_NOT_APPLICABLE" });
+    if (!isEvidenceType(intake.analysis.kind)) throw Object.assign(new Error("This document type cannot be attached to this record."), { code: "PROPOSAL_NOT_APPLICABLE" });
     await this.journeys.addEvidence(sessionId, journeyId, {
       type: intake.analysis.kind as EvidenceType,
       fileName: intake.fileName,
@@ -212,18 +212,18 @@ export class DocumentAssistantService {
       message: intake.proposal.toolName === "recordVaccination"
         ? "The vaccination receipt was added and the child’s timeline was refreshed."
         : intake.proposal.toolName === "recordVehicleInsurance"
-          ? "The policy was added to the matching vehicle journey."
+          ? "The policy was added to the matching vehicle."
           : intake.proposal.toolName === "createHealthJourneyFromPolicy" || intake.proposal.toolName === "recordHealthInsurance"
-            ? "The health policy was added and the health journey is ready for review."
+            ? "The health policy was added and this person’s cover is ready for review."
           : intake.proposal.toolName === "createChildJourneyFromDischargeSummary" || intake.proposal.toolName === "updateChildFromDischargeSummary"
-            ? "The hospital record was added and the child journey was pre-filled for review."
+            ? "The hospital record was added and the child’s details are ready for review."
           : intake.proposal.toolName === "createMoveJourneyFromResidenceProof" || intake.proposal.toolName === "updateMoveFromResidenceProof"
-            ? "The residence evidence was added and the moving-home journey is ready for review."
+            ? "The residence evidence was added and the new home is ready for review."
           : intake.proposal.toolName === "createBusinessJourneyFromPremisesProof" || intake.proposal.toolName === "updateBusinessFromPremisesProof"
-            ? "The premises evidence was added and the business journey is ready for review."
+            ? "The premises evidence was added and the business is ready for review."
           : intake.proposal.toolName === "createRetirementJourneyFromStatement" || intake.proposal.toolName === "updateRetirementFromStatement"
-            ? "The statement was added and the retirement journey is ready for review."
-        : "The RC was attached and the vehicle journey is ready for review.",
+            ? "The statement was added and the retirement record is ready for review."
+        : "The RC was attached and the vehicle is ready for review.",
     };
   }
 }

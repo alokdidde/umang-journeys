@@ -18,7 +18,7 @@ describe("document intake proposals", () => {
       action: "create_vehicle_journey",
       canApply: true,
       targetJourneyId: null,
-      title: "Start a journey for Tata Nexon EV",
+      title: "Add Tata Nexon EV to My life",
       toolName: "createVehicleJourneyFromRC",
     });
     expect(proposal.changes).toContainEqual({ label: "Registration number", value: "TS09EV4321" });
@@ -91,7 +91,7 @@ describe("document intake proposals", () => {
     expect(proposal).toMatchObject({
       action: "create_health_journey",
       canApply: true,
-      title: "Start a health journey for Ananya Sharma",
+      title: "Add Ananya Sharma to My life",
       toolName: "createHealthJourneyFromPolicy",
     });
   });
@@ -113,7 +113,7 @@ describe("document intake proposals", () => {
       action: "create_child_journey",
       canApply: true,
       targetJourneyId: null,
-      title: "Start a journey for Mira Sharma",
+      title: "Add Mira Sharma to My life",
       toolName: "createChildJourneyFromDischargeSummary",
     });
   });

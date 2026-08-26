@@ -171,11 +171,11 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
       {state.phase === "success" ? <div className="document-result success" role="status" aria-live="polite">
         <span><BadgeCheck /></span>
         <div><p>Document handled</p><h3>{state.message}</h3><small>The document and resulting changes are recorded in this evaluation account.</small></div>
-        <div>{state.journeyId ? <Link className="primary-cta" href={`/journeys/${state.journeyId}`}>Open updated journey<ArrowRight /></Link> : null}<button className="secondary-button" type="button" onClick={() => dispatch({ type: "reset" })}>Use another document</button></div>
+        <div>{state.journeyId ? <Link className="primary-cta" href={`/journeys/${state.journeyId}`}>Open updated record<ArrowRight /></Link> : null}<button className="secondary-button" type="button" onClick={() => dispatch({ type: "reset" })}>Use another document</button></div>
       </div> : null}
 
       {state.phase === "error" ? <div className="document-result error" role="alert">
-        <span><X /></span><div><p>We couldn’t finish that</p><h3>{state.error}</h3><small>No journey data was changed.</small></div>
+        <span><X /></span><div><p>We couldn’t finish that</p><h3>{state.error}</h3><small>Nothing in My life was changed.</small></div>
         <button className="secondary-button" type="button" onClick={() => dispatch({ type: "reset" })}><RotateCw />Try another document</button>
       </div> : null}
 
@@ -192,11 +192,11 @@ function PromptInputAttachments() {
 
 function DocumentProcessing({ mode }: { mode: "analyse" | "apply" }) {
   const steps = mode === "analyse"
-    ? ["Reading the document", "Extracting supported facts", "Matching your journeys"]
+    ? ["Reading the document", "Extracting supported facts", "Finding the right person or thing"]
     : ["Attaching verified evidence", "Running the approved tool", "Refreshing your next action"];
   return <div className="document-processing" role="status" aria-live="polite">
     <span className="processing-orbit"><LoaderCircle /></span>
-    <div><p>{mode === "analyse" ? "Analysing securely" : "Applying your approval"}</p><h3>{mode === "analyse" ? "Finding the right journey…" : "Updating your journey…"}</h3></div>
+    <div><p>{mode === "analyse" ? "Analysing securely" : "Applying your approval"}</p><h3>{mode === "analyse" ? "Finding where this belongs…" : "Updating My life…"}</h3></div>
     <ol>{steps.map((step, index) => <li className={index === 0 ? "active" : "queued"} key={step}><span>{index === 0 ? <LoaderCircle /> : index + 1}</span>{step}</li>)}</ol>
   </div>;
 }
@@ -231,18 +231,18 @@ function ProposalReview({ document, decide }: { document: DocumentDeskRecord; de
       <em><Check />Analysis complete</em>
     </header>
     <div className="document-proposal-body">
-      <div><p>{proposal.description}</p>{Object.keys(fields).length ? <fieldset className="document-field-review"><legend>Choose and check the values to use</legend>{Object.entries(fields).map(([key, value]) => <label key={key}><input type="checkbox" checked={included.has(key)} onChange={(event) => setIncluded((current) => { const next = new Set(current); if (event.target.checked) next.add(key); else next.delete(key); return next; })} /><span>{key.replace(/([A-Z])/g, " $1")}</span><input value={value} disabled={!included.has(key)} onChange={(event) => setFields((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</fieldset> : <p>No supported values were read from this copy.</p>}{!proposal.canApply && proposal.targetOptions?.length ? <label className="document-target-picker"><span>Which journey is this for?</span><select value={targetJourneyId} onChange={(event) => setTargetJourneyId(event.target.value)}><option value="">Choose a journey</option>{proposal.targetOptions.map((option) => <option value={option.id} key={option.id}>{option.label} · {option.type}</option>)}</select></label> : null}</div>
+      <div><p>{proposal.description}</p>{Object.keys(fields).length ? <fieldset className="document-field-review"><legend>Choose and check the values to use</legend>{Object.entries(fields).map(([key, value]) => <label key={key}><input type="checkbox" checked={included.has(key)} onChange={(event) => setIncluded((current) => { const next = new Set(current); if (event.target.checked) next.add(key); else next.delete(key); return next; })} /><span>{key.replace(/([A-Z])/g, " $1")}</span><input value={value} disabled={!included.has(key)} onChange={(event) => setFields((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</fieldset> : <p>No supported values were read from this copy.</p>}{!proposal.canApply && proposal.targetOptions?.length ? <label className="document-target-picker"><span>Who or what is this document for?</span><select value={targetJourneyId} onChange={(event) => setTargetJourneyId(event.target.value)}><option value="">Choose a person or thing</option>{proposal.targetOptions.map((option) => <option value={option.id} key={option.id}>{option.label} · {option.type}</option>)}</select></label> : null}</div>
       <aside><ShieldCheck /><strong>You stay in control</strong><p>We’ll run only the named update and preserve the source document as evidence.</p></aside>
     </div>
     {proposal.canApply ? <Confirmation approval={{ id: document.id }} state="approval-requested" className="document-confirmation">
       <ConfirmationRequest>
-        <ConfirmationTitle>Approve this update to your UMANG journeys?</ConfirmationTitle>
+        <ConfirmationTitle>Approve this update to UMANG Life?</ConfirmationTitle>
         <ConfirmationActions>
           <ConfirmationAction variant="outline" onClick={() => void decide(false)}>Don’t update</ConfirmationAction>
           <ConfirmationAction disabled={!Object.keys(approvedFields).length} onClick={() => void decide(true, { fields: approvedFields })}>Approve update with selected values<ArrowRight /></ConfirmationAction>
         </ConfirmationActions>
       </ConfirmationRequest>
-    </Confirmation> : <div className="document-needs-review"><ShieldCheck /><div><strong>Choose where this document belongs</strong><p>Select a journey and approve only the values you want to use. If the document is unreadable, dismiss it and upload a clearer copy.</p></div><button type="button" className="secondary-button" onClick={() => void decide(false)}>Dismiss</button><button type="button" disabled={!targetJourneyId || !Object.keys(approvedFields).length} onClick={() => void decide(true, { targetJourneyId, fields: approvedFields })}>Apply to selected journey</button></div>}
+    </Confirmation> : <div className="document-needs-review"><ShieldCheck /><div><strong>Choose where this document belongs</strong><p>Select a person or thing and approve only the values you want to use. If the document is unreadable, dismiss it and upload a clearer copy.</p></div><button type="button" className="secondary-button" onClick={() => void decide(false)}>Dismiss</button><button type="button" disabled={!targetJourneyId || !Object.keys(approvedFields).length} onClick={() => void decide(true, { targetJourneyId, fields: approvedFields })}>Add to selected record</button></div>}
   </div>;
 }
 
