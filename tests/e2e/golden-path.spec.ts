@@ -24,14 +24,78 @@ async function mockIntakeAI(page: Page) {
   });
 }
 
+function lifeRequestFixture(statement: string) {
+  const normalized = statement.toLowerCase();
+  if (["need to get insurance for parents", "i need to get insurance for my parents", "i need health insurance for my parents"].includes(normalized)) return {
+    supported: true, resolver: "ai_gateway", requestId: "e2e-parent-cover", summary: "Two parents, with health cover organised separately.",
+    subjects: [
+      { ref: "mother", type: "person", displayName: "Mother", relationship: "mother", facts: [{ key: "person.name", value: "Mother", confidence: 1 }] },
+      { ref: "father", type: "person", displayName: "Father", relationship: "father", facts: [{ key: "person.name", value: "Father", confidence: 1 }] },
+    ],
+    needs: [
+      { id: "mother-cover", subjectRef: "mother", lifeEvent: "managing_health_cover", templateId: "health-insurance.india.v1", label: "Review your mother’s cover", description: "Prepare a separate health-cover record.", confidence: 0.99, facts: [{ key: "health.coverageFor", value: "dependent", confidence: 1 }, { key: "health.dependentRelationship", value: "mother", confidence: 1 }] },
+      { id: "father-cover", subjectRef: "father", lifeEvent: "managing_health_cover", templateId: "health-insurance.india.v1", label: "Review your father’s cover", description: "Prepare a separate health-cover record.", confidence: 0.99, facts: [{ key: "health.coverageFor", value: "dependent", confidence: 1 }, { key: "health.dependentRelationship", value: "father", confidence: 1 }] },
+    ], questions: [],
+  };
+  if (normalized === "i had a baby and need insurance for her") return {
+    supported: true,
+    resolver: "ai_gateway",
+    requestId: "e2e-baby-cover",
+    summary: "Add your daughter and organise her first services.",
+    subjects: [{ ref: "baby", type: "child", displayName: "Your baby", relationship: "daughter", facts: [] }],
+    needs: [
+      { id: "arrival", subjectRef: "baby", lifeEvent: "having_a_baby", templateId: "new-baby.india.v1", label: "Set up her records", description: "Register her birth and prepare her first records.", confidence: 0.99, facts: [] },
+      { id: "cover", subjectRef: "baby", lifeEvent: "managing_health_cover", templateId: "health-insurance.india.v1", label: "Arrange health cover", description: "Review how to add her to health cover.", confidence: 0.98, facts: [] },
+    ],
+    questions: [
+      { id: "name", subjectRef: "baby", factKey: "child.name", label: "What is your baby's name?", input: "text", required: true },
+      { id: "dob", subjectRef: "baby", factKey: "child.dateOfBirth", label: "When was she born?", input: "date", required: true },
+    ],
+  };
+  throw new Error(`Missing exact life-request fixture for statement: ${statement}`);
+}
+
+async function mockCompoundLifeRequest(page: Page) {
+  await page.route("**/api/life/plan", async (route) => {
+    const { statement } = route.request().postDataJSON() as { statement: string };
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ plan: lifeRequestFixture(statement) }) });
+  });
+}
+
 async function login(page: Page, options: { mockIntake?: boolean } = {}) {
-  if (options.mockIntake !== false) await mockIntakeAI(page);
+  if (options.mockIntake !== false) {
+    await mockIntakeAI(page);
+    await mockCompoundLifeRequest(page);
+  }
   await page.goto("/login");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Open the guided demo" }).click();
   await expect(page.getByRole("heading", { name: /Continue where you left off|What do you need help with\?|Everything is up to date/ })).toBeVisible();
 }
+
+test("one request becomes one child with several organised needs", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  await page.reload();
+
+  await page.getByLabel("Tell us what happened").fill("I had a baby and need insurance for her");
+  await page.getByRole("button", { name: "Show my steps" }).click();
+  await expect(page.getByRole("heading", { name: "Add your daughter and organise her first services." })).toBeVisible();
+  await page.getByLabel("What is your baby's name?").fill("Mira");
+  await page.getByLabel("When was she born?").fill("2026-08-20");
+  await page.getByRole("button", { name: "Review what will be added" }).click();
+  await expect(page.getByRole("heading", { name: "One person, 2 things organised" })).toBeVisible();
+  await page.getByRole("button", { name: "Add to My life" }).click();
+
+  await expect(page).toHaveURL(/\/life\/entity-/);
+  await expect(page.getByRole("heading", { name: "Mira", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Having a Baby" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Health & Insurance" })).toBeVisible();
+  await page.locator("main").getByRole("link", { name: "My life" }).click();
+  await expect(page.locator(".life-card").getByRole("heading", { name: "Mira", exact: true })).toHaveCount(1);
+  await expect(page.locator(".life-card").getByText("2 areas organised")).toBeVisible();
+});
 
 async function seedJourney(page: Page) {
   const created = await page.request.post("/api/journeys", {
@@ -230,11 +294,10 @@ test("Show my steps accepts either a description or a document with context", as
 
   await page.getByLabel("Tell us what happened").fill("need to get insurance for parents");
   await page.getByRole("button", { name: "Show my steps" }).click();
-  await expect(page).toHaveURL(/\/intake\?analyse=1$/);
-  await expect(page.getByRole("region", { name: "Health & Insurance" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Who needs health cover?" })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { name: "2 people, 2 things organised" })).toBeVisible();
 
-  await page.goBack();
+  await page.reload();
   await expect(page.getByRole("heading", { name: "What do you need help with?" })).toBeVisible();
   const created = await page.request.post("/api/journeys", {
     data: {
@@ -301,14 +364,11 @@ test("a request for both parents creates one health journey for each parent", as
   await page.getByLabel("Tell us what happened").fill("I need to get insurance for my parents");
   await page.getByRole("button", { name: "Show my steps" }).click();
 
-  await expect(page.getByRole("heading", { name: "Who needs health cover?" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Both parents" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "My mother" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "My father" })).toBeVisible();
-
-  await page.getByRole("button", { name: "Both parents" }).click();
-  await page.getByRole("button", { name: "Add health to My life" }).click();
-  await expect(page).toHaveURL(/\/journeys$/);
+  await expect(page.getByRole("heading", { name: "2 people, 2 things organised" })).toBeVisible();
+  await expect(page.getByText("Mother", { exact: true })).toBeVisible();
+  await expect(page.getByText("Father", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Add to My life" }).click();
+  await expect(page).toHaveURL(/\/life\/entity-/);
 
   const response = await page.request.get("/api/journeys");
   expect(response.ok()).toBeTruthy();
@@ -334,33 +394,32 @@ test("failed AI language analysis is visible and retryable without creating a gu
   await login(page, { mockIntake: false });
   await page.request.post("/api/demo/reset");
   let shouldFail = true;
-  await page.route("**/api/intake/resolve", async (route) => {
+  await page.route("**/api/life/plan", async (route) => {
     if (shouldFail) {
       await route.fulfill({
         status: 503,
         contentType: "application/json",
-        body: JSON.stringify({ code: "AI_INTAKE_FAILED", message: "AI could not analyse that request. Please try again." }),
+        body: JSON.stringify({ code: "AI_LIFE_REQUEST_FAILED", message: "We could not organise that request. Please try again." }),
       });
       return;
     }
     const { statement } = route.request().postDataJSON() as { statement: string };
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(intakeFixture(statement)) });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ plan: lifeRequestFixture(statement) }) });
   });
 
   await page.goto("/");
   await page.getByLabel("Tell us what happened").fill("I need health insurance for my parents");
   await page.getByRole("button", { name: "Show my steps" }).click();
 
-  await expect(page.getByText("AI analysis did not finish", { exact: true })).toBeVisible();
-  await expect(page.getByText("AI could not analyse that request. Please try again.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Who needs health cover?" })).toHaveCount(0);
+  await expect(page.getByText("We could not organise that request. Please try again.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "2 people, 2 things organised" })).toHaveCount(0);
   expect((await page.request.get("/api/journeys")).ok()).toBeTruthy();
   const beforeRetry = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
   expect(beforeRetry.journeys).toHaveLength(0);
 
   shouldFail = false;
-  await page.getByRole("button", { name: "Try again" }).click();
-  await expect(page.getByRole("heading", { name: "Who needs health cover?" })).toBeVisible();
+  await page.getByRole("button", { name: "Show my steps" }).click();
+  await expect(page.getByRole("heading", { name: "2 people, 2 things organised" })).toBeVisible();
   await page.request.post("/api/demo/reset");
 });
 
@@ -610,7 +669,8 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await page.goto("/journeys");
   await expect(page.getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Start" })).toHaveCount(2);
+  await expect(page.getByRole("link", { name: /Buying a Vehicle Register ownership/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Having a Baby Birth certificate/ })).toBeVisible();
 
   await page.goto(`/journeys/${vehicleId}/services/ownership_transfer`);
   await expect(page.getByRole("heading", { name: "2 items needed before review" })).toBeVisible();
@@ -653,7 +713,7 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
   await page.goto("/journeys");
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
-  await expect(page.getByLabel("Needs attention").getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${babyId}/services/birth_certificate`);
+  await expect(page.getByLabel("Needs attention").getByRole("link", { name: /Having a Baby Birth certificate/ })).toHaveAttribute("href", `/journeys/${babyId}/services/birth_certificate`);
   await expect(page.locator("#all-caught-up").getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
   await page.request.post("/api/demo/reset");
 });

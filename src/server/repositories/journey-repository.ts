@@ -22,8 +22,12 @@ export type StoredJourney = {
   updatedAt: string;
 };
 
+export type JourneySubjectSeed = Pick<JourneySubject, "type" | "displayName" | "role"> & {
+  canonicalEntityId?: string;
+};
+
 export interface JourneyRepository {
-  create(sessionId: string, facts?: Record<string, string>, templateId?: string): Promise<StoredJourney>;
+  create(sessionId: string, facts?: Record<string, string>, templateId?: string, subject?: JourneySubjectSeed): Promise<StoredJourney>;
   list(sessionId: string): Promise<StoredJourney[]>;
   get(sessionId: string, id: string): Promise<StoredJourney | null>;
   updateFacts(sessionId: string, id: string, facts: Record<string, string>, provenance?: { source: "user_statement" | "document" | "provider" | "demo"; sourceRef?: string }): Promise<StoredJourney | null>;
@@ -101,20 +105,23 @@ export class MemoryJourneyRepository implements JourneyRepository {
 
   constructor(private readonly agencyAgent: ExternalAgencyAgent = evaluateSyntheticAgency) {}
 
-  async create(sessionId: string, facts: Record<string, string> = {}, templateId = newBabyTemplate.id) {
+  async create(sessionId: string, facts: Record<string, string> = {}, templateId = newBabyTemplate.id, subjectSeed?: JourneySubjectSeed) {
     const template = getJourneyTemplate(templateId);
     if (!template) throw new Error(`Unknown journey template: ${templateId}`);
     const timestamp = now();
-    const subject = subjectForJourney(template.lifeEvent, facts);
+    const subject = subjectSeed ?? subjectForJourney(template.lifeEvent, facts);
     const entityKey = `${sessionId}:${subject.type}:${subject.displayName.trim().toLocaleLowerCase("en-IN")}`;
-    const entity = this.entities.get(entityKey) ?? { id: `entity-${crypto.randomUUID()}`, type: subject.type, displayName: subject.displayName };
+    const seededEntity = subjectSeed?.canonicalEntityId
+      ? [...this.entities.values()].find((candidate) => candidate.id === subjectSeed.canonicalEntityId)
+      : undefined;
+    const entity = seededEntity ?? this.entities.get(entityKey) ?? { id: `entity-${crypto.randomUUID()}`, type: subject.type, displayName: subject.displayName };
     this.entities.set(entityKey, entity);
     const subjectId = `${subject.type}-${crypto.randomUUID()}`;
     const journey: StoredJourney = {
       id: `journey-${crypto.randomUUID()}`,
       sessionId,
       status: "active",
-      subject: { id: subjectId, ...subject, canonicalEntityId: entity.id, householdId: `household:${sessionId}`, role: subject.type === "person" && !facts["health.dependentRelationship"] ? "account_holder" : subject.type === "person" || subject.type === "child" ? "dependent" : "asset" },
+      subject: { id: subjectId, ...subject, canonicalEntityId: entity.id, householdId: `household:${sessionId}`, role: subject.role ?? (subject.type === "person" && !facts["health.dependentRelationship"] ? "account_holder" : subject.type === "person" || subject.type === "child" ? "dependent" : "asset") },
       projection: compileJourney(template, facts),
       facts,
       factHistory: Object.entries(facts).map(([key, value]) => ({ id: `fact-${crypto.randomUUID()}`, key, value, source: "user_statement" as const, status: "active" as const, recordedAt: timestamp })),

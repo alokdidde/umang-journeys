@@ -138,5 +138,15 @@
     "footer": "none",
     "knobs": "empty-by-default/selected-context/document-or-text/typed-ai-review/one-rigid-question/explicit-failure",
     "brief": "UMANG Journeys · let AI understand a vehicle purchase without letting it invent or silently switch the government-service workflow"
+  },
+  {
+    "date": "2026-08-27",
+    "page": "compound request composer, approval, and My life subject records",
+    "macrostructure": "Subject-centred Request Transformation",
+    "nav": "existing familiar top navigation",
+    "hero": "one subject visibly connected to several service needs",
+    "footer": "explicit approval boundary",
+    "knobs": "structured-ai/no-chat/one-subject-many-needs/missing-facts/approval-gated/persistent-record",
+    "brief": "UMANG Life · turn a compound natural-language request into one person or thing with several linked responsibilities"
   }
 ]

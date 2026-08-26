@@ -1,6 +1,6 @@
 import { activateBranch as activateJourneyBranch, compileJourney, completeNode, getJourneyTemplate, hydrateJourney, isJourneyComplete, newBabyTemplate, type JourneyTemplate, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
-import { buildAgencyCaseInput, canAdvanceFromVerifiedEvidence, evidenceFacts, type JourneyRepository, type StoredJourney } from "@/server/repositories/journey-repository";
+import { buildAgencyCaseInput, canAdvanceFromVerifiedEvidence, evidenceFacts, type JourneyRepository, type JourneySubjectSeed, type StoredJourney } from "@/server/repositories/journey-repository";
 import { agencyDecisionToServiceRun, evaluateSyntheticAgency, type ExternalAgencyAgent } from "@/server/integrations/external-agency-agent";
 import { serviceDefinitionFor, type SandboxServiceRun } from "@/domain/service-workflows";
 import type { EvidenceRecord, EvidenceSource, EvidenceType, JourneyEvidence } from "@/domain/evidence";
@@ -46,6 +46,10 @@ function toSubjectType(type: string): JourneySubject["type"] {
   if (type === "RESIDENCE") return "residence";
   if (type === "BUSINESS") return "business";
   return "child";
+}
+
+function toDatabaseSubjectType(type: JourneySubject["type"]) {
+  return type.toUpperCase() as "CHILD" | "VEHICLE" | "PERSON" | "RESIDENCE" | "BUSINESS";
 }
 
 const toDatabaseStatus = (status: NodeStatus) => status.toUpperCase() as
@@ -179,11 +183,13 @@ function validDate(value: string | undefined) {
 export class PrismaJourneyRepository implements JourneyRepository {
   constructor(private readonly agencyAgent: ExternalAgencyAgent = evaluateSyntheticAgency) {}
 
-  async create(sessionId: string, facts: Record<string, string> = {}, templateId = newBabyTemplate.id) {
+  async create(sessionId: string, facts: Record<string, string> = {}, templateId = newBabyTemplate.id, subjectSeed?: JourneySubjectSeed) {
     const template = getJourneyTemplate(templateId);
     if (!template) throw new Error(`Unknown journey template: ${templateId}`);
-    const subject = subjectForJourney(template.lifeEvent, facts);
-    const subjectIsAccountHolder = isAccountHolder(subject, facts);
+    const subject = subjectSeed
+      ? { type: toDatabaseSubjectType(subjectSeed.type), displayName: subjectSeed.displayName }
+      : subjectForJourney(template.lifeEvent, facts);
+    const subjectIsAccountHolder = subjectSeed ? subjectSeed.role === "account_holder" : isAccountHolder(subject, facts);
     const prisma = getPrisma();
     const profile = await prisma.userProfile.upsert({
       where: { sessionId },
@@ -211,11 +217,15 @@ export class PrismaJourneyRepository implements JourneyRepository {
       update: {},
       create: { profileId: profile.id, type: "HOUSEHOLD", externalKey: "household:ananya", displayName: "Ananya's household", dataJson: { synthetic: true } },
     });
-    const subjectEntity = subjectIsAccountHolder ? primaryPerson : await prisma.canonicalEntity.upsert({
+    const selectedSubjectEntity = subjectSeed?.canonicalEntityId
+      ? await prisma.canonicalEntity.findFirst({ where: { id: subjectSeed.canonicalEntityId, profileId: profile.id } })
+      : null;
+    if (subjectSeed?.canonicalEntityId && !selectedSubjectEntity) throw new Error("The selected person or thing is not available in this profile.");
+    const subjectEntity = selectedSubjectEntity ?? (subjectIsAccountHolder ? primaryPerson : await prisma.canonicalEntity.upsert({
       where: { profileId_type_externalKey: { profileId: profile.id, type: canonicalType(subject), externalKey: canonicalKey(subject, facts) } },
       update: { displayName: subject.displayName, dataJson: facts },
       create: { profileId: profile.id, type: canonicalType(subject), externalKey: canonicalKey(subject, facts), displayName: subject.displayName, dataJson: facts },
-    });
+    }));
     const relationships = [
       { fromId: household.id, toId: primaryPerson.id, kind: "MEMBER" },
       ...(subjectEntity.id === primaryPerson.id ? [] : [{ fromId: subject.type === "CHILD" ? household.id : primaryPerson.id, toId: subjectEntity.id, kind: subject.type === "CHILD" || subject.type === "PERSON" ? "DEPENDENT" : subject.type === "RESIDENCE" ? "OCCUPIES" : subject.type === "BUSINESS" ? "OPERATES" : "OWNS" }]),

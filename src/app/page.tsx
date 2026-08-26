@@ -59,6 +59,7 @@ export default function HomePage() {
 }
 
 function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string, journey?: IntakeJourneyKey) => void; loadError: string | null }) {
+  const [query, setQuery] = useState("");
   const attentionJourney = journeys.find((journey) => journey.status !== "completed" && journey.nextAction)
     ?? journeys.find((journey) => journey.status !== "completed");
   const additionalAttention = journeys.filter((journey) => journey.status !== "completed" && journey.id !== attentionJourney?.id && journey.nextAction).slice(0, 2);
@@ -98,6 +99,7 @@ function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummar
 
       <details className="journey-starter content-layer">
         <summary><span><Plus />Tell us what changed</span><small>Everything already here will stay saved.</small></summary>
+        <JourneyStarterComposer query={query} setQuery={setQuery} start={start} />
         <LifeEventGrid start={start} returning />
       </details>
       <TrustNote>The people, things and records shown here use synthetic data.</TrustNote>

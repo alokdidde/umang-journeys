@@ -60,6 +60,18 @@ describe("journey repository", () => {
     expect(journey.projection.nodes[0]?.key).toBe("health_profile");
   });
 
+  it("links different service needs to one explicitly selected child", async () => {
+    const repository = new MemoryJourneyRepository();
+    const baby = await repository.create("session-linked", { "child.name": "Mira" }, "new-baby.india.v1", {
+      type: "child", displayName: "Mira", role: "dependent",
+    });
+    const cover = await repository.create("session-linked", { "person.name": "Mira", "health.coverageFor": "dependent" }, "health-insurance.india.v1", {
+      type: "child", displayName: "Mira", role: "dependent", canonicalEntityId: baby.subject.canonicalEntityId,
+    });
+
+    expect(cover.subject).toMatchObject({ type: "child", displayName: "Mira", canonicalEntityId: baby.subject.canonicalEntityId });
+  });
+
   it("persists an optional branch choice and makes its first eligible step actionable", async () => {
     const repository = new MemoryJourneyRepository();
     const created = await repository.create("session-branches", {}, "business-setup.india.v1");
