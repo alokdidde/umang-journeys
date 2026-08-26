@@ -2,7 +2,7 @@
 
 import { useReducer, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Baby, BriefcaseBusiness, Car, Check, CheckCircle2, FileSearch, FileText, Home, LoaderCircle, Paperclip, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Baby, BriefcaseBusiness, Car, CheckCircle2, ClipboardList, FileSearch, FileText, Home, LoaderCircle, Paperclip, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
 import {
   Attachment,
   AttachmentInfo,
@@ -28,6 +28,7 @@ import {
 import type { DocumentDeskRecord } from "@/domain/document-desk-reducer";
 import type { IntakeExperience } from "@/domain/intake-experience";
 import type { LifeRequestPlan } from "@/domain/life-request";
+import { approvalHeading, lifeRequestDestination, presentLifeRequest } from "@/domain/life-request-presentation";
 import { initialLifeRequestState, lifeRequestReducer } from "@/domain/life-request-reducer";
 import { Confirmation, ConfirmationAction, ConfirmationActions, ConfirmationRequest, ConfirmationTitle } from "@/components/ai-elements/confirmation";
 
@@ -119,9 +120,10 @@ export function JourneyStarterComposer({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ plan: requestState.plan, answers: requestState.answers }),
       });
-      const body = await response.json() as { subjectEntityId?: string | null; journeyIds?: string[]; message?: string };
+      const body = await response.json() as { subjectEntityId?: string | null; subjectEntityIds?: string[]; journeyIds?: string[]; message?: string };
       if (!response.ok) throw new Error(body.message ?? "The update could not be added.");
-      if (body.subjectEntityId) router.push(`/life/${encodeURIComponent(body.subjectEntityId)}`);
+      if (body.subjectEntityIds?.length) router.push(lifeRequestDestination(body.subjectEntityIds));
+      else if (body.subjectEntityId) router.push(`/life/${encodeURIComponent(body.subjectEntityId)}`);
       else if (body.journeyIds?.[0]) router.push(`/journeys/${encodeURIComponent(body.journeyIds[0])}`);
       else throw new Error("The update was saved, but there is nothing to open.");
     } catch (caught) {
@@ -227,20 +229,47 @@ export function JourneyStarterComposer({
 }
 
 function LifeRequestDetails({ plan, answers, answer, review }: { plan: LifeRequestPlan; answers: Record<string, string>; answer: (id: string, value: string) => void; review: () => void }) {
-  const complete = plan.questions.every((question) => !question.required || answers[question.id]?.trim());
+  const [showErrors, setShowErrors] = useState(false);
+  const missingQuestionIds = new Set(plan.questions.filter((question) => question.required && !answers[question.id]?.trim()).map((question) => question.id));
+  function reviewDetails() {
+    if (!missingQuestionIds.size) {
+      review();
+      return;
+    }
+    setShowErrors(true);
+    requestAnimationFrame(() => document.getElementById(`life-request-${[...missingQuestionIds][0]}`)?.focus());
+  }
   return <section className="life-request-panel" aria-labelledby="life-request-details-title">
-    <header className="life-request-heading"><span><Sparkles /></span><div><p>Here’s what I understood</p><h2 id="life-request-details-title">{plan.summary}</h2></div></header>
-    <LifeRequestMap plan={plan} />
-    <div className="life-request-fields">
-      <p>A couple of details will help me prepare this properly.</p>
-      {plan.questions.map((question) => <label key={question.id}><span>{question.label}</span>{question.input === "choice" ? <select value={answers[question.id] ?? ""} onChange={(event) => answer(question.id, event.target.value)}><option value="">Choose one</option>{question.choices?.map((choice) => <option value={choice.value} key={choice.value}>{choice.label}</option>)}</select> : <input type={question.input} value={answers[question.id] ?? ""} onChange={(event) => answer(question.id, event.target.value)} />}</label>)}
-    </div>
-    <footer><span><ShieldCheck />Nothing has been added yet.</span><button type="button" className="life-search-submit" disabled={!complete} onClick={review}>Review what will be added<ArrowRight /></button></footer>
+    <header className="life-request-heading"><span><Sparkles /></span><div><p>Check what we understood</p><h2 id="life-request-details-title">{plan.summary}</h2><span>Each detail stays with the person or thing shown below.</span></div></header>
+    <LifeRequestMap plan={plan} answers={answers} answer={answer} mode="collect" invalidQuestionIds={showErrors ? missingQuestionIds : new Set()} />
+    <footer><span><ShieldCheck />Nothing has been added yet.</span><button type="button" className="life-search-submit" onClick={reviewDetails}>Review what will be added<ArrowRight /></button></footer>
   </section>;
 }
 
-function LifeRequestMap({ plan }: { plan: LifeRequestPlan }) {
-  return <div className="life-request-map">{plan.subjects.map((subject) => <div className="life-request-subject" key={subject.ref}><div className="life-request-person"><span><LifeSubjectIcon type={subject.type} /></span><div><small>{subject.relationship || subject.type}</small><strong>{subject.displayName}</strong></div></div><div className="life-request-needs">{plan.needs.filter((need) => need.subjectRef === subject.ref).map((need) => <div key={need.id}><Check /><span><strong>{need.label}</strong><small>{need.description}</small></span></div>)}</div></div>)}</div>;
+function subjectTypeLabel(subject: LifeRequestPlan["subjects"][number]) {
+  if (subject.relationship) return subject.relationship;
+  if (subject.type === "residence") return "Home";
+  if (subject.type === "business") return "Business";
+  if (subject.type === "vehicle") return "Vehicle";
+  return subject.type === "child" ? "Child" : "Person";
+}
+
+function LifeRequestMap({ plan, answers = {}, answer, mode = "summary", invalidQuestionIds = new Set<string>() }: { plan: LifeRequestPlan; answers?: Record<string, string>; answer?: (id: string, value: string) => void; mode?: "collect" | "review" | "summary"; invalidQuestionIds?: Set<string> }) {
+  const presentedSubjects = presentLifeRequest(plan, answers);
+  return <div className="life-request-map">{presentedSubjects.map((subject) => {
+    const questions = plan.questions.filter((question) => question.subjectRef === subject.ref);
+    return <article className="life-request-subject" key={subject.ref}>
+      <div className="life-request-person"><span><LifeSubjectIcon type={subject.type} /></span><div><small>{subjectTypeLabel(subject)}</small><strong>{subject.displayName}</strong></div></div>
+      <div className="life-request-needs">{plan.needs.filter((need) => need.subjectRef === subject.ref).map((need) => <div key={need.id}><ClipboardList aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description}</small></span></div>)}</div>
+      {mode === "collect" && questions.length ? <fieldset className="life-request-subject-fields"><legend>Details for {subject.displayName}</legend>{questions.map((question) => {
+        const fieldId = `life-request-${question.id}`;
+        const errorId = `${fieldId}-error`;
+        const invalid = invalidQuestionIds.has(question.id);
+        return <label key={question.id} htmlFor={fieldId}><span>{question.label}</span>{question.input === "choice" ? <select id={fieldId} name={question.factKey} value={answers[question.id] ?? ""} aria-invalid={invalid || undefined} aria-describedby={invalid ? errorId : undefined} onChange={(event) => answer?.(question.id, event.target.value)}><option value="">Choose one</option>{question.choices?.map((choice) => <option value={choice.value} key={choice.value}>{choice.label}</option>)}</select> : <input id={fieldId} name={question.factKey} type={question.input} value={answers[question.id] ?? ""} aria-invalid={invalid || undefined} aria-describedby={invalid ? errorId : undefined} onChange={(event) => answer?.(question.id, event.target.value)} />}{invalid ? <small className="life-request-field-error" id={errorId}>Enter this detail to continue.</small> : null}</label>;
+      })}</fieldset> : null}
+      {mode === "review" && subject.details.length ? <div className="life-request-review-details"><div className="life-request-review-label"><ClipboardList aria-hidden="true" /><strong>Details you gave</strong></div><dl>{subject.details.map((detail) => <div key={detail.id}><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}</dl></div> : null}
+    </article>;
+  })}</div>;
 }
 
 function LifeSubjectIcon({ type }: { type: LifeRequestPlan["subjects"][number]["type"] }) {
@@ -252,19 +281,13 @@ function LifeSubjectIcon({ type }: { type: LifeRequestPlan["subjects"][number]["
 }
 
 function LifeRequestProposal({ plan, answers, edit, apply }: { plan: LifeRequestPlan; answers: Record<string, string>; edit: () => void; apply: () => Promise<void> }) {
-  const namedPlan = { ...plan, subjects: plan.subjects.map((subject) => {
-    const nameQuestion = plan.questions.find((question) => question.subjectRef === subject.ref && ["child.name", "person.name", "business.name", "vehicle.makeModel", "move.label"].includes(question.factKey));
-    return { ...subject, displayName: nameQuestion ? answers[nameQuestion.id]?.trim() || subject.displayName : subject.displayName };
-  }) };
-  const peopleOnly = plan.subjects.every((subject) => subject.type === "person" || subject.type === "child");
-  const subjectLabel = plan.subjects.length === 1 ? (peopleOnly ? "person" : plan.subjects[0]!.type) : peopleOnly ? "people" : "people and things";
-  const approvalTarget = plan.subjects.length === 1 ? `this ${subjectLabel}` : `these ${subjectLabel}`;
+  const multipleSubjects = plan.subjects.length > 1;
   return <Confirmation className="life-request-panel life-request-confirmation" approval={{ id: plan.requestId }} state="approval-requested">
     <ConfirmationRequest>
-      <header className="life-request-heading"><span><Sparkles /></span><div><p>Ready for your approval</p><h2>{plan.subjects.length === 1 ? "One" : plan.subjects.length} {subjectLabel}, {plan.needs.length} {plan.needs.length === 1 ? "thing" : "things"} organised</h2></div></header>
-      <LifeRequestMap plan={namedPlan} />
-      <ConfirmationTitle><ShieldCheck />I’ll add {approvalTarget} and prepare these services. Nothing will be submitted to a department.</ConfirmationTitle>
-      <ConfirmationActions><ConfirmationAction variant="outline" onClick={edit}><ArrowLeft />Change details</ConfirmationAction><ConfirmationAction onClick={() => void apply()}>Add to My life<ArrowRight /></ConfirmationAction></ConfirmationActions>
+      <header className="life-request-heading"><span><Sparkles /></span><div><p>Ready to add to My life</p><h2>{approvalHeading(plan, answers)}</h2><span>{multipleSubjects ? `${plan.needs.length} service areas will stay under the right person or thing. ` : ""}Check the details below before you continue.</span></div></header>
+      <LifeRequestMap plan={plan} answers={answers} mode="review" />
+      <ConfirmationTitle><ShieldCheck />I’ll save only what is shown above. No department will be contacted.</ConfirmationTitle>
+      <ConfirmationActions><ConfirmationAction variant="outline" onClick={edit}><ArrowLeft />Change details</ConfirmationAction><ConfirmationAction onClick={() => void apply()}>{multipleSubjects ? "Add these to My life" : "Add to My life"}<ArrowRight /></ConfirmationAction></ConfirmationActions>
     </ConfirmationRequest>
   </Confirmation>;
 }

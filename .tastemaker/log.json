@@ -148,5 +148,15 @@
     "footer": "explicit approval boundary",
     "knobs": "structured-ai/no-chat/one-subject-many-needs/missing-facts/approval-gated/persistent-record",
     "brief": "UMANG Life · turn a compound natural-language request into one person or thing with several linked responsibilities"
+  },
+  {
+    "date": "2026-08-27",
+    "page": "compound request details, approval, and applied result",
+    "macrostructure": "Subject-centred Request Transformation",
+    "nav": "existing familiar top navigation and mobile bottom navigation",
+    "hero": "one plain-language request becomes grouped subjects, an exact approval receipt, and a complete saved-result receipt",
+    "footer": "one recommended next action after all affected records are visible",
+    "knobs": "subject-grouped-facts/complete-approval-receipt/multi-subject-success/plain-language/low-density/accessibility-verified",
+    "brief": "UMANG Life · make unusual compound requests verifiable before saving and visibly complete afterward"
   }
 ]

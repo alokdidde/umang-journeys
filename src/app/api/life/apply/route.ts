@@ -19,8 +19,12 @@ export async function POST(request: Request) {
   }
   try {
     const result = await applyLifeRequest(sessionId, prepareLifeRequest(output.data, requestId), answers.data, journeyRepository);
+    const subjectEntityIds = output.data.subjects
+      .map((subject) => result.subjectEntityIds[subject.ref])
+      .filter((id): id is string => Boolean(id));
     return NextResponse.json({
-      subjectEntityId: result.journeys[0]?.subject.canonicalEntityId ?? null,
+      subjectEntityId: subjectEntityIds[0] ?? null,
+      subjectEntityIds,
       journeyIds: result.journeys.map((journey) => journey.id),
     });
   } catch (error) {

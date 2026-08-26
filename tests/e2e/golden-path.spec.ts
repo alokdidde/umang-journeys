@@ -82,10 +82,16 @@ test("one request becomes one child with several organised needs", async ({ page
   await page.getByLabel("Tell us what happened").fill("I had a baby and need insurance for her");
   await page.getByRole("button", { name: "Show my steps" }).click();
   await expect(page.getByRole("heading", { name: "Add your daughter and organise her first services." })).toBeVisible();
+  await page.getByRole("button", { name: "Review what will be added" }).click();
+  await expect(page.getByText("Enter this detail to continue.")).toHaveCount(2);
+  await expect(page.getByLabel("What is your baby's name?")).toBeFocused();
   await page.getByLabel("What is your baby's name?").fill("Mira");
   await page.getByLabel("When was she born?").fill("2026-08-20");
   await page.getByRole("button", { name: "Review what will be added" }).click();
-  await expect(page.getByRole("heading", { name: "One person, 2 things organised" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Mira and organise 2 areas" })).toBeVisible();
+  await expect(page.getByText("20 Aug 2026", { exact: true })).toBeVisible();
+  const proposalA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(proposalA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
   await page.getByRole("button", { name: "Add to My life" }).click();
 
   await expect(page).toHaveURL(/\/life\/entity-/);
@@ -295,7 +301,7 @@ test("Show my steps accepts either a description or a document with context", as
   await page.getByLabel("Tell us what happened").fill("need to get insurance for parents");
   await page.getByRole("button", { name: "Show my steps" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "2 people, 2 things organised" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Mother and Father" })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("heading", { name: "What do you need help with?" })).toBeVisible();
@@ -364,11 +370,16 @@ test("a request for both parents creates one health journey for each parent", as
   await page.getByLabel("Tell us what happened").fill("I need to get insurance for my parents");
   await page.getByRole("button", { name: "Show my steps" }).click();
 
-  await expect(page.getByRole("heading", { name: "2 people, 2 things organised" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Mother and Father" })).toBeVisible();
   await expect(page.getByText("Mother", { exact: true })).toBeVisible();
   await expect(page.getByText("Father", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Add to My life" }).click();
-  await expect(page).toHaveURL(/\/life\/entity-/);
+  await page.getByRole("button", { name: "Add these to My life" }).click();
+  await expect(page).toHaveURL(/\/life\/added\?subject=/);
+  await expect(page.getByRole("heading", { name: "Everything in your request was added" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mother", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Father", exact: true })).toBeVisible();
+  const appliedA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(appliedA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
 
   const response = await page.request.get("/api/journeys");
   expect(response.ok()).toBeTruthy();
@@ -412,14 +423,14 @@ test("failed AI language analysis is visible and retryable without creating a gu
   await page.getByRole("button", { name: "Show my steps" }).click();
 
   await expect(page.getByText("We could not organise that request. Please try again.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "2 people, 2 things organised" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Add Mother and Father" })).toHaveCount(0);
   expect((await page.request.get("/api/journeys")).ok()).toBeTruthy();
   const beforeRetry = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
   expect(beforeRetry.journeys).toHaveLength(0);
 
   shouldFail = false;
   await page.getByRole("button", { name: "Show my steps" }).click();
-  await expect(page.getByRole("heading", { name: "2 people, 2 things organised" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add Mother and Father" })).toBeVisible();
   await page.request.post("/api/demo/reset");
 });
 
