@@ -165,6 +165,11 @@ function mapJourney(
 
 const includeJourney = { nodes: true, facts: { include: { revisions: { orderBy: { createdAt: "asc" as const } } } }, documents: true, evidence: true, subject: true, entityLinks: true, templateSnapshot: true, audits: true } as const;
 
+const transactionOptions = {
+  maxWait: 10_000,
+  timeout: 30_000,
+} as const;
+
 function validDate(value: string | undefined) {
   if (!value) return undefined;
   const date = new Date(value);
@@ -285,8 +290,13 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const prisma = getPrisma();
     const sourceType = provenance.source === "document" || provenance.source === "provider" ? "DERIVED" as const : provenance.source === "demo" ? "DEMO_PROFILE" as const : "USER_CONFIRMED" as const;
     await prisma.$transaction(async (tx) => {
-      for (const [key, valueJson] of Object.entries(facts)) {
-        const current = await tx.fact.findUnique({ where: { journeyId_key: { journeyId: id, key } } });
+      const factEntries = Object.entries(facts);
+      const currentFacts = factEntries.length
+        ? await tx.fact.findMany({ where: { journeyId: id, key: { in: factEntries.map(([key]) => key) } } })
+        : [];
+      const currentByKey = new Map(currentFacts.map((fact) => [fact.key, fact]));
+      for (const [key, valueJson] of factEntries) {
+        const current = currentByKey.get(key);
         if (current) {
           await tx.factRevision.updateMany({ where: { factId: current.id, status: "ACTIVE" }, data: { status: "CORRECTED" } });
           await tx.fact.update({
@@ -310,7 +320,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
         await tx.canonicalEntity.update({ where: { id: subjectLink.entityId }, data: { displayName: nextDisplayName || subjectLink.entity.displayName, dataJson: { ...currentData, ...facts } } });
       }
       await tx.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } });
-    });
+    }, transactionOptions);
     return this.get(sessionId, id);
   }
 
@@ -342,7 +352,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       }
       await tx.auditEvent.create({ data: { journeyId: id, actorType: "demo_user", eventType: "journey_branch_activated", payloadJson: { branchKey } } });
       await tx.journeyInstance.update({ where: { id }, data: { status: "ACTIVE", updatedAt: new Date() } });
-    });
+    }, transactionOptions);
     return this.get(sessionId, id);
   }
 
@@ -364,7 +374,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       }
       await tx.auditEvent.create({ data: { journeyId: id, actorType: "demo_user", eventType: scopedKey, payloadJson: { nodeKey } } });
       await tx.journeyInstance.update({ where: { id }, data: { status: isJourneyComplete(projection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() } });
-    });
+    }, transactionOptions);
     return this.get(sessionId, id);
   }
 
@@ -383,7 +393,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
         },
       });
       await tx.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } });
-    });
+    }, transactionOptions);
     const derivedFacts = evidenceFacts({ ...input, verificationStatus: input.verificationStatus });
     if (Object.keys(derivedFacts).length) await this.updateFacts(sessionId, id, derivedFacts, { source: "document", sourceRef: `evidence:${input.fileName}` });
     return this.get(sessionId, id);
@@ -401,7 +411,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       await tx.evidence.update({ where: { id: evidenceId }, data: { metadataJson: { ...value, extractedFields, verificationStatus: nextStatus, reviewedAt: new Date().toISOString() } } });
       await tx.auditEvent.create({ data: { journeyId: id, actorType: "demo_user", eventType: `evidence_${nextStatus}`, payloadJson: { evidenceId } } });
       await tx.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } });
-    });
+    }, transactionOptions);
     if (nextStatus === "verified") {
       const derivedFacts = evidenceFacts({ type: item.type as EvidenceType, extractedFields, verificationStatus: "verified" });
       if (Object.keys(derivedFacts).length) await this.updateFacts(sessionId, id, derivedFacts, { source: "document", sourceRef: evidenceId });
@@ -521,7 +531,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
         where: { id },
         data: { status: nextProjection && isJourneyComplete(nextProjection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() },
       });
-    });
+    }, transactionOptions);
     return this.get(sessionId, id);
   }
 
