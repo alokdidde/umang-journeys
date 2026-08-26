@@ -94,6 +94,12 @@ test("one request becomes one child with several organised needs", async ({ page
   await expect(approvalHeading).toBeFocused();
   await expect.poll(() => approvalHeading.evaluate((heading) => Math.round(heading.closest(".life-request-panel")?.getBoundingClientRect().width ?? 0))).toBe(800);
   await expect.poll(() => approvalHeading.evaluate((heading) => {
+    const panelBounds = heading.closest(".life-request-panel")?.getBoundingClientRect();
+    const laneBounds = heading.closest(".hero, .journey-starter")?.getBoundingClientRect();
+    if (!panelBounds || !laneBounds) return Number.POSITIVE_INFINITY;
+    return Math.round(Math.abs((panelBounds.left + panelBounds.right - laneBounds.left - laneBounds.right) / 2));
+  })).toBeLessThanOrEqual(1);
+  await expect.poll(() => approvalHeading.evaluate((heading) => {
     const bounds = heading.closest(".life-request-panel")?.getBoundingClientRect();
     return Boolean(bounds && bounds.top >= 0 && bounds.top < window.innerHeight / 2);
   })).toBe(true);

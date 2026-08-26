@@ -89,6 +89,7 @@ Established: 2026-08-26. Updated: 2026-08-27 for the subject-centred AI interact
 - Render authoritative tasks from the journey engine with the existing citizen task UI. Do not present model reasoning, raw tool calls, JSON, model selectors, or generated task guesses as citizen-facing service guidance.
 - Every mutating AI action states what will be added or changed and requires explicit approval. External submission, data sharing, declarations, and payments require a separate explicit approval at the point of action.
 - Compound-request approval shows every citizen-supplied answer under the person or thing it belongs to. After approval, one subject may open directly; several subjects first resolve into a complete saved-result receipt with every affected record and one recommended next action.
+- Expanded request details and approval panels stay centred within the guided reading lane; the compact request composer remains left-aligned with its prompt.
 - AI states include analysing, asking for information, proposal ready, applying, applied, declined, recoverable failure, and unavailable. Each state must remain understandable without animation or colour alone.
 
 ## Mood descriptors
