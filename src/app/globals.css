@@ -1119,7 +1119,7 @@ body { background:#f7f9fc; }
 .service-workspace-header { grid-template-columns:1fr; gap:18px; margin:22px 0; }
 .service-workspace-header h1 { font-size:clamp(36px,5vw,50px); }
 .service-workspace-header > div:first-child > p:last-child { max-width:650px; font-size:16px; line-height:1.55; }
-.service-state-card { max-width:520px; min-height:88px; }
+.service-state-card { width:100%; max-width:none; min-height:88px; }
 .service-workspace-grid { grid-template-columns:1fr; gap:18px; }
 .service-start-card { padding:30px; }
 .service-start-card h2 { font-size:27px; }
@@ -1440,7 +1440,8 @@ button,a,summary { touch-action:manipulation; }
 .sample-more > div { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; padding-bottom:2px; }
 
 /* Forms: one reading lane; reassurance is optional rather than a competing column. */
-.vehicle-form-layout { display:block; max-width:760px; }
+.vehicle-form-heading,.vehicle-form-layout { width:100%; max-width:760px; margin-inline:auto; }
+.vehicle-form-layout { display:block; }
 .vehicle-details-form { padding:26px; }
 .form-step-label { width:fit-content; margin:0 0 16px; padding:6px 9px; color:#285fae; background:#edf4ff; border-radius:8px; font-size:11px; font-weight:750; }
 .profile-form-actions { display:flex; align-items:center; gap:10px; margin-top:26px; }

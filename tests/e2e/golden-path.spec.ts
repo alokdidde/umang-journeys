@@ -74,6 +74,16 @@ async function login(page: Page, options: { mockIntake?: boolean } = {}) {
   await expect(page.getByRole("heading", { name: /Continue where you left off|What do you need help with\?|Everything is up to date/ })).toBeVisible();
 }
 
+async function expectCentredInClosest(page: Page, childSelector: string, ancestorSelector: string) {
+  await expect.poll(() => page.locator(childSelector).evaluate((element, selector) => {
+    const ancestor = element.closest(selector);
+    if (!ancestor) return Number.POSITIVE_INFINITY;
+    const childBounds = element.getBoundingClientRect();
+    const ancestorBounds = ancestor.getBoundingClientRect();
+    return Math.round(Math.abs((childBounds.left + childBounds.right - ancestorBounds.left - ancestorBounds.right) / 2));
+  }, ancestorSelector)).toBeLessThanOrEqual(1);
+}
+
 test("one request becomes one child with several organised needs", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
   await login(page);
@@ -258,6 +268,11 @@ test("newborn journey persists, completes every synthetic agency review, downloa
     await page.goto(`/journeys/${id}/services/${key}`);
     await page.getByLabel("I authorise an AI review of this synthetic case").check();
     await page.getByRole("button", { name: action }).click();
+    await expect(page.locator(".service-state-card")).toBeVisible();
+    await expect.poll(() => page.locator(".service-workspace-header, .service-state-card").evaluateAll((elements) => {
+      const widths = elements.map((element) => element.getBoundingClientRect().width);
+      return Math.round(Math.abs(widths[0] - widths[1]));
+    })).toBeLessThanOrEqual(1);
     await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
     await expect(page.locator(".service-artifact").getByRole("heading", { name: `Synthetic ${artifactTitle} result` })).toBeVisible();
     await expect(page.locator(".service-timeline time")).toHaveCount(1);
@@ -419,6 +434,33 @@ test("a request for both parents creates one health journey for each parent", as
     await page.goto(`/journeys/${journey.id}/health-profile`);
     await expect(page.getByLabel("Full name")).toHaveValue(detail.subject.displayName);
     await expect(page.getByRole("heading", { name: "About the person" })).toBeVisible();
+  }
+
+  await page.request.post("/api/demo/reset");
+});
+
+test("every guided profile form uses the same centred reading lane", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await login(page);
+  await page.request.post("/api/demo/reset");
+
+  const profiles = [
+    ["vehicle-purchase.india.v1", "vehicle-details"],
+    ["health-insurance.india.v1", "health-profile"],
+    ["moving-home.india.v1", "move-profile"],
+    ["business-setup.india.v1", "business-profile"],
+    ["retirement.india.v1", "retirement-profile"],
+  ] as const;
+
+  for (const [templateId, route] of profiles) {
+    const created = await page.request.post("/api/journeys", { data: { templateId, facts: {} } });
+    expect(created.ok()).toBeTruthy();
+    const { id } = await created.json() as { id: string };
+    await page.goto(`/journeys/${id}/${route}`);
+    await expect(page.locator(".vehicle-form-layout")).toBeVisible();
+    await expectCentredInClosest(page, ".vehicle-form-heading", ".service-shell");
+    await expectCentredInClosest(page, ".vehicle-form-layout", ".service-shell");
+    await expect.poll(() => page.locator(".vehicle-form-heading, .vehicle-form-layout").evaluateAll((elements) => elements.map((element) => Math.round(element.getBoundingClientRect().width)))).toEqual([760, 760]);
   }
 
   await page.request.post("/api/demo/reset");
