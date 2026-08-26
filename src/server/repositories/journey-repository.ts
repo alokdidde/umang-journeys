@@ -26,6 +26,22 @@ export type JourneySubjectSeed = Pick<JourneySubject, "type" | "displayName" | "
   canonicalEntityId?: string;
 };
 
+function identitySlug(value: string) {
+  return value.trim().toLocaleLowerCase("en-IN").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
+}
+
+export function canonicalEntityKey(subject: JourneySubjectSeed, facts: Record<string, string>) {
+  if (subject.type === "child") return `child:${identitySlug(facts["child.dateOfBirth"] || facts["child.name"] || subject.displayName)}`;
+  if (subject.type === "vehicle") return `vehicle:${identitySlug(facts["vehicle.registrationNumber"] || subject.displayName)}`;
+  if (subject.type === "residence") return `address:${identitySlug(facts["move.postalCode"] || facts["move.newCity"] || subject.displayName)}`;
+  if (subject.type === "business") return `business:${identitySlug(facts["business.gstin"] || facts["business.pan"] || subject.displayName)}`;
+  if (subject.role === "account_holder") return `person:${identitySlug(facts["person.name"] || subject.displayName)}`;
+  const relationship = facts["person.relationship"] || facts["health.dependentRelationship"];
+  const namedIdentity = [facts["person.name"], facts["person.dateOfBirth"]].filter(Boolean).join(":");
+  const requestIdentity = [facts["intake.requestId"], facts["intake.subjectRef"]].filter(Boolean).join(":");
+  return `person:${identitySlug(namedIdentity || relationship || requestIdentity || subject.displayName)}`;
+}
+
 export interface JourneyRepository {
   create(sessionId: string, facts?: Record<string, string>, templateId?: string, subject?: JourneySubjectSeed): Promise<StoredJourney>;
   list(sessionId: string): Promise<StoredJourney[]>;
@@ -110,7 +126,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
     if (!template) throw new Error(`Unknown journey template: ${templateId}`);
     const timestamp = now();
     const subject = subjectSeed ?? subjectForJourney(template.lifeEvent, facts);
-    const entityKey = `${sessionId}:${subject.type}:${subject.displayName.trim().toLocaleLowerCase("en-IN")}`;
+    const entityKey = `${sessionId}:${canonicalEntityKey(subject, facts)}`;
     const seededEntity = subjectSeed?.canonicalEntityId
       ? [...this.entities.values()].find((candidate) => candidate.id === subjectSeed.canonicalEntityId)
       : undefined;

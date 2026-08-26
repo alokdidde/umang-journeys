@@ -1,6 +1,6 @@
 import { activateBranch as activateJourneyBranch, compileJourney, completeNode, getJourneyTemplate, hydrateJourney, isJourneyComplete, newBabyTemplate, type JourneyTemplate, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
-import { buildAgencyCaseInput, canAdvanceFromVerifiedEvidence, evidenceFacts, type JourneyRepository, type JourneySubjectSeed, type StoredJourney } from "@/server/repositories/journey-repository";
+import { buildAgencyCaseInput, canAdvanceFromVerifiedEvidence, canonicalEntityKey, evidenceFacts, type JourneyRepository, type JourneySubjectSeed, type StoredJourney } from "@/server/repositories/journey-repository";
 import { agencyDecisionToServiceRun, evaluateSyntheticAgency, type ExternalAgencyAgent } from "@/server/integrations/external-agency-agent";
 import { serviceDefinitionFor, type SandboxServiceRun } from "@/domain/service-workflows";
 import type { EvidenceRecord, EvidenceSource, EvidenceType, JourneyEvidence } from "@/domain/evidence";
@@ -14,17 +14,6 @@ function subjectForJourney(lifeEvent: string, facts: Record<string, string>): { 
   if (lifeEvent === "starting_a_business") return { type: "BUSINESS", displayName: facts["business.name"]?.trim() || "Your new business" };
   if (lifeEvent === "managing_health_cover" || lifeEvent === "retirement") return { type: "PERSON", displayName: facts["person.name"]?.trim() || "Ananya Sharma" };
   return { type: "CHILD", displayName: facts["child.name"]?.trim() || "Your baby" };
-}
-
-function canonicalKey(subject: ReturnType<typeof subjectForJourney>, facts: Record<string, string>) {
-  const slug = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
-  if (subject.type === "CHILD") return `child:${facts["child.dateOfBirth"] || slug(subject.displayName)}`;
-  if (subject.type === "VEHICLE") return `vehicle:${slug(facts["vehicle.registrationNumber"] || subject.displayName)}`;
-  if (subject.type === "RESIDENCE") return `address:${slug(facts["move.postalCode"] || facts["move.newCity"] || subject.displayName)}`;
-  if (subject.type === "BUSINESS") return `business:${slug(facts["business.gstin"] || facts["business.pan"] || subject.displayName)}`;
-  return facts["health.dependentRelationship"]
-    ? `person:${slug(facts["health.dependentRelationship"])}`
-    : "person:ananya-sharma";
 }
 
 function isAccountHolder(subject: ReturnType<typeof subjectForJourney>, facts: Record<string, string>) {
@@ -221,10 +210,11 @@ export class PrismaJourneyRepository implements JourneyRepository {
       ? await prisma.canonicalEntity.findFirst({ where: { id: subjectSeed.canonicalEntityId, profileId: profile.id } })
       : null;
     if (subjectSeed?.canonicalEntityId && !selectedSubjectEntity) throw new Error("The selected person or thing is not available in this profile.");
+    const subjectEntityKey = canonicalEntityKey({ type: toSubjectType(subject.type), displayName: subject.displayName, role: subjectSeed?.role }, facts);
     const subjectEntity = selectedSubjectEntity ?? (subjectIsAccountHolder ? primaryPerson : await prisma.canonicalEntity.upsert({
-      where: { profileId_type_externalKey: { profileId: profile.id, type: canonicalType(subject), externalKey: canonicalKey(subject, facts) } },
+      where: { profileId_type_externalKey: { profileId: profile.id, type: canonicalType(subject), externalKey: subjectEntityKey } },
       update: { displayName: subject.displayName, dataJson: facts },
-      create: { profileId: profile.id, type: canonicalType(subject), externalKey: canonicalKey(subject, facts), displayName: subject.displayName, dataJson: facts },
+      create: { profileId: profile.id, type: canonicalType(subject), externalKey: subjectEntityKey, displayName: subject.displayName, dataJson: facts },
     }));
     const relationships = [
       { fromId: household.id, toId: primaryPerson.id, kind: "MEMBER" },

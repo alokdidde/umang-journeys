@@ -23,7 +23,11 @@ function factsForNeed(plan: LifeRequestPlan, subject: LifeRequestPlan["subjects"
     ...answeredFacts,
     "intake.requestId": plan.requestId,
     "intake.needId": need.id,
+    "intake.subjectRef": subject.ref,
   };
+  if ((subject.type === "person" || subject.type === "child") && subject.relationship) {
+    facts["person.relationship"] = subject.relationship;
+  }
   if (need.lifeEvent === "managing_health_cover" && subject.type === "child") {
     if (facts["child.name"]) facts["person.name"] = facts["child.name"];
     if (facts["child.dateOfBirth"]) facts["person.dateOfBirth"] = facts["child.dateOfBirth"];

@@ -35,4 +35,25 @@ describe("applying a life request", () => {
     const repository = new MemoryJourneyRepository();
     await expect(applyLifeRequest("session", prepareLifeRequest(output, "request-2"), {}, repository)).rejects.toMatchObject({ code: "MISSING_REQUIRED_ANSWERS" });
   });
+
+  it("keeps different relatives separate even when their display labels are generic", async () => {
+    const repository = new MemoryJourneyRepository();
+    const plan = prepareLifeRequest({
+      supported: true,
+      summary: "Arrange health cover for both parents.",
+      subjects: [
+        { ref: "mother", type: "person", displayName: "Parent", relationship: "mother", facts: [] },
+        { ref: "father", type: "person", displayName: "Parent", relationship: "father", facts: [] },
+      ],
+      needs: [
+        { id: "mother-cover", subjectRef: "mother", lifeEvent: "managing_health_cover", label: "Health cover for mother", description: "Prepare health cover.", confidence: 0.99, facts: [] },
+        { id: "father-cover", subjectRef: "father", lifeEvent: "managing_health_cover", label: "Health cover for father", description: "Prepare health cover.", confidence: 0.99, facts: [] },
+      ],
+      questions: [],
+    }, "request-parents");
+
+    const result = await applyLifeRequest("session", plan, {}, repository);
+
+    expect(new Set(Object.values(result.subjectEntityIds))).toHaveLength(2);
+  });
 });
