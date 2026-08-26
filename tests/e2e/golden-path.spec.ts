@@ -75,6 +75,7 @@ async function login(page: Page, options: { mockIntake?: boolean } = {}) {
 }
 
 test("one request becomes one child with several organised needs", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
   await login(page);
   await page.request.post("/api/demo/reset");
   await page.reload();
@@ -88,8 +89,24 @@ test("one request becomes one child with several organised needs", async ({ page
   await page.getByLabel("What is your baby's name?").fill("Mira");
   await page.getByLabel("When was she born?").fill("2026-08-20");
   await page.getByRole("button", { name: "Review what will be added" }).click();
-  await expect(page.getByRole("heading", { name: "Add Mira and organise 2 areas" })).toBeVisible();
+  const approvalHeading = page.getByRole("heading", { name: "Add Mira and organise 2 areas" });
+  await expect(approvalHeading).toBeVisible();
+  await expect(approvalHeading).toBeFocused();
+  await expect.poll(() => approvalHeading.evaluate((heading) => Math.round(heading.closest(".life-request-panel")?.getBoundingClientRect().width ?? 0))).toBe(800);
+  await expect.poll(() => approvalHeading.evaluate((heading) => {
+    const bounds = heading.closest(".life-request-panel")?.getBoundingClientRect();
+    return Boolean(bounds && bounds.top >= 0 && bounds.top < window.innerHeight / 2);
+  })).toBe(true);
   await expect(page.getByText("20 Aug 2026", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Change details" }).click();
+  const detailsHeading = page.getByRole("heading", { name: "Add your daughter and organise her first services." });
+  await expect(detailsHeading).toBeFocused();
+  await expect.poll(() => detailsHeading.evaluate((heading) => {
+    const bounds = heading.closest(".life-request-panel")?.getBoundingClientRect();
+    return Boolean(bounds && bounds.top >= 0 && bounds.top < window.innerHeight / 2);
+  })).toBe(true);
+  await page.getByRole("button", { name: "Review what will be added" }).click();
+  await expect(approvalHeading).toBeFocused();
   const proposalA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(proposalA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
   await page.getByRole("button", { name: "Add to My life" }).click();

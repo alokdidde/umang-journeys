@@ -1201,11 +1201,13 @@ button,a,summary { touch-action:manipulation; }
 /* New-user home: one conversational entry point plus plain, scannable choices. */
 .home-page { background:linear-gradient(180deg,#eef5ff 0,#f7f9fc 500px); }
 .home-page .hero { max-width:960px; min-height:340px; padding:30px 27% 14px 0; }
+.home-page .hero:has(.journey-composer.details),.home-page .hero:has(.journey-composer.proposal) { padding-right:0; }
 .home-page .hero h1 { max-width:580px; font-size:clamp(43px,5vw,60px); }
 .home-page .hero > p { max-width:560px; font-size:16px; }
 .life-search-submit { min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:0 15px; color:#fff; background:var(--blue); border:0; border-radius:10px; cursor:pointer; font-size:12px; font-weight:750; white-space:nowrap; }
 .life-search-submit svg { width:16px; }
 .journey-composer { width:min(700px,100%); margin-top:22px; }
+.journey-composer.details,.journey-composer.proposal { width:min(800px,100%); }
 .journey-composer-form [data-slot="input-group"] { min-height:116px; overflow:visible; color:var(--navy); background:rgba(255,255,255,.98); border:1px solid #aebfda; border-radius:16px; box-shadow:0 12px 30px rgba(24,65,128,.12); }
 .journey-composer-form [data-slot="input-group"]:focus-within { border-color:var(--blue); box-shadow:0 0 0 3px #dfeaff,0 12px 30px rgba(24,65,128,.12); }
 .journey-composer-form textarea[data-slot="input-group-control"] { min-height:58px; padding:15px 17px 4px; color:var(--navy); font-size:16px; line-height:1.45; }

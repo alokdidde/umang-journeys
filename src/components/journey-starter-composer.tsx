@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Baby, BriefcaseBusiness, Car, CheckCircle2, ClipboardList, FileSearch, FileText, Home, LoaderCircle, Paperclip, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
 import {
@@ -52,6 +52,25 @@ export function JourneyStarterComposer({
   const [requestState, dispatchRequest] = useReducer(lifeRequestReducer, initialLifeRequestState);
   const [document, setDocument] = useState<DocumentDeskRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const previousRequestPhase = useRef(requestState.phase);
+
+  useEffect(() => {
+    const previousPhase = previousRequestPhase.current;
+    previousRequestPhase.current = requestState.phase;
+    const headingId = previousPhase === "details" && requestState.phase === "proposal"
+      ? "life-request-proposal-title"
+      : previousPhase === "proposal" && requestState.phase === "details"
+        ? "life-request-details-title"
+        : null;
+    if (!headingId) return;
+
+    const frame = requestAnimationFrame(() => {
+      const heading = globalThis.document.getElementById(headingId);
+      heading?.focus({ preventScroll: true });
+      heading?.closest(".life-request-panel")?.scrollIntoView({ block: "start", behavior: "auto" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [requestState.phase]);
 
   async function analyseDocument(form: FormData) {
     setPhase("analysing");
@@ -240,7 +259,7 @@ function LifeRequestDetails({ plan, answers, answer, review }: { plan: LifeReque
     requestAnimationFrame(() => document.getElementById(`life-request-${[...missingQuestionIds][0]}`)?.focus());
   }
   return <section className="life-request-panel" aria-labelledby="life-request-details-title">
-    <header className="life-request-heading"><span><Sparkles /></span><div><p>Check what we understood</p><h2 id="life-request-details-title">{plan.summary}</h2><span>Each detail stays with the person or thing shown below.</span></div></header>
+    <header className="life-request-heading"><span><Sparkles /></span><div><p>Check what we understood</p><h2 id="life-request-details-title" tabIndex={-1}>{plan.summary}</h2><span>Each detail stays with the person or thing shown below.</span></div></header>
     <LifeRequestMap plan={plan} answers={answers} answer={answer} mode="collect" invalidQuestionIds={showErrors ? missingQuestionIds : new Set()} />
     <footer><span><ShieldCheck />Nothing has been added yet.</span><button type="button" className="life-search-submit" onClick={reviewDetails}>Review what will be added<ArrowRight /></button></footer>
   </section>;
@@ -284,7 +303,7 @@ function LifeRequestProposal({ plan, answers, edit, apply }: { plan: LifeRequest
   const multipleSubjects = plan.subjects.length > 1;
   return <Confirmation className="life-request-panel life-request-confirmation" approval={{ id: plan.requestId }} state="approval-requested">
     <ConfirmationRequest>
-      <header className="life-request-heading"><span><Sparkles /></span><div><p>Ready to add to My life</p><h2>{approvalHeading(plan, answers)}</h2><span>{multipleSubjects ? `${plan.needs.length} service areas will stay under the right person or thing. ` : ""}Check the details below before you continue.</span></div></header>
+      <header className="life-request-heading"><span><Sparkles /></span><div><p>Ready to add to My life</p><h2 id="life-request-proposal-title" tabIndex={-1}>{approvalHeading(plan, answers)}</h2><span>{multipleSubjects ? `${plan.needs.length} service areas will stay under the right person or thing. ` : ""}Check the details below before you continue.</span></div></header>
       <LifeRequestMap plan={plan} answers={answers} mode="review" />
       <ConfirmationTitle><ShieldCheck />I’ll save only what is shown above. No department will be contacted.</ConfirmationTitle>
       <ConfirmationActions><ConfirmationAction variant="outline" onClick={edit}><ArrowLeft />Change details</ConfirmationAction><ConfirmationAction onClick={() => void apply()}>{multipleSubjects ? "Add these to My life" : "Add to My life"}<ArrowRight /></ConfirmationAction></ConfirmationActions>
