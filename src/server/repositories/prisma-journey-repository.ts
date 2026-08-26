@@ -1,6 +1,6 @@
-import { completeNode, getJourneyTemplate, newBabyTemplate, type JourneyProjection, type NodeStatus } from "@/domain/journey-engine";
+import { completeNode, getJourneyTemplate, newBabyTemplate, type JourneyProjection, type JourneyTemplate, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
-import type { JourneyRepository, StoredJourney } from "@/server/repositories/journey-repository";
+import { evidenceFacts, type JourneyRepository, type StoredJourney } from "@/server/repositories/journey-repository";
 import { advanceSimulatedService, isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
 import type { SandboxServiceKey, SandboxServiceRun } from "@/domain/service-workflows";
 import type { EvidenceRecord, EvidenceSource, EvidenceType, JourneyEvidence } from "@/domain/evidence";
@@ -14,6 +14,22 @@ function subjectForJourney(lifeEvent: string, facts: Record<string, string>): { 
   if (lifeEvent === "starting_a_business") return { type: "BUSINESS", displayName: facts["business.name"]?.trim() || "Your new business" };
   if (lifeEvent === "managing_health_cover" || lifeEvent === "retirement") return { type: "PERSON", displayName: facts["person.name"]?.trim() || "Ananya Sharma" };
   return { type: "CHILD", displayName: facts["child.name"]?.trim() || "Your baby" };
+}
+
+function canonicalKey(subject: ReturnType<typeof subjectForJourney>, facts: Record<string, string>) {
+  const slug = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
+  if (subject.type === "CHILD") return `child:${facts["child.dateOfBirth"] || slug(subject.displayName)}`;
+  if (subject.type === "VEHICLE") return `vehicle:${slug(facts["vehicle.registrationNumber"] || subject.displayName)}`;
+  if (subject.type === "RESIDENCE") return `address:${slug(facts["move.postalCode"] || facts["move.newCity"] || subject.displayName)}`;
+  if (subject.type === "BUSINESS") return `business:${slug(facts["business.gstin"] || facts["business.pan"] || subject.displayName)}`;
+  return "person:ananya-sharma";
+}
+
+function canonicalType(subject: ReturnType<typeof subjectForJourney>) {
+  if (subject.type === "VEHICLE") return "VEHICLE" as const;
+  if (subject.type === "RESIDENCE") return "ADDRESS" as const;
+  if (subject.type === "BUSINESS") return "BUSINESS" as const;
+  return "PERSON" as const;
 }
 
 function toSubjectType(type: string): JourneySubject["type"] {
@@ -36,15 +52,20 @@ const toDatabaseStatus = (status: NodeStatus) => status.toUpperCase() as
 function mapJourney(
   journey: NonNullable<DatabaseJourney> & {
     nodes: Array<{ nodeKey: string; status: string; recommended: boolean }>;
-    facts: Array<{ key: string; valueJson: unknown }>;
+    facts: Array<{ key: string; valueJson: unknown; revisions: Array<{ id: string; valueJson: unknown; sourceType: string; sourceRef: string | null; status: string; createdAt: Date }> }>;
     documents: Array<{ metadataJson: unknown }>;
     evidence: Array<{ id: string; type: string; provider: string; metadataJson: unknown }>;
     subject: { id: string; type: string; displayName: string };
+    templateSnapshot: { configJson: unknown } | null;
+    audits: Array<{ id: string; actorType: string; eventType: string; payloadJson: unknown; createdAt: Date }>;
   },
   sessionId: string,
 ): StoredJourney {
   const nodeByKey = new Map(journey.nodes.map((node) => [node.nodeKey, node]));
-  const template = getJourneyTemplate(journey.templateId) ?? newBabyTemplate;
+  const snapshot = journey.templateSnapshot?.configJson;
+  const template = snapshot && typeof snapshot === "object" && "nodes" in snapshot && Array.isArray(snapshot.nodes)
+    ? snapshot as unknown as JourneyTemplate
+    : getJourneyTemplate(journey.templateId) ?? newBabyTemplate;
   const projection: JourneyProjection = {
     templateId: template.id,
     nodes: template.nodes.map((definition) => {
@@ -94,6 +115,13 @@ function mapJourney(
       source: String(value.source ?? item.provider) as EvidenceSource,
       verificationStatus: String(value.verificationStatus ?? "needs_review") as JourneyEvidence["verificationStatus"],
       extractedFields: value.extractedFields && typeof value.extractedFields === "object" ? value.extractedFields as Record<string, string> : {},
+      analysisConfidence: typeof value.analysisConfidence === "number" ? value.analysisConfidence : undefined,
+      checks: Array.isArray(value.checks) ? value.checks as JourneyEvidence["checks"] : undefined,
+      checksum: typeof value.checksum === "string" ? value.checksum : undefined,
+      scanStatus: value.scanStatus === "clean" ? "clean" as const : value.scanStatus === "flagged" ? "flagged" as const : undefined,
+      retentionExpiresAt: typeof value.retentionExpiresAt === "string" ? value.retentionExpiresAt : undefined,
+      version: typeof value.version === "number" ? value.version : undefined,
+      reviewedAt: typeof value.reviewedAt === "string" ? value.reviewedAt : undefined,
       createdAt: String(value.createdAt ?? journey.updatedAt.toISOString()),
     }];
   });
@@ -105,6 +133,16 @@ function mapJourney(
     subject: { id: journey.subject.id, type: toSubjectType(journey.subject.type), displayName: journey.subject.displayName },
     projection,
     facts,
+    factHistory: journey.facts.flatMap((fact) => fact.revisions.map((revision) => ({
+      id: revision.id,
+      key: fact.key,
+      value: typeof revision.valueJson === "string" ? revision.valueJson : String(revision.valueJson),
+      source: revision.sourceType === "DERIVED" ? (revision.sourceRef?.startsWith("provider:") ? "provider" as const : "document" as const) : revision.sourceType === "DEMO_PROFILE" ? "demo" as const : "user_statement" as const,
+      sourceRef: revision.sourceRef ?? undefined,
+      status: revision.status.toLowerCase() as "active" | "corrected" | "retracted",
+      recordedAt: revision.createdAt.toISOString(),
+    }))),
+    auditLog: journey.audits.map((event) => ({ id: event.id, actor: event.actorType === "sandbox_adapter" ? "provider" as const : event.actorType === "document_agent" ? "document_agent" as const : event.actorType === "system" ? "system" as const : "citizen" as const, event: event.eventType, detail: event.payloadJson && typeof event.payloadJson === "object" ? Object.fromEntries(Object.entries(event.payloadJson).map(([key, value]) => [key, String(value)])) : {}, occurredAt: event.createdAt.toISOString() })),
     serviceRuns,
     evidence,
     registrationId: registration?.registrationId,
@@ -113,7 +151,7 @@ function mapJourney(
   };
 }
 
-const includeJourney = { nodes: true, facts: true, documents: true, evidence: true, subject: true } as const;
+const includeJourney = { nodes: true, facts: { include: { revisions: { orderBy: { createdAt: "asc" as const } } } }, documents: true, evidence: true, subject: true, templateSnapshot: true, audits: true } as const;
 
 function validDate(value: string | undefined) {
   if (!value) return undefined;
@@ -141,6 +179,35 @@ export class PrismaJourneyRepository implements JourneyRepository {
       update: { version: template.version, lifeEvent: template.lifeEvent, configJson: template },
       create: { id: template.id, version: template.version, lifeEvent: template.lifeEvent, configJson: template },
     });
+    await prisma.journeyTemplateVersion.upsert({
+      where: { templateKey_version: { templateKey: template.id, version: template.version } },
+      update: {},
+      create: { templateKey: template.id, version: template.version, lifeEvent: template.lifeEvent, configJson: template },
+    });
+
+    const primaryPerson = await prisma.canonicalEntity.upsert({
+      where: { profileId_type_externalKey: { profileId: profile.id, type: "PERSON", externalKey: "person:ananya-sharma" } },
+      update: { displayName: facts["person.name"]?.trim() || "Ananya Sharma", dataJson: { role: "account_holder" } },
+      create: { profileId: profile.id, type: "PERSON", externalKey: "person:ananya-sharma", displayName: facts["person.name"]?.trim() || "Ananya Sharma", dataJson: { role: "account_holder" } },
+    });
+    const household = await prisma.canonicalEntity.upsert({
+      where: { profileId_type_externalKey: { profileId: profile.id, type: "HOUSEHOLD", externalKey: "household:ananya" } },
+      update: {},
+      create: { profileId: profile.id, type: "HOUSEHOLD", externalKey: "household:ananya", displayName: "Ananya's household", dataJson: { synthetic: true } },
+    });
+    const subjectEntity = subject.type === "PERSON" ? primaryPerson : await prisma.canonicalEntity.upsert({
+      where: { profileId_type_externalKey: { profileId: profile.id, type: canonicalType(subject), externalKey: canonicalKey(subject, facts) } },
+      update: { displayName: subject.displayName, dataJson: facts },
+      create: { profileId: profile.id, type: canonicalType(subject), externalKey: canonicalKey(subject, facts), displayName: subject.displayName, dataJson: facts },
+    });
+    const relationships = [
+      { fromId: household.id, toId: primaryPerson.id, kind: "MEMBER" },
+      ...(subjectEntity.id === primaryPerson.id ? [] : [{ fromId: subject.type === "CHILD" ? household.id : primaryPerson.id, toId: subjectEntity.id, kind: subject.type === "CHILD" ? "DEPENDENT" : subject.type === "RESIDENCE" ? "OCCUPIES" : subject.type === "BUSINESS" ? "OPERATES" : "OWNS" }]),
+    ];
+    for (const relationship of relationships) {
+      const existing = await prisma.entityRelationship.findFirst({ where: relationship });
+      if (!existing) await prisma.entityRelationship.create({ data: relationship });
+    }
 
     const initial = template.nodes.map((node, index) => ({
       nodeKey: node.key,
@@ -151,7 +218,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       data: {
         profile: { connect: { id: profile.id } },
         template: { connect: { id: template.id } },
-        templateVersion: template.version,
+        templateSnapshot: { connect: { templateKey_version: { templateKey: template.id, version: template.version } } },
         status: "ACTIVE",
         subject: {
           create: {
@@ -161,6 +228,11 @@ export class PrismaJourneyRepository implements JourneyRepository {
             profile: { connect: { id: profile.id } },
           },
         },
+        entityLinks: { create: [
+          { entityId: subjectEntity.id, role: "subject" },
+          { entityId: primaryPerson.id, role: "applicant" },
+          { entityId: household.id, role: "household" },
+        ] },
         nodes: { create: initial },
         facts: {
           create: Object.entries(facts).map(([key, valueJson]) => ({
@@ -168,6 +240,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
             valueJson,
             sourceType: "USER_CONFIRMED" as const,
             confirmed: true,
+            revisions: { create: { valueJson, sourceType: "USER_CONFIRMED", status: "ACTIVE" } },
           })),
         },
         edges: {
@@ -198,24 +271,30 @@ export class PrismaJourneyRepository implements JourneyRepository {
     return journey ? mapJourney(journey, sessionId) : null;
   }
 
-  async updateFacts(sessionId: string, id: string, facts: Record<string, string>) {
+  async updateFacts(sessionId: string, id: string, facts: Record<string, string>, provenance: { source: "user_statement" | "document" | "provider" | "demo"; sourceRef?: string } = { source: "user_statement" }) {
     const journey = await this.get(sessionId, id);
     if (!journey) return null;
     const prisma = getPrisma();
-    await prisma.$transaction(
-      [
-        ...Object.entries(facts).map(([key, valueJson]) =>
-        prisma.fact.upsert({
+    const sourceType = provenance.source === "document" || provenance.source === "provider" ? "DERIVED" as const : provenance.source === "demo" ? "DEMO_PROFILE" as const : "USER_CONFIRMED" as const;
+    await prisma.$transaction(async (tx) => {
+      for (const [key, valueJson] of Object.entries(facts)) {
+        const current = await tx.fact.findUnique({ where: { journeyId_key: { journeyId: id, key } } });
+        if (current) await tx.factRevision.updateMany({ where: { factId: current.id, status: "ACTIVE" }, data: { status: "CORRECTED" } });
+        await tx.fact.upsert({
           where: { journeyId_key: { journeyId: id, key } },
-          update: { valueJson, sourceType: "USER_CONFIRMED", confirmed: true },
-          create: { journeyId: id, key, valueJson, sourceType: "USER_CONFIRMED", confirmed: true },
-        })),
-        ...((facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || facts["move.label"]?.trim() || facts["move.newCity"]?.trim() || facts["business.name"]?.trim() || facts["person.name"]?.trim())
-          ? [prisma.journeySubject.update({ where: { id: journey.subject.id }, data: { displayName: facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || facts["move.label"]?.trim() || (facts["move.newCity"]?.trim() ? `New home in ${facts["move.newCity"].trim()}` : undefined) || facts["business.name"]?.trim() || facts["person.name"]!.trim() } })]
-          : []),
-        prisma.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } }),
-      ],
-    );
+          update: { valueJson, sourceType, sourceRef: provenance.sourceRef, confirmed: provenance.source === "user_statement", revisions: { create: { valueJson, sourceType, sourceRef: provenance.sourceRef, status: "ACTIVE" } } },
+          create: { journeyId: id, key, valueJson, sourceType, sourceRef: provenance.sourceRef, confirmed: provenance.source === "user_statement", revisions: { create: { valueJson, sourceType, sourceRef: provenance.sourceRef, status: "ACTIVE" } } },
+        });
+      }
+      const nextDisplayName = facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || facts["move.label"]?.trim() || (facts["move.newCity"]?.trim() ? `New home in ${facts["move.newCity"].trim()}` : undefined) || facts["business.name"]?.trim() || facts["person.name"]?.trim();
+      if (nextDisplayName) await tx.journeySubject.update({ where: { id: journey.subject.id }, data: { displayName: nextDisplayName } });
+      const subjectLink = await tx.journeyEntityLink.findFirst({ where: { journeyId: id, role: "subject" }, include: { entity: true } });
+      if (subjectLink) {
+        const currentData = JSON.parse(JSON.stringify(subjectLink.entity.dataJson)) as Record<string, string>;
+        await tx.canonicalEntity.update({ where: { id: subjectLink.entityId }, data: { displayName: nextDisplayName || subjectLink.entity.displayName, dataJson: { ...currentData, ...facts } } });
+      }
+      await tx.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } });
+    });
     return this.get(sessionId, id);
   }
 
@@ -245,24 +324,48 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const journey = await this.get(sessionId, id);
     if (!journey) return null;
     const createdAt = new Date().toISOString();
+    const version = journey.evidence.filter((item) => item.type === input.type).length + 1;
     await getPrisma().$transaction(async (tx) => {
-      await tx.evidence.deleteMany({ where: { journeyId: id, type: input.type } });
       await tx.evidence.create({
         data: {
           journeyId: id,
           type: input.type,
           provider: input.source,
-          metadataJson: { ...input, createdAt },
+          metadataJson: { ...input, version, createdAt },
         },
       });
       await tx.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } });
     });
+    const derivedFacts = evidenceFacts({ ...input, verificationStatus: input.verificationStatus });
+    if (Object.keys(derivedFacts).length) await this.updateFacts(sessionId, id, derivedFacts, { source: "document", sourceRef: `evidence:${input.fileName}` });
+    return this.get(sessionId, id);
+  }
+
+  async reviewEvidence(sessionId: string, id: string, evidenceId: string, approved: boolean, fields?: Record<string, string>) {
+    const item = await getPrisma().evidence.findFirst({ where: { id: evidenceId, journeyId: id, journey: { profile: { sessionId } } } });
+    if (!item || !item.metadataJson || typeof item.metadataJson !== "object") return null;
+    const value = item.metadataJson as Record<string, unknown>;
+    if (value.source === "sample") return null;
+    const checks = Array.isArray(value.checks) ? value.checks as Array<{ status?: string }> : [];
+    const extractedFields = fields ?? (value.extractedFields && typeof value.extractedFields === "object" ? value.extractedFields as Record<string, string> : {});
+    const nextStatus = approved && !checks.some((check) => check.status === "failed") && Object.keys(extractedFields).length > 0 ? "verified" : "rejected";
+    await getPrisma().$transaction(async (tx) => {
+      await tx.evidence.update({ where: { id: evidenceId }, data: { metadataJson: { ...value, extractedFields, verificationStatus: nextStatus, reviewedAt: new Date().toISOString() } } });
+      await tx.auditEvent.create({ data: { journeyId: id, actorType: "demo_user", eventType: `evidence_${nextStatus}`, payloadJson: { evidenceId } } });
+      await tx.journeyInstance.update({ where: { id }, data: { updatedAt: new Date() } });
+    });
+    if (nextStatus === "verified") {
+      const derivedFacts = evidenceFacts({ type: item.type as EvidenceType, extractedFields, verificationStatus: "verified" });
+      if (Object.keys(derivedFacts).length) await this.updateFacts(sessionId, id, derivedFacts, { source: "document", sourceRef: evidenceId });
+    }
     return this.get(sessionId, id);
   }
 
   async getEvidence(sessionId: string, id: string, evidenceId: string) {
-    const item = await getPrisma().evidence.findFirst({ where: { id: evidenceId, journeyId: id, journey: { profile: { sessionId } } } });
+    const prisma = getPrisma();
+    const item = await prisma.evidence.findFirst({ where: { id: evidenceId, journeyId: id, journey: { profile: { sessionId } } }, include: { journey: { select: { profileId: true } } } });
     if (!item || !item.metadataJson || typeof item.metadataJson !== "object") return null;
+    await prisma.accessEvent.create({ data: { profileId: item.journey.profileId, actor: "demo_user", action: "READ", resourceType: "journey_evidence", resourceId: item.id, metadataJson: { journeyId: id, evidenceType: item.type } } });
     const value = item.metadataJson as Record<string, unknown>;
     return {
       id: item.id,
@@ -273,6 +376,13 @@ export class PrismaJourneyRepository implements JourneyRepository {
       source: String(value.source ?? item.provider) as EvidenceSource,
       verificationStatus: String(value.verificationStatus ?? "needs_review") as EvidenceRecord["verificationStatus"],
       extractedFields: value.extractedFields && typeof value.extractedFields === "object" ? value.extractedFields as Record<string, string> : {},
+      analysisConfidence: typeof value.analysisConfidence === "number" ? value.analysisConfidence : undefined,
+      checks: Array.isArray(value.checks) ? value.checks as EvidenceRecord["checks"] : undefined,
+      checksum: typeof value.checksum === "string" ? value.checksum : undefined,
+      scanStatus: value.scanStatus === "clean" ? "clean" as const : value.scanStatus === "flagged" ? "flagged" as const : undefined,
+      retentionExpiresAt: typeof value.retentionExpiresAt === "string" ? value.retentionExpiresAt : undefined,
+      version: typeof value.version === "number" ? value.version : undefined,
+      reviewedAt: typeof value.reviewedAt === "string" ? value.reviewedAt : undefined,
       createdAt: String(value.createdAt ?? ""),
       contentBase64: String(value.contentBase64 ?? ""),
     };
@@ -340,12 +450,13 @@ export class PrismaJourneyRepository implements JourneyRepository {
     if (!journey || !projectedNode || projectedNode.status === "locked" || !isSandboxServiceKey(nodeKey)) return null;
     const prisma = getPrisma();
     const node = await prisma.journeyNode.findUniqueOrThrow({ where: { journeyId_nodeKey: { journeyId: id, nodeKey } } });
+    const owner = await prisma.journeyInstance.findUniqueOrThrow({ where: { id }, select: { profileId: true } });
     const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
     const existing = await prisma.externalAction.findUnique({ where: { idempotencyKey: scopedKey } });
     if (existing) return this.get(sessionId, id);
     const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey], journey.facts);
     const result = simulateExternalService(id, nodeKey);
-    const nodeStatus = run.status === "completed" ? "COMPLETED" : run.status === "waiting_external" ? "WAITING_EXTERNAL" : "IN_PROGRESS";
+    const nodeStatus = run.status === "completed" ? "COMPLETED" : run.status === "waiting_external" ? "WAITING_EXTERNAL" : run.status === "failed" ? "BLOCKED" : "IN_PROGRESS";
     const nextProjection = run.status === "completed" ? completeNode(journey.projection, nodeKey) : null;
 
     await prisma.$transaction(async (tx) => {
@@ -354,12 +465,21 @@ export class PrismaJourneyRepository implements JourneyRepository {
           nodeId: node.id,
           adapterKey: result.adapterKey,
           actionType: run.events.at(-1)?.stageKey ?? result.actionType,
-          status: run.status === "waiting_external" ? "PENDING" : "SUCCEEDED",
+          status: run.status === "failed" ? "FAILED" : run.status === "waiting_external" ? "PENDING" : "SUCCEEDED",
           idempotencyKey: scopedKey,
           requestJson: { runId: run.runId, stage: run.currentStage, synthetic: true },
           responseJson: { progress: run.progress, state: run.status, receipt: run.receipt, synthetic: true },
         },
       });
+      const caseStatus = (run.caseStatus ?? "under_review").toUpperCase() as "SUBMITTED" | "ACKNOWLEDGED" | "UNDER_REVIEW" | "ACTION_REQUIRED" | "APPROVED" | "REJECTED" | "WITHDRAWN" | "EXPIRED" | "APPEALED";
+      await tx.providerCase.upsert({
+        where: { journeyId_nodeKey: { journeyId: id, nodeKey } },
+        update: { status: caseStatus, scenario: run.scenario ?? "success", reasonCode: run.reasonCode, nextTransitionAt: run.nextTransitionAt ? new Date(run.nextTransitionAt) : null, payloadJson: run },
+        create: { journeyId: id, nodeKey, provider: run.provider, status: caseStatus, scenario: run.scenario ?? "success", reasonCode: run.reasonCode, nextTransitionAt: run.nextTransitionAt ? new Date(run.nextTransitionAt) : null, payloadJson: run },
+      });
+      if (!journey.serviceRuns[nodeKey] && journey.facts[`simulation.consent.${nodeKey}`]) {
+        await tx.consentGrant.create({ data: { profileId: owner.profileId, purpose: `sandbox_service:${nodeKey}`, scopeJson: { journeyId: id, nodeKey, provider: run.provider }, expiresAt: new Date(journey.facts[`simulation.consent.${nodeKey}`]) } });
+      }
       if (nextProjection) {
         for (const projectedNode of nextProjection.nodes) {
           await tx.journeyNode.update({

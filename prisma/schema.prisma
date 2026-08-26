@@ -38,6 +38,41 @@ enum ExternalActionStatus {
   FAILED
 }
 
+enum CanonicalEntityType {
+  PERSON
+  HOUSEHOLD
+  ADDRESS
+  VEHICLE
+  BUSINESS
+  POLICY
+  ACCOUNT
+}
+
+enum FactRevisionStatus {
+  ACTIVE
+  CORRECTED
+  RETRACTED
+}
+
+enum ProviderCaseStatus {
+  SUBMITTED
+  ACKNOWLEDGED
+  UNDER_REVIEW
+  ACTION_REQUIRED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+  EXPIRED
+  APPEALED
+}
+
+enum CitizenTaskStatus {
+  OPEN
+  WAITING
+  COMPLETED
+  DISMISSED
+}
+
 enum JourneySubjectType {
   CHILD
   VEHICLE
@@ -56,8 +91,42 @@ model UserProfile {
   journeys    JourneyInstance[]
   subjects    JourneySubject[]
   documentIntakes DocumentIntake[]
+  entities     CanonicalEntity[]
+  tasks        CitizenTask[]
+  consents     ConsentGrant[]
+  accessEvents AccessEvent[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+}
+
+model CanonicalEntity {
+  id          String              @id @default(cuid())
+  profileId   String
+  type        CanonicalEntityType
+  displayName String
+  externalKey String?
+  dataJson    Json
+  profile     UserProfile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  journeyLinks JourneyEntityLink[]
+  outgoingRelationships EntityRelationship[] @relation("RelationshipFrom")
+  incomingRelationships EntityRelationship[] @relation("RelationshipTo")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([profileId, type])
+  @@unique([profileId, type, externalKey])
+}
+
+model EntityRelationship {
+  id        String          @id @default(cuid())
+  fromId    String
+  toId      String
+  kind      String
+  validFrom DateTime?
+  validTo   DateTime?
+  from      CanonicalEntity @relation("RelationshipFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        CanonicalEntity @relation("RelationshipTo", fields: [toId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
 }
 
 model JourneySubject {
@@ -100,6 +169,33 @@ model JourneyInstance {
   documents       OutputDocument[]
   audits          AuditEvent[]
   documentIntakes DocumentIntake[]
+  entityLinks     JourneyEntityLink[]
+  tasks           CitizenTask[]
+  providerCases   ProviderCase[]
+  templateSnapshot JourneyTemplateVersion? @relation(fields: [templateId, templateVersion], references: [templateKey, version])
+}
+
+model JourneyEntityLink {
+  id        String          @id @default(cuid())
+  journeyId String
+  entityId  String
+  role      String
+  journey   JourneyInstance @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  entity    CanonicalEntity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyId, entityId, role])
+}
+
+model JourneyTemplateVersion {
+  id          String            @id @default(cuid())
+  templateKey String
+  version     Int
+  lifeEvent   String
+  configJson  Json
+  createdAt   DateTime          @default(now())
+  journeys    JourneyInstance[]
+
+  @@unique([templateKey, version])
 }
 
 model DocumentIntake {
@@ -157,8 +253,24 @@ model Fact {
   sourceRef  String?
   confirmed  Boolean         @default(false)
   journey    JourneyInstance @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  revisions  FactRevision[]
 
   @@unique([journeyId, key])
+}
+
+model FactRevision {
+  id           String             @id @default(cuid())
+  factId       String
+  valueJson    Json
+  sourceType   SourceType
+  sourceRef    String?
+  confidence   Float?
+  status       FactRevisionStatus @default(ACTIVE)
+  supersedesId String?
+  fact         Fact               @relation(fields: [factId], references: [id], onDelete: Cascade)
+  createdAt    DateTime           @default(now())
+
+  @@index([factId, createdAt])
 }
 
 model Evidence {
@@ -183,6 +295,67 @@ model ExternalAction {
   node           JourneyNode          @relation(fields: [nodeId], references: [id], onDelete: Cascade)
 }
 
+model ProviderCase {
+  id               String             @id @default(cuid())
+  journeyId        String
+  nodeKey          String
+  provider         String
+  status           ProviderCaseStatus
+  scenario         String
+  reasonCode       String?
+  nextTransitionAt DateTime?
+  payloadJson      Json
+  journey          JourneyInstance    @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@unique([journeyId, nodeKey])
+}
+
+model CitizenTask {
+  id          String            @id @default(cuid())
+  profileId   String
+  journeyId   String?
+  kind        String
+  title       String
+  detail      String
+  status      CitizenTaskStatus @default(OPEN)
+  dueAt       DateTime?
+  reminderAt  DateTime?
+  metadataJson Json
+  profile     UserProfile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  journey     JourneyInstance?  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([profileId, status, dueAt])
+}
+
+model ConsentGrant {
+  id          String      @id @default(cuid())
+  profileId   String
+  purpose     String
+  scopeJson   Json
+  grantedAt   DateTime    @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  profile     UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model AccessEvent {
+  id          String      @id @default(cuid())
+  profileId   String
+  actor       String
+  action      String
+  resourceType String
+  resourceId  String
+  metadataJson Json
+  profile     UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+
+  @@index([profileId, createdAt])
+}
+
 model OutputDocument {
   id           String          @id @default(cuid())
   journeyId    String
@@ -190,6 +363,9 @@ model OutputDocument {
   type         String
   synthetic    Boolean         @default(true)
   metadataJson Json
+  version      Int             @default(1)
+  supersedesId String?
+  checksum     String?
   journey      JourneyInstance @relation(fields: [journeyId], references: [id], onDelete: Cascade)
   node         JourneyNode     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
 }

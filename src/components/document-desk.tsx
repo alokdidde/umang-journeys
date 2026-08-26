@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useEffectReducer } from "use-effect-reducer";
 import {
   ArrowRight,
@@ -93,14 +94,14 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
     await analyseForm(form);
   }
 
-  async function decide(approved: boolean) {
+  async function decide(approved: boolean, options?: { targetJourneyId?: string; fields?: Record<string, string> }) {
     if (!state.document) return;
     dispatch({ type: "application_started" });
     try {
       const response = await fetch(`/api/assistant/documents/${encodeURIComponent(state.document.id)}/decision`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ approved }),
+        body: JSON.stringify({ approved, ...options }),
       });
       const body = await response.json() as DecisionResponse & { message?: string };
       if (!response.ok) throw new Error(body.message ?? "The proposed update could not be applied.");
@@ -200,8 +201,12 @@ function DocumentProcessing({ mode }: { mode: "analyse" | "apply" }) {
   </div>;
 }
 
-function ProposalReview({ document, decide }: { document: DocumentDeskRecord; decide: (approved: boolean) => Promise<void> }) {
+function ProposalReview({ document, decide }: { document: DocumentDeskRecord; decide: (approved: boolean, options?: { targetJourneyId?: string; fields?: Record<string, string> }) => Promise<void> }) {
   const proposal = document.proposal;
+  const [targetJourneyId, setTargetJourneyId] = useState(proposal.targetJourneyId ?? "");
+  const [fields, setFields] = useState(document.analysis.fields);
+  const [included, setIncluded] = useState(() => new Set(Object.keys(document.analysis.fields)));
+  const approvedFields = Object.fromEntries(Object.entries(fields).filter(([key]) => included.has(key)));
   const kindLabel = document.analysis.kind === "vehicle_rc"
     ? "Registration certificate"
     : document.analysis.kind === "vaccination_receipt"
@@ -226,7 +231,7 @@ function ProposalReview({ document, decide }: { document: DocumentDeskRecord; de
       <em><Check />Analysis complete</em>
     </header>
     <div className="document-proposal-body">
-      <div><p>{proposal.description}</p><dl>{proposal.changes.map((change) => <div key={change.label}><dt>{change.label}</dt><dd>{change.value}</dd></div>)}</dl></div>
+      <div><p>{proposal.description}</p>{Object.keys(fields).length ? <fieldset className="document-field-review"><legend>Choose and check the values to use</legend>{Object.entries(fields).map(([key, value]) => <label key={key}><input type="checkbox" checked={included.has(key)} onChange={(event) => setIncluded((current) => { const next = new Set(current); if (event.target.checked) next.add(key); else next.delete(key); return next; })} /><span>{key.replace(/([A-Z])/g, " $1")}</span><input value={value} disabled={!included.has(key)} onChange={(event) => setFields((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</fieldset> : <p>No supported values were read from this copy.</p>}{!proposal.canApply && proposal.targetOptions?.length ? <label className="document-target-picker"><span>Which journey is this for?</span><select value={targetJourneyId} onChange={(event) => setTargetJourneyId(event.target.value)}><option value="">Choose a journey</option>{proposal.targetOptions.map((option) => <option value={option.id} key={option.id}>{option.label} · {option.type}</option>)}</select></label> : null}</div>
       <aside><ShieldCheck /><strong>You stay in control</strong><p>We’ll run only the named update and preserve the source document as evidence.</p></aside>
     </div>
     {proposal.canApply ? <Confirmation approval={{ id: document.id }} state="approval-requested" className="document-confirmation">
@@ -234,10 +239,10 @@ function ProposalReview({ document, decide }: { document: DocumentDeskRecord; de
         <ConfirmationTitle>Approve this update to your UMANG journeys?</ConfirmationTitle>
         <ConfirmationActions>
           <ConfirmationAction variant="outline" onClick={() => void decide(false)}>Don’t update</ConfirmationAction>
-          <ConfirmationAction onClick={() => void decide(true)}>Approve update<ArrowRight /></ConfirmationAction>
+          <ConfirmationAction disabled={!Object.keys(approvedFields).length} onClick={() => void decide(true, { fields: approvedFields })}>Approve update with selected values<ArrowRight /></ConfirmationAction>
         </ConfirmationActions>
       </ConfirmationRequest>
-    </Confirmation> : <div className="document-needs-review"><ShieldCheck /><div><strong>We need a clearer match</strong><p>Upload a clearer copy or rename the file so we can identify the document. No update is available at this confidence.</p></div><button type="button" className="secondary-button" onClick={() => void decide(false)}>Dismiss</button></div>}
+    </Confirmation> : <div className="document-needs-review"><ShieldCheck /><div><strong>Choose where this document belongs</strong><p>Select a journey and approve only the values you want to use. If the document is unreadable, dismiss it and upload a clearer copy.</p></div><button type="button" className="secondary-button" onClick={() => void decide(false)}>Dismiss</button><button type="button" disabled={!targetJourneyId || !Object.keys(approvedFields).length} onClick={() => void decide(true, { targetJourneyId, fields: approvedFields })}>Apply to selected journey</button></div>}
   </div>;
 }
 

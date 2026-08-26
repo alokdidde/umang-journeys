@@ -5,7 +5,7 @@ import { documentAssistant } from "@/server/document-assistant-instance";
 import { getDemoSession } from "@/server/session";
 import { journeyRepository } from "@/server/repositories/journey-repository";
 
-const bodySchema = z.object({ approved: z.boolean() });
+const bodySchema = z.object({ approved: z.boolean(), targetJourneyId: z.string().optional(), fields: z.record(z.string(), z.string().max(300)).optional() });
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const sessionId = await getDemoSession();
@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsed.success) return NextResponse.json({ code: "INVALID_DECISION", message: "Approve or dismiss the proposed update." }, { status: 400 });
   const { id } = await params;
   try {
-    const result = await documentAssistant.apply(sessionId, id, parsed.data.approved);
+    const result = await documentAssistant.apply(sessionId, id, parsed.data.approved, { targetJourneyId: parsed.data.targetJourneyId, fields: parsed.data.fields });
     const journey = result.journeyId ? await journeyRepository.get(sessionId, result.journeyId) : null;
     return NextResponse.json({ ...result, journey: journey ? buildJourneySummary(journey) : null });
   } catch (error) {

@@ -50,4 +50,28 @@ describe("citizen hub snapshot", () => {
     expect(snapshot.activity[0]).toMatchObject({ title: "Timeline published", journeyId: "journey-child" });
     expect(snapshot.summary).toMatchObject({ uploaded: 1, issued: 1, activity: 5 });
   });
+
+  it("surfaces evidence reviews, provider questions, and journey exceptions as tasks", () => {
+    const snapshot = buildCitizenHubSnapshot({
+      journeys: [{
+        id: "journey-vehicle",
+        subject: { type: "vehicle", displayName: "Tata Nexon" },
+        title: "Buying a Vehicle",
+        createdAt: "2026-08-26T08:00:00.000Z",
+        updatedAt: "2026-08-26T08:00:00.000Z",
+        facts: { "vehicle.transferScope": "interstate" },
+        projection: { nodes: [{ key: "ownership_transfer", title: "Transfer ownership", status: "in_progress" }] },
+        evidence: [{ id: "rc", type: "vehicle_rc", fileName: "rc.pdf", mimeType: "application/pdf", size: 500, source: "user_upload", verificationStatus: "needs_review", extractedFields: {}, createdAt: "2026-08-26T08:00:00.000Z" }],
+        serviceRuns: { ownership_transfer: { status: "failed", updatedAt: "2026-08-26T08:01:00.000Z", events: [] } },
+      }],
+      documents: [],
+    });
+
+    expect(snapshot.tasks.map((task) => task.title)).toEqual(expect.arrayContaining([
+      "Prepare the interstate transfer",
+      "Review Vehicle Rc",
+      "Respond to the provider",
+    ]));
+    expect(snapshot.summary.tasks).toBe(3);
+  });
 });

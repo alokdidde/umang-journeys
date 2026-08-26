@@ -250,6 +250,10 @@ export type JourneyInstanceWhereInput = {
   documents?: Prisma.OutputDocumentListRelationFilter
   audits?: Prisma.AuditEventListRelationFilter
   documentIntakes?: Prisma.DocumentIntakeListRelationFilter
+  entityLinks?: Prisma.JourneyEntityLinkListRelationFilter
+  tasks?: Prisma.CitizenTaskListRelationFilter
+  providerCases?: Prisma.ProviderCaseListRelationFilter
+  templateSnapshot?: Prisma.XOR<Prisma.JourneyTemplateVersionNullableScalarRelationFilter, Prisma.JourneyTemplateVersionWhereInput> | null
 }
 
 export type JourneyInstanceOrderByWithRelationInput = {
@@ -271,6 +275,10 @@ export type JourneyInstanceOrderByWithRelationInput = {
   documents?: Prisma.OutputDocumentOrderByRelationAggregateInput
   audits?: Prisma.AuditEventOrderByRelationAggregateInput
   documentIntakes?: Prisma.DocumentIntakeOrderByRelationAggregateInput
+  entityLinks?: Prisma.JourneyEntityLinkOrderByRelationAggregateInput
+  tasks?: Prisma.CitizenTaskOrderByRelationAggregateInput
+  providerCases?: Prisma.ProviderCaseOrderByRelationAggregateInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionOrderByWithRelationInput
 }
 
 export type JourneyInstanceWhereUniqueInput = Prisma.AtLeast<{
@@ -295,6 +303,10 @@ export type JourneyInstanceWhereUniqueInput = Prisma.AtLeast<{
   documents?: Prisma.OutputDocumentListRelationFilter
   audits?: Prisma.AuditEventListRelationFilter
   documentIntakes?: Prisma.DocumentIntakeListRelationFilter
+  entityLinks?: Prisma.JourneyEntityLinkListRelationFilter
+  tasks?: Prisma.CitizenTaskListRelationFilter
+  providerCases?: Prisma.ProviderCaseListRelationFilter
+  templateSnapshot?: Prisma.XOR<Prisma.JourneyTemplateVersionNullableScalarRelationFilter, Prisma.JourneyTemplateVersionWhereInput> | null
 }, "id">
 
 export type JourneyInstanceOrderByWithAggregationInput = {
@@ -329,7 +341,6 @@ export type JourneyInstanceScalarWhereWithAggregatesInput = {
 
 export type JourneyInstanceCreateInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -343,6 +354,10 @@ export type JourneyInstanceCreateInput = {
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateInput = {
@@ -361,11 +376,13 @@ export type JourneyInstanceUncheckedCreateInput = {
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -379,6 +396,10 @@ export type JourneyInstanceUpdateInput = {
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateInput = {
@@ -397,6 +418,9 @@ export type JourneyInstanceUncheckedUpdateInput = {
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceCreateManyInput = {
@@ -412,7 +436,6 @@ export type JourneyInstanceCreateManyInput = {
 
 export type JourneyInstanceUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -480,14 +503,14 @@ export type JourneyInstanceSumOrderByAggregateInput = {
   templateVersion?: Prisma.SortOrder
 }
 
-export type JourneyInstanceNullableScalarRelationFilter = {
-  is?: Prisma.JourneyInstanceWhereInput | null
-  isNot?: Prisma.JourneyInstanceWhereInput | null
-}
-
 export type JourneyInstanceScalarRelationFilter = {
   is?: Prisma.JourneyInstanceWhereInput
   isNot?: Prisma.JourneyInstanceWhereInput
+}
+
+export type JourneyInstanceNullableScalarRelationFilter = {
+  is?: Prisma.JourneyInstanceWhereInput | null
+  isNot?: Prisma.JourneyInstanceWhereInput | null
 }
 
 export type JourneyInstanceCreateNestedManyWithoutProfileInput = {
@@ -620,6 +643,62 @@ export type EnumJourneyStatusFieldUpdateOperationsInput = {
   set?: $Enums.JourneyStatus
 }
 
+export type JourneyInstanceCreateNestedOneWithoutEntityLinksInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutEntityLinksInput, Prisma.JourneyInstanceUncheckedCreateWithoutEntityLinksInput>
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutEntityLinksInput
+  connect?: Prisma.JourneyInstanceWhereUniqueInput
+}
+
+export type JourneyInstanceUpdateOneRequiredWithoutEntityLinksNestedInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutEntityLinksInput, Prisma.JourneyInstanceUncheckedCreateWithoutEntityLinksInput>
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutEntityLinksInput
+  upsert?: Prisma.JourneyInstanceUpsertWithoutEntityLinksInput
+  connect?: Prisma.JourneyInstanceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.JourneyInstanceUpdateToOneWithWhereWithoutEntityLinksInput, Prisma.JourneyInstanceUpdateWithoutEntityLinksInput>, Prisma.JourneyInstanceUncheckedUpdateWithoutEntityLinksInput>
+}
+
+export type JourneyInstanceCreateNestedManyWithoutTemplateSnapshotInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput, Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput> | Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput[] | Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput[]
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutTemplateSnapshotInput | Prisma.JourneyInstanceCreateOrConnectWithoutTemplateSnapshotInput[]
+  createMany?: Prisma.JourneyInstanceCreateManyTemplateSnapshotInputEnvelope
+  connect?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+}
+
+export type JourneyInstanceUncheckedCreateNestedManyWithoutTemplateSnapshotInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput, Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput> | Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput[] | Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput[]
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutTemplateSnapshotInput | Prisma.JourneyInstanceCreateOrConnectWithoutTemplateSnapshotInput[]
+  createMany?: Prisma.JourneyInstanceCreateManyTemplateSnapshotInputEnvelope
+  connect?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+}
+
+export type JourneyInstanceUpdateManyWithoutTemplateSnapshotNestedInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput, Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput> | Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput[] | Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput[]
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutTemplateSnapshotInput | Prisma.JourneyInstanceCreateOrConnectWithoutTemplateSnapshotInput[]
+  upsert?: Prisma.JourneyInstanceUpsertWithWhereUniqueWithoutTemplateSnapshotInput | Prisma.JourneyInstanceUpsertWithWhereUniqueWithoutTemplateSnapshotInput[]
+  createMany?: Prisma.JourneyInstanceCreateManyTemplateSnapshotInputEnvelope
+  set?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+  disconnect?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+  delete?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+  connect?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+  update?: Prisma.JourneyInstanceUpdateWithWhereUniqueWithoutTemplateSnapshotInput | Prisma.JourneyInstanceUpdateWithWhereUniqueWithoutTemplateSnapshotInput[]
+  updateMany?: Prisma.JourneyInstanceUpdateManyWithWhereWithoutTemplateSnapshotInput | Prisma.JourneyInstanceUpdateManyWithWhereWithoutTemplateSnapshotInput[]
+  deleteMany?: Prisma.JourneyInstanceScalarWhereInput | Prisma.JourneyInstanceScalarWhereInput[]
+}
+
+export type JourneyInstanceUncheckedUpdateManyWithoutTemplateSnapshotNestedInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput, Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput> | Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput[] | Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput[]
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutTemplateSnapshotInput | Prisma.JourneyInstanceCreateOrConnectWithoutTemplateSnapshotInput[]
+  upsert?: Prisma.JourneyInstanceUpsertWithWhereUniqueWithoutTemplateSnapshotInput | Prisma.JourneyInstanceUpsertWithWhereUniqueWithoutTemplateSnapshotInput[]
+  createMany?: Prisma.JourneyInstanceCreateManyTemplateSnapshotInputEnvelope
+  set?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+  disconnect?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+  delete?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+  connect?: Prisma.JourneyInstanceWhereUniqueInput | Prisma.JourneyInstanceWhereUniqueInput[]
+  update?: Prisma.JourneyInstanceUpdateWithWhereUniqueWithoutTemplateSnapshotInput | Prisma.JourneyInstanceUpdateWithWhereUniqueWithoutTemplateSnapshotInput[]
+  updateMany?: Prisma.JourneyInstanceUpdateManyWithWhereWithoutTemplateSnapshotInput | Prisma.JourneyInstanceUpdateManyWithWhereWithoutTemplateSnapshotInput[]
+  deleteMany?: Prisma.JourneyInstanceScalarWhereInput | Prisma.JourneyInstanceScalarWhereInput[]
+}
+
 export type JourneyInstanceCreateNestedOneWithoutDocumentIntakesInput = {
   create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutDocumentIntakesInput, Prisma.JourneyInstanceUncheckedCreateWithoutDocumentIntakesInput>
   connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutDocumentIntakesInput
@@ -692,6 +771,36 @@ export type JourneyInstanceUpdateOneRequiredWithoutEvidenceNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.JourneyInstanceUpdateToOneWithWhereWithoutEvidenceInput, Prisma.JourneyInstanceUpdateWithoutEvidenceInput>, Prisma.JourneyInstanceUncheckedUpdateWithoutEvidenceInput>
 }
 
+export type JourneyInstanceCreateNestedOneWithoutProviderCasesInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutProviderCasesInput, Prisma.JourneyInstanceUncheckedCreateWithoutProviderCasesInput>
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutProviderCasesInput
+  connect?: Prisma.JourneyInstanceWhereUniqueInput
+}
+
+export type JourneyInstanceUpdateOneRequiredWithoutProviderCasesNestedInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutProviderCasesInput, Prisma.JourneyInstanceUncheckedCreateWithoutProviderCasesInput>
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutProviderCasesInput
+  upsert?: Prisma.JourneyInstanceUpsertWithoutProviderCasesInput
+  connect?: Prisma.JourneyInstanceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.JourneyInstanceUpdateToOneWithWhereWithoutProviderCasesInput, Prisma.JourneyInstanceUpdateWithoutProviderCasesInput>, Prisma.JourneyInstanceUncheckedUpdateWithoutProviderCasesInput>
+}
+
+export type JourneyInstanceCreateNestedOneWithoutTasksInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTasksInput, Prisma.JourneyInstanceUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutTasksInput
+  connect?: Prisma.JourneyInstanceWhereUniqueInput
+}
+
+export type JourneyInstanceUpdateOneWithoutTasksNestedInput = {
+  create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTasksInput, Prisma.JourneyInstanceUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutTasksInput
+  upsert?: Prisma.JourneyInstanceUpsertWithoutTasksInput
+  disconnect?: Prisma.JourneyInstanceWhereInput | boolean
+  delete?: Prisma.JourneyInstanceWhereInput | boolean
+  connect?: Prisma.JourneyInstanceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.JourneyInstanceUpdateToOneWithWhereWithoutTasksInput, Prisma.JourneyInstanceUpdateWithoutTasksInput>, Prisma.JourneyInstanceUncheckedUpdateWithoutTasksInput>
+}
+
 export type JourneyInstanceCreateNestedOneWithoutDocumentsInput = {
   create?: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutDocumentsInput, Prisma.JourneyInstanceUncheckedCreateWithoutDocumentsInput>
   connectOrCreate?: Prisma.JourneyInstanceCreateOrConnectWithoutDocumentsInput
@@ -722,7 +831,6 @@ export type JourneyInstanceUpdateOneRequiredWithoutAuditsNestedInput = {
 
 export type JourneyInstanceCreateWithoutProfileInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -735,6 +843,10 @@ export type JourneyInstanceCreateWithoutProfileInput = {
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutProfileInput = {
@@ -752,6 +864,9 @@ export type JourneyInstanceUncheckedCreateWithoutProfileInput = {
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutProfileInput = {
@@ -796,7 +911,6 @@ export type JourneyInstanceScalarWhereInput = {
 
 export type JourneyInstanceCreateWithoutSubjectInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -809,6 +923,10 @@ export type JourneyInstanceCreateWithoutSubjectInput = {
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutSubjectInput = {
@@ -826,6 +944,9 @@ export type JourneyInstanceUncheckedCreateWithoutSubjectInput = {
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutSubjectInput = {
@@ -856,7 +977,6 @@ export type JourneyInstanceUpdateManyWithWhereWithoutSubjectInput = {
 
 export type JourneyInstanceCreateWithoutTemplateInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -869,6 +989,10 @@ export type JourneyInstanceCreateWithoutTemplateInput = {
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutTemplateInput = {
@@ -886,6 +1010,9 @@ export type JourneyInstanceUncheckedCreateWithoutTemplateInput = {
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutTemplateInput = {
@@ -914,9 +1041,8 @@ export type JourneyInstanceUpdateManyWithWhereWithoutTemplateInput = {
   data: Prisma.XOR<Prisma.JourneyInstanceUpdateManyMutationInput, Prisma.JourneyInstanceUncheckedUpdateManyWithoutTemplateInput>
 }
 
-export type JourneyInstanceCreateWithoutDocumentIntakesInput = {
+export type JourneyInstanceCreateWithoutEntityLinksInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -929,6 +1055,171 @@ export type JourneyInstanceCreateWithoutDocumentIntakesInput = {
   evidence?: Prisma.EvidenceCreateNestedManyWithoutJourneyInput
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
+}
+
+export type JourneyInstanceUncheckedCreateWithoutEntityLinksInput = {
+  id?: string
+  profileId: string
+  templateId: string
+  templateVersion: number
+  subjectId: string
+  status?: $Enums.JourneyStatus
+  startedAt?: Date | string
+  updatedAt?: Date | string
+  nodes?: Prisma.JourneyNodeUncheckedCreateNestedManyWithoutJourneyInput
+  edges?: Prisma.JourneyEdgeUncheckedCreateNestedManyWithoutJourneyInput
+  facts?: Prisma.FactUncheckedCreateNestedManyWithoutJourneyInput
+  evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutJourneyInput
+  documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
+  audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
+}
+
+export type JourneyInstanceCreateOrConnectWithoutEntityLinksInput = {
+  where: Prisma.JourneyInstanceWhereUniqueInput
+  create: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutEntityLinksInput, Prisma.JourneyInstanceUncheckedCreateWithoutEntityLinksInput>
+}
+
+export type JourneyInstanceUpsertWithoutEntityLinksInput = {
+  update: Prisma.XOR<Prisma.JourneyInstanceUpdateWithoutEntityLinksInput, Prisma.JourneyInstanceUncheckedUpdateWithoutEntityLinksInput>
+  create: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutEntityLinksInput, Prisma.JourneyInstanceUncheckedCreateWithoutEntityLinksInput>
+  where?: Prisma.JourneyInstanceWhereInput
+}
+
+export type JourneyInstanceUpdateToOneWithWhereWithoutEntityLinksInput = {
+  where?: Prisma.JourneyInstanceWhereInput
+  data: Prisma.XOR<Prisma.JourneyInstanceUpdateWithoutEntityLinksInput, Prisma.JourneyInstanceUncheckedUpdateWithoutEntityLinksInput>
+}
+
+export type JourneyInstanceUpdateWithoutEntityLinksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutJourneysNestedInput
+  template?: Prisma.JourneyTemplateUpdateOneRequiredWithoutJourneysNestedInput
+  subject?: Prisma.JourneySubjectUpdateOneRequiredWithoutJourneysNestedInput
+  nodes?: Prisma.JourneyNodeUpdateManyWithoutJourneyNestedInput
+  edges?: Prisma.JourneyEdgeUpdateManyWithoutJourneyNestedInput
+  facts?: Prisma.FactUpdateManyWithoutJourneyNestedInput
+  evidence?: Prisma.EvidenceUpdateManyWithoutJourneyNestedInput
+  documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
+  audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
+}
+
+export type JourneyInstanceUncheckedUpdateWithoutEntityLinksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  templateId?: Prisma.StringFieldUpdateOperationsInput | string
+  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  subjectId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nodes?: Prisma.JourneyNodeUncheckedUpdateManyWithoutJourneyNestedInput
+  edges?: Prisma.JourneyEdgeUncheckedUpdateManyWithoutJourneyNestedInput
+  facts?: Prisma.FactUncheckedUpdateManyWithoutJourneyNestedInput
+  evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutJourneyNestedInput
+  documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
+  audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
+}
+
+export type JourneyInstanceCreateWithoutTemplateSnapshotInput = {
+  id?: string
+  status?: $Enums.JourneyStatus
+  startedAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutJourneysInput
+  template: Prisma.JourneyTemplateCreateNestedOneWithoutJourneysInput
+  subject: Prisma.JourneySubjectCreateNestedOneWithoutJourneysInput
+  nodes?: Prisma.JourneyNodeCreateNestedManyWithoutJourneyInput
+  edges?: Prisma.JourneyEdgeCreateNestedManyWithoutJourneyInput
+  facts?: Prisma.FactCreateNestedManyWithoutJourneyInput
+  evidence?: Prisma.EvidenceCreateNestedManyWithoutJourneyInput
+  documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
+  audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+}
+
+export type JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput = {
+  id?: string
+  profileId: string
+  subjectId: string
+  status?: $Enums.JourneyStatus
+  startedAt?: Date | string
+  updatedAt?: Date | string
+  nodes?: Prisma.JourneyNodeUncheckedCreateNestedManyWithoutJourneyInput
+  edges?: Prisma.JourneyEdgeUncheckedCreateNestedManyWithoutJourneyInput
+  facts?: Prisma.FactUncheckedCreateNestedManyWithoutJourneyInput
+  evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutJourneyInput
+  documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
+  audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
+}
+
+export type JourneyInstanceCreateOrConnectWithoutTemplateSnapshotInput = {
+  where: Prisma.JourneyInstanceWhereUniqueInput
+  create: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput, Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput>
+}
+
+export type JourneyInstanceCreateManyTemplateSnapshotInputEnvelope = {
+  data: Prisma.JourneyInstanceCreateManyTemplateSnapshotInput | Prisma.JourneyInstanceCreateManyTemplateSnapshotInput[]
+  skipDuplicates?: boolean
+}
+
+export type JourneyInstanceUpsertWithWhereUniqueWithoutTemplateSnapshotInput = {
+  where: Prisma.JourneyInstanceWhereUniqueInput
+  update: Prisma.XOR<Prisma.JourneyInstanceUpdateWithoutTemplateSnapshotInput, Prisma.JourneyInstanceUncheckedUpdateWithoutTemplateSnapshotInput>
+  create: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTemplateSnapshotInput, Prisma.JourneyInstanceUncheckedCreateWithoutTemplateSnapshotInput>
+}
+
+export type JourneyInstanceUpdateWithWhereUniqueWithoutTemplateSnapshotInput = {
+  where: Prisma.JourneyInstanceWhereUniqueInput
+  data: Prisma.XOR<Prisma.JourneyInstanceUpdateWithoutTemplateSnapshotInput, Prisma.JourneyInstanceUncheckedUpdateWithoutTemplateSnapshotInput>
+}
+
+export type JourneyInstanceUpdateManyWithWhereWithoutTemplateSnapshotInput = {
+  where: Prisma.JourneyInstanceScalarWhereInput
+  data: Prisma.XOR<Prisma.JourneyInstanceUpdateManyMutationInput, Prisma.JourneyInstanceUncheckedUpdateManyWithoutTemplateSnapshotInput>
+}
+
+export type JourneyInstanceCreateWithoutDocumentIntakesInput = {
+  id?: string
+  status?: $Enums.JourneyStatus
+  startedAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutJourneysInput
+  template: Prisma.JourneyTemplateCreateNestedOneWithoutJourneysInput
+  subject: Prisma.JourneySubjectCreateNestedOneWithoutJourneysInput
+  nodes?: Prisma.JourneyNodeCreateNestedManyWithoutJourneyInput
+  edges?: Prisma.JourneyEdgeCreateNestedManyWithoutJourneyInput
+  facts?: Prisma.FactCreateNestedManyWithoutJourneyInput
+  evidence?: Prisma.EvidenceCreateNestedManyWithoutJourneyInput
+  documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
+  audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutDocumentIntakesInput = {
@@ -946,6 +1237,9 @@ export type JourneyInstanceUncheckedCreateWithoutDocumentIntakesInput = {
   evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutJourneyInput
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutDocumentIntakesInput = {
@@ -966,7 +1260,6 @@ export type JourneyInstanceUpdateToOneWithWhereWithoutDocumentIntakesInput = {
 
 export type JourneyInstanceUpdateWithoutDocumentIntakesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -979,6 +1272,10 @@ export type JourneyInstanceUpdateWithoutDocumentIntakesInput = {
   evidence?: Prisma.EvidenceUpdateManyWithoutJourneyNestedInput
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutDocumentIntakesInput = {
@@ -996,11 +1293,13 @@ export type JourneyInstanceUncheckedUpdateWithoutDocumentIntakesInput = {
   evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutJourneyNestedInput
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceCreateWithoutNodesInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -1013,6 +1312,10 @@ export type JourneyInstanceCreateWithoutNodesInput = {
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutNodesInput = {
@@ -1030,6 +1333,9 @@ export type JourneyInstanceUncheckedCreateWithoutNodesInput = {
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutNodesInput = {
@@ -1050,7 +1356,6 @@ export type JourneyInstanceUpdateToOneWithWhereWithoutNodesInput = {
 
 export type JourneyInstanceUpdateWithoutNodesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1063,6 +1368,10 @@ export type JourneyInstanceUpdateWithoutNodesInput = {
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutNodesInput = {
@@ -1080,11 +1389,13 @@ export type JourneyInstanceUncheckedUpdateWithoutNodesInput = {
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceCreateWithoutEdgesInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -1097,6 +1408,10 @@ export type JourneyInstanceCreateWithoutEdgesInput = {
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutEdgesInput = {
@@ -1114,6 +1429,9 @@ export type JourneyInstanceUncheckedCreateWithoutEdgesInput = {
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutEdgesInput = {
@@ -1134,7 +1452,6 @@ export type JourneyInstanceUpdateToOneWithWhereWithoutEdgesInput = {
 
 export type JourneyInstanceUpdateWithoutEdgesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1147,6 +1464,10 @@ export type JourneyInstanceUpdateWithoutEdgesInput = {
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutEdgesInput = {
@@ -1164,11 +1485,13 @@ export type JourneyInstanceUncheckedUpdateWithoutEdgesInput = {
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceCreateWithoutFactsInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -1181,6 +1504,10 @@ export type JourneyInstanceCreateWithoutFactsInput = {
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutFactsInput = {
@@ -1198,6 +1525,9 @@ export type JourneyInstanceUncheckedCreateWithoutFactsInput = {
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutFactsInput = {
@@ -1218,7 +1548,6 @@ export type JourneyInstanceUpdateToOneWithWhereWithoutFactsInput = {
 
 export type JourneyInstanceUpdateWithoutFactsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1231,6 +1560,10 @@ export type JourneyInstanceUpdateWithoutFactsInput = {
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutFactsInput = {
@@ -1248,11 +1581,13 @@ export type JourneyInstanceUncheckedUpdateWithoutFactsInput = {
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceCreateWithoutEvidenceInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -1265,6 +1600,10 @@ export type JourneyInstanceCreateWithoutEvidenceInput = {
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutEvidenceInput = {
@@ -1282,6 +1621,9 @@ export type JourneyInstanceUncheckedCreateWithoutEvidenceInput = {
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutEvidenceInput = {
@@ -1302,7 +1644,6 @@ export type JourneyInstanceUpdateToOneWithWhereWithoutEvidenceInput = {
 
 export type JourneyInstanceUpdateWithoutEvidenceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1315,6 +1656,10 @@ export type JourneyInstanceUpdateWithoutEvidenceInput = {
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutEvidenceInput = {
@@ -1332,11 +1677,205 @@ export type JourneyInstanceUncheckedUpdateWithoutEvidenceInput = {
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
+}
+
+export type JourneyInstanceCreateWithoutProviderCasesInput = {
+  id?: string
+  status?: $Enums.JourneyStatus
+  startedAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutJourneysInput
+  template: Prisma.JourneyTemplateCreateNestedOneWithoutJourneysInput
+  subject: Prisma.JourneySubjectCreateNestedOneWithoutJourneysInput
+  nodes?: Prisma.JourneyNodeCreateNestedManyWithoutJourneyInput
+  edges?: Prisma.JourneyEdgeCreateNestedManyWithoutJourneyInput
+  facts?: Prisma.FactCreateNestedManyWithoutJourneyInput
+  evidence?: Prisma.EvidenceCreateNestedManyWithoutJourneyInput
+  documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
+  audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
+}
+
+export type JourneyInstanceUncheckedCreateWithoutProviderCasesInput = {
+  id?: string
+  profileId: string
+  templateId: string
+  templateVersion: number
+  subjectId: string
+  status?: $Enums.JourneyStatus
+  startedAt?: Date | string
+  updatedAt?: Date | string
+  nodes?: Prisma.JourneyNodeUncheckedCreateNestedManyWithoutJourneyInput
+  edges?: Prisma.JourneyEdgeUncheckedCreateNestedManyWithoutJourneyInput
+  facts?: Prisma.FactUncheckedCreateNestedManyWithoutJourneyInput
+  evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutJourneyInput
+  documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
+  audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+}
+
+export type JourneyInstanceCreateOrConnectWithoutProviderCasesInput = {
+  where: Prisma.JourneyInstanceWhereUniqueInput
+  create: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutProviderCasesInput, Prisma.JourneyInstanceUncheckedCreateWithoutProviderCasesInput>
+}
+
+export type JourneyInstanceUpsertWithoutProviderCasesInput = {
+  update: Prisma.XOR<Prisma.JourneyInstanceUpdateWithoutProviderCasesInput, Prisma.JourneyInstanceUncheckedUpdateWithoutProviderCasesInput>
+  create: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutProviderCasesInput, Prisma.JourneyInstanceUncheckedCreateWithoutProviderCasesInput>
+  where?: Prisma.JourneyInstanceWhereInput
+}
+
+export type JourneyInstanceUpdateToOneWithWhereWithoutProviderCasesInput = {
+  where?: Prisma.JourneyInstanceWhereInput
+  data: Prisma.XOR<Prisma.JourneyInstanceUpdateWithoutProviderCasesInput, Prisma.JourneyInstanceUncheckedUpdateWithoutProviderCasesInput>
+}
+
+export type JourneyInstanceUpdateWithoutProviderCasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutJourneysNestedInput
+  template?: Prisma.JourneyTemplateUpdateOneRequiredWithoutJourneysNestedInput
+  subject?: Prisma.JourneySubjectUpdateOneRequiredWithoutJourneysNestedInput
+  nodes?: Prisma.JourneyNodeUpdateManyWithoutJourneyNestedInput
+  edges?: Prisma.JourneyEdgeUpdateManyWithoutJourneyNestedInput
+  facts?: Prisma.FactUpdateManyWithoutJourneyNestedInput
+  evidence?: Prisma.EvidenceUpdateManyWithoutJourneyNestedInput
+  documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
+  audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
+}
+
+export type JourneyInstanceUncheckedUpdateWithoutProviderCasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  templateId?: Prisma.StringFieldUpdateOperationsInput | string
+  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  subjectId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nodes?: Prisma.JourneyNodeUncheckedUpdateManyWithoutJourneyNestedInput
+  edges?: Prisma.JourneyEdgeUncheckedUpdateManyWithoutJourneyNestedInput
+  facts?: Prisma.FactUncheckedUpdateManyWithoutJourneyNestedInput
+  evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutJourneyNestedInput
+  documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
+  audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+}
+
+export type JourneyInstanceCreateWithoutTasksInput = {
+  id?: string
+  status?: $Enums.JourneyStatus
+  startedAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutJourneysInput
+  template: Prisma.JourneyTemplateCreateNestedOneWithoutJourneysInput
+  subject: Prisma.JourneySubjectCreateNestedOneWithoutJourneysInput
+  nodes?: Prisma.JourneyNodeCreateNestedManyWithoutJourneyInput
+  edges?: Prisma.JourneyEdgeCreateNestedManyWithoutJourneyInput
+  facts?: Prisma.FactCreateNestedManyWithoutJourneyInput
+  evidence?: Prisma.EvidenceCreateNestedManyWithoutJourneyInput
+  documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
+  audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
+}
+
+export type JourneyInstanceUncheckedCreateWithoutTasksInput = {
+  id?: string
+  profileId: string
+  templateId: string
+  templateVersion: number
+  subjectId: string
+  status?: $Enums.JourneyStatus
+  startedAt?: Date | string
+  updatedAt?: Date | string
+  nodes?: Prisma.JourneyNodeUncheckedCreateNestedManyWithoutJourneyInput
+  edges?: Prisma.JourneyEdgeUncheckedCreateNestedManyWithoutJourneyInput
+  facts?: Prisma.FactUncheckedCreateNestedManyWithoutJourneyInput
+  evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutJourneyInput
+  documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
+  audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
+}
+
+export type JourneyInstanceCreateOrConnectWithoutTasksInput = {
+  where: Prisma.JourneyInstanceWhereUniqueInput
+  create: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTasksInput, Prisma.JourneyInstanceUncheckedCreateWithoutTasksInput>
+}
+
+export type JourneyInstanceUpsertWithoutTasksInput = {
+  update: Prisma.XOR<Prisma.JourneyInstanceUpdateWithoutTasksInput, Prisma.JourneyInstanceUncheckedUpdateWithoutTasksInput>
+  create: Prisma.XOR<Prisma.JourneyInstanceCreateWithoutTasksInput, Prisma.JourneyInstanceUncheckedCreateWithoutTasksInput>
+  where?: Prisma.JourneyInstanceWhereInput
+}
+
+export type JourneyInstanceUpdateToOneWithWhereWithoutTasksInput = {
+  where?: Prisma.JourneyInstanceWhereInput
+  data: Prisma.XOR<Prisma.JourneyInstanceUpdateWithoutTasksInput, Prisma.JourneyInstanceUncheckedUpdateWithoutTasksInput>
+}
+
+export type JourneyInstanceUpdateWithoutTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutJourneysNestedInput
+  template?: Prisma.JourneyTemplateUpdateOneRequiredWithoutJourneysNestedInput
+  subject?: Prisma.JourneySubjectUpdateOneRequiredWithoutJourneysNestedInput
+  nodes?: Prisma.JourneyNodeUpdateManyWithoutJourneyNestedInput
+  edges?: Prisma.JourneyEdgeUpdateManyWithoutJourneyNestedInput
+  facts?: Prisma.FactUpdateManyWithoutJourneyNestedInput
+  evidence?: Prisma.EvidenceUpdateManyWithoutJourneyNestedInput
+  documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
+  audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
+}
+
+export type JourneyInstanceUncheckedUpdateWithoutTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  templateId?: Prisma.StringFieldUpdateOperationsInput | string
+  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  subjectId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nodes?: Prisma.JourneyNodeUncheckedUpdateManyWithoutJourneyNestedInput
+  edges?: Prisma.JourneyEdgeUncheckedUpdateManyWithoutJourneyNestedInput
+  facts?: Prisma.FactUncheckedUpdateManyWithoutJourneyNestedInput
+  evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutJourneyNestedInput
+  documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
+  audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceCreateWithoutDocumentsInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -1349,6 +1888,10 @@ export type JourneyInstanceCreateWithoutDocumentsInput = {
   evidence?: Prisma.EvidenceCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutDocumentsInput = {
@@ -1366,6 +1909,9 @@ export type JourneyInstanceUncheckedCreateWithoutDocumentsInput = {
   evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutJourneyInput
   audits?: Prisma.AuditEventUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutDocumentsInput = {
@@ -1386,7 +1932,6 @@ export type JourneyInstanceUpdateToOneWithWhereWithoutDocumentsInput = {
 
 export type JourneyInstanceUpdateWithoutDocumentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1399,6 +1944,10 @@ export type JourneyInstanceUpdateWithoutDocumentsInput = {
   evidence?: Prisma.EvidenceUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutDocumentsInput = {
@@ -1416,11 +1965,13 @@ export type JourneyInstanceUncheckedUpdateWithoutDocumentsInput = {
   evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceCreateWithoutAuditsInput = {
   id?: string
-  templateVersion: number
   status?: $Enums.JourneyStatus
   startedAt?: Date | string
   updatedAt?: Date | string
@@ -1433,6 +1984,10 @@ export type JourneyInstanceCreateWithoutAuditsInput = {
   evidence?: Prisma.EvidenceCreateNestedManyWithoutJourneyInput
   documents?: Prisma.OutputDocumentCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseCreateNestedManyWithoutJourneyInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionCreateNestedOneWithoutJourneysInput
 }
 
 export type JourneyInstanceUncheckedCreateWithoutAuditsInput = {
@@ -1450,6 +2005,9 @@ export type JourneyInstanceUncheckedCreateWithoutAuditsInput = {
   evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutJourneyInput
   documents?: Prisma.OutputDocumentUncheckedCreateNestedManyWithoutJourneyInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutJourneyInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutJourneyInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutJourneyInput
+  providerCases?: Prisma.ProviderCaseUncheckedCreateNestedManyWithoutJourneyInput
 }
 
 export type JourneyInstanceCreateOrConnectWithoutAuditsInput = {
@@ -1470,7 +2028,6 @@ export type JourneyInstanceUpdateToOneWithWhereWithoutAuditsInput = {
 
 export type JourneyInstanceUpdateWithoutAuditsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1483,6 +2040,10 @@ export type JourneyInstanceUpdateWithoutAuditsInput = {
   evidence?: Prisma.EvidenceUpdateManyWithoutJourneyNestedInput
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutAuditsInput = {
@@ -1500,6 +2061,9 @@ export type JourneyInstanceUncheckedUpdateWithoutAuditsInput = {
   evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutJourneyNestedInput
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceCreateManyProfileInput = {
@@ -1514,7 +2078,6 @@ export type JourneyInstanceCreateManyProfileInput = {
 
 export type JourneyInstanceUpdateWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1527,6 +2090,10 @@ export type JourneyInstanceUpdateWithoutProfileInput = {
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutProfileInput = {
@@ -1544,6 +2111,9 @@ export type JourneyInstanceUncheckedUpdateWithoutProfileInput = {
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateManyWithoutProfileInput = {
@@ -1568,7 +2138,6 @@ export type JourneyInstanceCreateManySubjectInput = {
 
 export type JourneyInstanceUpdateWithoutSubjectInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1581,6 +2150,10 @@ export type JourneyInstanceUpdateWithoutSubjectInput = {
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutSubjectInput = {
@@ -1598,6 +2171,9 @@ export type JourneyInstanceUncheckedUpdateWithoutSubjectInput = {
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateManyWithoutSubjectInput = {
@@ -1622,7 +2198,6 @@ export type JourneyInstanceCreateManyTemplateInput = {
 
 export type JourneyInstanceUpdateWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1635,6 +2210,10 @@ export type JourneyInstanceUpdateWithoutTemplateInput = {
   documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+  templateSnapshot?: Prisma.JourneyTemplateVersionUpdateOneWithoutJourneysNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateWithoutTemplateInput = {
@@ -1652,12 +2231,72 @@ export type JourneyInstanceUncheckedUpdateWithoutTemplateInput = {
   documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
   audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
 }
 
 export type JourneyInstanceUncheckedUpdateManyWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  subjectId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type JourneyInstanceCreateManyTemplateSnapshotInput = {
+  id?: string
+  profileId: string
+  subjectId: string
+  status?: $Enums.JourneyStatus
+  startedAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type JourneyInstanceUpdateWithoutTemplateSnapshotInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutJourneysNestedInput
+  template?: Prisma.JourneyTemplateUpdateOneRequiredWithoutJourneysNestedInput
+  subject?: Prisma.JourneySubjectUpdateOneRequiredWithoutJourneysNestedInput
+  nodes?: Prisma.JourneyNodeUpdateManyWithoutJourneyNestedInput
+  edges?: Prisma.JourneyEdgeUpdateManyWithoutJourneyNestedInput
+  facts?: Prisma.FactUpdateManyWithoutJourneyNestedInput
+  evidence?: Prisma.EvidenceUpdateManyWithoutJourneyNestedInput
+  documents?: Prisma.OutputDocumentUpdateManyWithoutJourneyNestedInput
+  audits?: Prisma.AuditEventUpdateManyWithoutJourneyNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUpdateManyWithoutJourneyNestedInput
+}
+
+export type JourneyInstanceUncheckedUpdateWithoutTemplateSnapshotInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  subjectId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nodes?: Prisma.JourneyNodeUncheckedUpdateManyWithoutJourneyNestedInput
+  edges?: Prisma.JourneyEdgeUncheckedUpdateManyWithoutJourneyNestedInput
+  facts?: Prisma.FactUncheckedUpdateManyWithoutJourneyNestedInput
+  evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutJourneyNestedInput
+  documents?: Prisma.OutputDocumentUncheckedUpdateManyWithoutJourneyNestedInput
+  audits?: Prisma.AuditEventUncheckedUpdateManyWithoutJourneyNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutJourneyNestedInput
+  entityLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutJourneyNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutJourneyNestedInput
+  providerCases?: Prisma.ProviderCaseUncheckedUpdateManyWithoutJourneyNestedInput
+}
+
+export type JourneyInstanceUncheckedUpdateManyWithoutTemplateSnapshotInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
   subjectId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumJourneyStatusFieldUpdateOperationsInput | $Enums.JourneyStatus
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1677,6 +2316,9 @@ export type JourneyInstanceCountOutputType = {
   documents: number
   audits: number
   documentIntakes: number
+  entityLinks: number
+  tasks: number
+  providerCases: number
 }
 
 export type JourneyInstanceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1687,6 +2329,9 @@ export type JourneyInstanceCountOutputTypeSelect<ExtArgs extends runtime.Types.E
   documents?: boolean | JourneyInstanceCountOutputTypeCountDocumentsArgs
   audits?: boolean | JourneyInstanceCountOutputTypeCountAuditsArgs
   documentIntakes?: boolean | JourneyInstanceCountOutputTypeCountDocumentIntakesArgs
+  entityLinks?: boolean | JourneyInstanceCountOutputTypeCountEntityLinksArgs
+  tasks?: boolean | JourneyInstanceCountOutputTypeCountTasksArgs
+  providerCases?: boolean | JourneyInstanceCountOutputTypeCountProviderCasesArgs
 }
 
 /**
@@ -1748,6 +2393,27 @@ export type JourneyInstanceCountOutputTypeCountDocumentIntakesArgs<ExtArgs exten
   where?: Prisma.DocumentIntakeWhereInput
 }
 
+/**
+ * JourneyInstanceCountOutputType without action
+ */
+export type JourneyInstanceCountOutputTypeCountEntityLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.JourneyEntityLinkWhereInput
+}
+
+/**
+ * JourneyInstanceCountOutputType without action
+ */
+export type JourneyInstanceCountOutputTypeCountTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CitizenTaskWhereInput
+}
+
+/**
+ * JourneyInstanceCountOutputType without action
+ */
+export type JourneyInstanceCountOutputTypeCountProviderCasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProviderCaseWhereInput
+}
+
 
 export type JourneyInstanceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1768,6 +2434,10 @@ export type JourneyInstanceSelect<ExtArgs extends runtime.Types.Extensions.Inter
   documents?: boolean | Prisma.JourneyInstance$documentsArgs<ExtArgs>
   audits?: boolean | Prisma.JourneyInstance$auditsArgs<ExtArgs>
   documentIntakes?: boolean | Prisma.JourneyInstance$documentIntakesArgs<ExtArgs>
+  entityLinks?: boolean | Prisma.JourneyInstance$entityLinksArgs<ExtArgs>
+  tasks?: boolean | Prisma.JourneyInstance$tasksArgs<ExtArgs>
+  providerCases?: boolean | Prisma.JourneyInstance$providerCasesArgs<ExtArgs>
+  templateSnapshot?: boolean | Prisma.JourneyInstance$templateSnapshotArgs<ExtArgs>
   _count?: boolean | Prisma.JourneyInstanceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["journeyInstance"]>
 
@@ -1783,6 +2453,7 @@ export type JourneyInstanceSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   template?: boolean | Prisma.JourneyTemplateDefaultArgs<ExtArgs>
   subject?: boolean | Prisma.JourneySubjectDefaultArgs<ExtArgs>
+  templateSnapshot?: boolean | Prisma.JourneyInstance$templateSnapshotArgs<ExtArgs>
 }, ExtArgs["result"]["journeyInstance"]>
 
 export type JourneyInstanceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1797,6 +2468,7 @@ export type JourneyInstanceSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   template?: boolean | Prisma.JourneyTemplateDefaultArgs<ExtArgs>
   subject?: boolean | Prisma.JourneySubjectDefaultArgs<ExtArgs>
+  templateSnapshot?: boolean | Prisma.JourneyInstance$templateSnapshotArgs<ExtArgs>
 }, ExtArgs["result"]["journeyInstance"]>
 
 export type JourneyInstanceSelectScalar = {
@@ -1822,17 +2494,23 @@ export type JourneyInstanceInclude<ExtArgs extends runtime.Types.Extensions.Inte
   documents?: boolean | Prisma.JourneyInstance$documentsArgs<ExtArgs>
   audits?: boolean | Prisma.JourneyInstance$auditsArgs<ExtArgs>
   documentIntakes?: boolean | Prisma.JourneyInstance$documentIntakesArgs<ExtArgs>
+  entityLinks?: boolean | Prisma.JourneyInstance$entityLinksArgs<ExtArgs>
+  tasks?: boolean | Prisma.JourneyInstance$tasksArgs<ExtArgs>
+  providerCases?: boolean | Prisma.JourneyInstance$providerCasesArgs<ExtArgs>
+  templateSnapshot?: boolean | Prisma.JourneyInstance$templateSnapshotArgs<ExtArgs>
   _count?: boolean | Prisma.JourneyInstanceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type JourneyInstanceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   template?: boolean | Prisma.JourneyTemplateDefaultArgs<ExtArgs>
   subject?: boolean | Prisma.JourneySubjectDefaultArgs<ExtArgs>
+  templateSnapshot?: boolean | Prisma.JourneyInstance$templateSnapshotArgs<ExtArgs>
 }
 export type JourneyInstanceIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   template?: boolean | Prisma.JourneyTemplateDefaultArgs<ExtArgs>
   subject?: boolean | Prisma.JourneySubjectDefaultArgs<ExtArgs>
+  templateSnapshot?: boolean | Prisma.JourneyInstance$templateSnapshotArgs<ExtArgs>
 }
 
 export type $JourneyInstancePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1848,6 +2526,10 @@ export type $JourneyInstancePayload<ExtArgs extends runtime.Types.Extensions.Int
     documents: Prisma.$OutputDocumentPayload<ExtArgs>[]
     audits: Prisma.$AuditEventPayload<ExtArgs>[]
     documentIntakes: Prisma.$DocumentIntakePayload<ExtArgs>[]
+    entityLinks: Prisma.$JourneyEntityLinkPayload<ExtArgs>[]
+    tasks: Prisma.$CitizenTaskPayload<ExtArgs>[]
+    providerCases: Prisma.$ProviderCasePayload<ExtArgs>[]
+    templateSnapshot: Prisma.$JourneyTemplateVersionPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2262,6 +2944,10 @@ export interface Prisma__JourneyInstanceClient<T, Null = never, ExtArgs extends 
   documents<T extends Prisma.JourneyInstance$documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JourneyInstance$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OutputDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   audits<T extends Prisma.JourneyInstance$auditsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JourneyInstance$auditsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   documentIntakes<T extends Prisma.JourneyInstance$documentIntakesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JourneyInstance$documentIntakesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentIntakePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  entityLinks<T extends Prisma.JourneyInstance$entityLinksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JourneyInstance$entityLinksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JourneyEntityLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  tasks<T extends Prisma.JourneyInstance$tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JourneyInstance$tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CitizenTaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  providerCases<T extends Prisma.JourneyInstance$providerCasesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JourneyInstance$providerCasesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProviderCasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  templateSnapshot<T extends Prisma.JourneyInstance$templateSnapshotArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JourneyInstance$templateSnapshotArgs<ExtArgs>>): Prisma.Prisma__JourneyTemplateVersionClient<runtime.Types.Result.GetResult<Prisma.$JourneyTemplateVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2865,6 +3551,97 @@ export type JourneyInstance$documentIntakesArgs<ExtArgs extends runtime.Types.Ex
   take?: number
   skip?: number
   distinct?: Prisma.DocumentIntakeScalarFieldEnum | Prisma.DocumentIntakeScalarFieldEnum[]
+}
+
+/**
+ * JourneyInstance.entityLinks
+ */
+export type JourneyInstance$entityLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the JourneyEntityLink
+   */
+  select?: Prisma.JourneyEntityLinkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the JourneyEntityLink
+   */
+  omit?: Prisma.JourneyEntityLinkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.JourneyEntityLinkInclude<ExtArgs> | null
+  where?: Prisma.JourneyEntityLinkWhereInput
+  orderBy?: Prisma.JourneyEntityLinkOrderByWithRelationInput | Prisma.JourneyEntityLinkOrderByWithRelationInput[]
+  cursor?: Prisma.JourneyEntityLinkWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.JourneyEntityLinkScalarFieldEnum | Prisma.JourneyEntityLinkScalarFieldEnum[]
+}
+
+/**
+ * JourneyInstance.tasks
+ */
+export type JourneyInstance$tasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CitizenTask
+   */
+  select?: Prisma.CitizenTaskSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CitizenTask
+   */
+  omit?: Prisma.CitizenTaskOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CitizenTaskInclude<ExtArgs> | null
+  where?: Prisma.CitizenTaskWhereInput
+  orderBy?: Prisma.CitizenTaskOrderByWithRelationInput | Prisma.CitizenTaskOrderByWithRelationInput[]
+  cursor?: Prisma.CitizenTaskWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CitizenTaskScalarFieldEnum | Prisma.CitizenTaskScalarFieldEnum[]
+}
+
+/**
+ * JourneyInstance.providerCases
+ */
+export type JourneyInstance$providerCasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProviderCase
+   */
+  select?: Prisma.ProviderCaseSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProviderCase
+   */
+  omit?: Prisma.ProviderCaseOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProviderCaseInclude<ExtArgs> | null
+  where?: Prisma.ProviderCaseWhereInput
+  orderBy?: Prisma.ProviderCaseOrderByWithRelationInput | Prisma.ProviderCaseOrderByWithRelationInput[]
+  cursor?: Prisma.ProviderCaseWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProviderCaseScalarFieldEnum | Prisma.ProviderCaseScalarFieldEnum[]
+}
+
+/**
+ * JourneyInstance.templateSnapshot
+ */
+export type JourneyInstance$templateSnapshotArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the JourneyTemplateVersion
+   */
+  select?: Prisma.JourneyTemplateVersionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the JourneyTemplateVersion
+   */
+  omit?: Prisma.JourneyTemplateVersionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.JourneyTemplateVersionInclude<ExtArgs> | null
+  where?: Prisma.JourneyTemplateVersionWhereInput
 }
 
 /**

@@ -209,6 +209,10 @@ export type UserProfileWhereInput = {
   journeys?: Prisma.JourneyInstanceListRelationFilter
   subjects?: Prisma.JourneySubjectListRelationFilter
   documentIntakes?: Prisma.DocumentIntakeListRelationFilter
+  entities?: Prisma.CanonicalEntityListRelationFilter
+  tasks?: Prisma.CitizenTaskListRelationFilter
+  consents?: Prisma.ConsentGrantListRelationFilter
+  accessEvents?: Prisma.AccessEventListRelationFilter
 }
 
 export type UserProfileOrderByWithRelationInput = {
@@ -223,6 +227,10 @@ export type UserProfileOrderByWithRelationInput = {
   journeys?: Prisma.JourneyInstanceOrderByRelationAggregateInput
   subjects?: Prisma.JourneySubjectOrderByRelationAggregateInput
   documentIntakes?: Prisma.DocumentIntakeOrderByRelationAggregateInput
+  entities?: Prisma.CanonicalEntityOrderByRelationAggregateInput
+  tasks?: Prisma.CitizenTaskOrderByRelationAggregateInput
+  consents?: Prisma.ConsentGrantOrderByRelationAggregateInput
+  accessEvents?: Prisma.AccessEventOrderByRelationAggregateInput
 }
 
 export type UserProfileWhereUniqueInput = Prisma.AtLeast<{
@@ -240,6 +248,10 @@ export type UserProfileWhereUniqueInput = Prisma.AtLeast<{
   journeys?: Prisma.JourneyInstanceListRelationFilter
   subjects?: Prisma.JourneySubjectListRelationFilter
   documentIntakes?: Prisma.DocumentIntakeListRelationFilter
+  entities?: Prisma.CanonicalEntityListRelationFilter
+  tasks?: Prisma.CitizenTaskListRelationFilter
+  consents?: Prisma.ConsentGrantListRelationFilter
+  accessEvents?: Prisma.AccessEventListRelationFilter
 }, "id" | "sessionId">
 
 export type UserProfileOrderByWithAggregationInput = {
@@ -282,6 +294,10 @@ export type UserProfileCreateInput = {
   journeys?: Prisma.JourneyInstanceCreateNestedManyWithoutProfileInput
   subjects?: Prisma.JourneySubjectCreateNestedManyWithoutProfileInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateInput = {
@@ -296,6 +312,10 @@ export type UserProfileUncheckedCreateInput = {
   journeys?: Prisma.JourneyInstanceUncheckedCreateNestedManyWithoutProfileInput
   subjects?: Prisma.JourneySubjectUncheckedCreateNestedManyWithoutProfileInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityUncheckedCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantUncheckedCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUpdateInput = {
@@ -310,6 +330,10 @@ export type UserProfileUpdateInput = {
   journeys?: Prisma.JourneyInstanceUpdateManyWithoutProfileNestedInput
   subjects?: Prisma.JourneySubjectUpdateManyWithoutProfileNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateInput = {
@@ -324,6 +348,10 @@ export type UserProfileUncheckedUpdateInput = {
   journeys?: Prisma.JourneyInstanceUncheckedUpdateManyWithoutProfileNestedInput
   subjects?: Prisma.JourneySubjectUncheckedUpdateManyWithoutProfileNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUncheckedUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUncheckedUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileCreateManyInput = {
@@ -409,6 +437,20 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type UserProfileCreateNestedOneWithoutEntitiesInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutEntitiesInput, Prisma.UserProfileUncheckedCreateWithoutEntitiesInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutEntitiesInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+}
+
+export type UserProfileUpdateOneRequiredWithoutEntitiesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutEntitiesInput, Prisma.UserProfileUncheckedCreateWithoutEntitiesInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutEntitiesInput
+  upsert?: Prisma.UserProfileUpsertWithoutEntitiesInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutEntitiesInput, Prisma.UserProfileUpdateWithoutEntitiesInput>, Prisma.UserProfileUncheckedUpdateWithoutEntitiesInput>
+}
+
 export type UserProfileCreateNestedOneWithoutSubjectsInput = {
   create?: Prisma.XOR<Prisma.UserProfileCreateWithoutSubjectsInput, Prisma.UserProfileUncheckedCreateWithoutSubjectsInput>
   connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutSubjectsInput
@@ -451,6 +493,132 @@ export type UserProfileUpdateOneRequiredWithoutDocumentIntakesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutDocumentIntakesInput, Prisma.UserProfileUpdateWithoutDocumentIntakesInput>, Prisma.UserProfileUncheckedUpdateWithoutDocumentIntakesInput>
 }
 
+export type UserProfileCreateNestedOneWithoutTasksInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutTasksInput, Prisma.UserProfileUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutTasksInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+}
+
+export type UserProfileUpdateOneRequiredWithoutTasksNestedInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutTasksInput, Prisma.UserProfileUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutTasksInput
+  upsert?: Prisma.UserProfileUpsertWithoutTasksInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutTasksInput, Prisma.UserProfileUpdateWithoutTasksInput>, Prisma.UserProfileUncheckedUpdateWithoutTasksInput>
+}
+
+export type UserProfileCreateNestedOneWithoutConsentsInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutConsentsInput, Prisma.UserProfileUncheckedCreateWithoutConsentsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutConsentsInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+}
+
+export type UserProfileUpdateOneRequiredWithoutConsentsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutConsentsInput, Prisma.UserProfileUncheckedCreateWithoutConsentsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutConsentsInput
+  upsert?: Prisma.UserProfileUpsertWithoutConsentsInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutConsentsInput, Prisma.UserProfileUpdateWithoutConsentsInput>, Prisma.UserProfileUncheckedUpdateWithoutConsentsInput>
+}
+
+export type UserProfileCreateNestedOneWithoutAccessEventsInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutAccessEventsInput, Prisma.UserProfileUncheckedCreateWithoutAccessEventsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutAccessEventsInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+}
+
+export type UserProfileUpdateOneRequiredWithoutAccessEventsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutAccessEventsInput, Prisma.UserProfileUncheckedCreateWithoutAccessEventsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutAccessEventsInput
+  upsert?: Prisma.UserProfileUpsertWithoutAccessEventsInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutAccessEventsInput, Prisma.UserProfileUpdateWithoutAccessEventsInput>, Prisma.UserProfileUncheckedUpdateWithoutAccessEventsInput>
+}
+
+export type UserProfileCreateWithoutEntitiesInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectCreateNestedManyWithoutProfileInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileUncheckedCreateWithoutEntitiesInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectUncheckedCreateNestedManyWithoutProfileInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantUncheckedCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileCreateOrConnectWithoutEntitiesInput = {
+  where: Prisma.UserProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutEntitiesInput, Prisma.UserProfileUncheckedCreateWithoutEntitiesInput>
+}
+
+export type UserProfileUpsertWithoutEntitiesInput = {
+  update: Prisma.XOR<Prisma.UserProfileUpdateWithoutEntitiesInput, Prisma.UserProfileUncheckedUpdateWithoutEntitiesInput>
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutEntitiesInput, Prisma.UserProfileUncheckedCreateWithoutEntitiesInput>
+  where?: Prisma.UserProfileWhereInput
+}
+
+export type UserProfileUpdateToOneWithWhereWithoutEntitiesInput = {
+  where?: Prisma.UserProfileWhereInput
+  data: Prisma.XOR<Prisma.UserProfileUpdateWithoutEntitiesInput, Prisma.UserProfileUncheckedUpdateWithoutEntitiesInput>
+}
+
+export type UserProfileUpdateWithoutEntitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUpdateManyWithoutProfileNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileUncheckedUpdateWithoutEntitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUncheckedUpdateManyWithoutProfileNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUncheckedUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUncheckedUpdateManyWithoutProfileNestedInput
+}
+
 export type UserProfileCreateWithoutSubjectsInput = {
   id?: string
   sessionId: string
@@ -462,6 +630,10 @@ export type UserProfileCreateWithoutSubjectsInput = {
   updatedAt?: Date | string
   journeys?: Prisma.JourneyInstanceCreateNestedManyWithoutProfileInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateWithoutSubjectsInput = {
@@ -475,6 +647,10 @@ export type UserProfileUncheckedCreateWithoutSubjectsInput = {
   updatedAt?: Date | string
   journeys?: Prisma.JourneyInstanceUncheckedCreateNestedManyWithoutProfileInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityUncheckedCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantUncheckedCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileCreateOrConnectWithoutSubjectsInput = {
@@ -504,6 +680,10 @@ export type UserProfileUpdateWithoutSubjectsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeys?: Prisma.JourneyInstanceUpdateManyWithoutProfileNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateWithoutSubjectsInput = {
@@ -517,6 +697,10 @@ export type UserProfileUncheckedUpdateWithoutSubjectsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeys?: Prisma.JourneyInstanceUncheckedUpdateManyWithoutProfileNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUncheckedUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUncheckedUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileCreateWithoutJourneysInput = {
@@ -530,6 +714,10 @@ export type UserProfileCreateWithoutJourneysInput = {
   updatedAt?: Date | string
   subjects?: Prisma.JourneySubjectCreateNestedManyWithoutProfileInput
   documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateWithoutJourneysInput = {
@@ -543,6 +731,10 @@ export type UserProfileUncheckedCreateWithoutJourneysInput = {
   updatedAt?: Date | string
   subjects?: Prisma.JourneySubjectUncheckedCreateNestedManyWithoutProfileInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityUncheckedCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantUncheckedCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileCreateOrConnectWithoutJourneysInput = {
@@ -572,6 +764,10 @@ export type UserProfileUpdateWithoutJourneysInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   subjects?: Prisma.JourneySubjectUpdateManyWithoutProfileNestedInput
   documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateWithoutJourneysInput = {
@@ -585,6 +781,10 @@ export type UserProfileUncheckedUpdateWithoutJourneysInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   subjects?: Prisma.JourneySubjectUncheckedUpdateManyWithoutProfileNestedInput
   documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUncheckedUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUncheckedUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileCreateWithoutDocumentIntakesInput = {
@@ -598,6 +798,10 @@ export type UserProfileCreateWithoutDocumentIntakesInput = {
   updatedAt?: Date | string
   journeys?: Prisma.JourneyInstanceCreateNestedManyWithoutProfileInput
   subjects?: Prisma.JourneySubjectCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateWithoutDocumentIntakesInput = {
@@ -611,6 +815,10 @@ export type UserProfileUncheckedCreateWithoutDocumentIntakesInput = {
   updatedAt?: Date | string
   journeys?: Prisma.JourneyInstanceUncheckedCreateNestedManyWithoutProfileInput
   subjects?: Prisma.JourneySubjectUncheckedCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityUncheckedCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantUncheckedCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileCreateOrConnectWithoutDocumentIntakesInput = {
@@ -640,6 +848,10 @@ export type UserProfileUpdateWithoutDocumentIntakesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeys?: Prisma.JourneyInstanceUpdateManyWithoutProfileNestedInput
   subjects?: Prisma.JourneySubjectUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateWithoutDocumentIntakesInput = {
@@ -653,6 +865,262 @@ export type UserProfileUncheckedUpdateWithoutDocumentIntakesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeys?: Prisma.JourneyInstanceUncheckedUpdateManyWithoutProfileNestedInput
   subjects?: Prisma.JourneySubjectUncheckedUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUncheckedUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUncheckedUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileCreateWithoutTasksInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectCreateNestedManyWithoutProfileInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileUncheckedCreateWithoutTasksInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectUncheckedCreateNestedManyWithoutProfileInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityUncheckedCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantUncheckedCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileCreateOrConnectWithoutTasksInput = {
+  where: Prisma.UserProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutTasksInput, Prisma.UserProfileUncheckedCreateWithoutTasksInput>
+}
+
+export type UserProfileUpsertWithoutTasksInput = {
+  update: Prisma.XOR<Prisma.UserProfileUpdateWithoutTasksInput, Prisma.UserProfileUncheckedUpdateWithoutTasksInput>
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutTasksInput, Prisma.UserProfileUncheckedCreateWithoutTasksInput>
+  where?: Prisma.UserProfileWhereInput
+}
+
+export type UserProfileUpdateToOneWithWhereWithoutTasksInput = {
+  where?: Prisma.UserProfileWhereInput
+  data: Prisma.XOR<Prisma.UserProfileUpdateWithoutTasksInput, Prisma.UserProfileUncheckedUpdateWithoutTasksInput>
+}
+
+export type UserProfileUpdateWithoutTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUpdateManyWithoutProfileNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileUncheckedUpdateWithoutTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUncheckedUpdateManyWithoutProfileNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUncheckedUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUncheckedUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileCreateWithoutConsentsInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectCreateNestedManyWithoutProfileInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileUncheckedCreateWithoutConsentsInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectUncheckedCreateNestedManyWithoutProfileInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityUncheckedCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutProfileInput
+  accessEvents?: Prisma.AccessEventUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileCreateOrConnectWithoutConsentsInput = {
+  where: Prisma.UserProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutConsentsInput, Prisma.UserProfileUncheckedCreateWithoutConsentsInput>
+}
+
+export type UserProfileUpsertWithoutConsentsInput = {
+  update: Prisma.XOR<Prisma.UserProfileUpdateWithoutConsentsInput, Prisma.UserProfileUncheckedUpdateWithoutConsentsInput>
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutConsentsInput, Prisma.UserProfileUncheckedCreateWithoutConsentsInput>
+  where?: Prisma.UserProfileWhereInput
+}
+
+export type UserProfileUpdateToOneWithWhereWithoutConsentsInput = {
+  where?: Prisma.UserProfileWhereInput
+  data: Prisma.XOR<Prisma.UserProfileUpdateWithoutConsentsInput, Prisma.UserProfileUncheckedUpdateWithoutConsentsInput>
+}
+
+export type UserProfileUpdateWithoutConsentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUpdateManyWithoutProfileNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileUncheckedUpdateWithoutConsentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUncheckedUpdateManyWithoutProfileNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUncheckedUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutProfileNestedInput
+  accessEvents?: Prisma.AccessEventUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileCreateWithoutAccessEventsInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectCreateNestedManyWithoutProfileInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileUncheckedCreateWithoutAccessEventsInput = {
+  id?: string
+  sessionId: string
+  displayName: string
+  locale?: string
+  stateCode: string
+  demoProfile?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedCreateNestedManyWithoutProfileInput
+  subjects?: Prisma.JourneySubjectUncheckedCreateNestedManyWithoutProfileInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutProfileInput
+  entities?: Prisma.CanonicalEntityUncheckedCreateNestedManyWithoutProfileInput
+  tasks?: Prisma.CitizenTaskUncheckedCreateNestedManyWithoutProfileInput
+  consents?: Prisma.ConsentGrantUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileCreateOrConnectWithoutAccessEventsInput = {
+  where: Prisma.UserProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutAccessEventsInput, Prisma.UserProfileUncheckedCreateWithoutAccessEventsInput>
+}
+
+export type UserProfileUpsertWithoutAccessEventsInput = {
+  update: Prisma.XOR<Prisma.UserProfileUpdateWithoutAccessEventsInput, Prisma.UserProfileUncheckedUpdateWithoutAccessEventsInput>
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutAccessEventsInput, Prisma.UserProfileUncheckedCreateWithoutAccessEventsInput>
+  where?: Prisma.UserProfileWhereInput
+}
+
+export type UserProfileUpdateToOneWithWhereWithoutAccessEventsInput = {
+  where?: Prisma.UserProfileWhereInput
+  data: Prisma.XOR<Prisma.UserProfileUpdateWithoutAccessEventsInput, Prisma.UserProfileUncheckedUpdateWithoutAccessEventsInput>
+}
+
+export type UserProfileUpdateWithoutAccessEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUpdateManyWithoutProfileNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileUncheckedUpdateWithoutAccessEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  stateCode?: Prisma.StringFieldUpdateOperationsInput | string
+  demoProfile?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeys?: Prisma.JourneyInstanceUncheckedUpdateManyWithoutProfileNestedInput
+  subjects?: Prisma.JourneySubjectUncheckedUpdateManyWithoutProfileNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutProfileNestedInput
+  entities?: Prisma.CanonicalEntityUncheckedUpdateManyWithoutProfileNestedInput
+  tasks?: Prisma.CitizenTaskUncheckedUpdateManyWithoutProfileNestedInput
+  consents?: Prisma.ConsentGrantUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 
@@ -664,12 +1132,20 @@ export type UserProfileCountOutputType = {
   journeys: number
   subjects: number
   documentIntakes: number
+  entities: number
+  tasks: number
+  consents: number
+  accessEvents: number
 }
 
 export type UserProfileCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   journeys?: boolean | UserProfileCountOutputTypeCountJourneysArgs
   subjects?: boolean | UserProfileCountOutputTypeCountSubjectsArgs
   documentIntakes?: boolean | UserProfileCountOutputTypeCountDocumentIntakesArgs
+  entities?: boolean | UserProfileCountOutputTypeCountEntitiesArgs
+  tasks?: boolean | UserProfileCountOutputTypeCountTasksArgs
+  consents?: boolean | UserProfileCountOutputTypeCountConsentsArgs
+  accessEvents?: boolean | UserProfileCountOutputTypeCountAccessEventsArgs
 }
 
 /**
@@ -703,6 +1179,34 @@ export type UserProfileCountOutputTypeCountDocumentIntakesArgs<ExtArgs extends r
   where?: Prisma.DocumentIntakeWhereInput
 }
 
+/**
+ * UserProfileCountOutputType without action
+ */
+export type UserProfileCountOutputTypeCountEntitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CanonicalEntityWhereInput
+}
+
+/**
+ * UserProfileCountOutputType without action
+ */
+export type UserProfileCountOutputTypeCountTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CitizenTaskWhereInput
+}
+
+/**
+ * UserProfileCountOutputType without action
+ */
+export type UserProfileCountOutputTypeCountConsentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ConsentGrantWhereInput
+}
+
+/**
+ * UserProfileCountOutputType without action
+ */
+export type UserProfileCountOutputTypeCountAccessEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AccessEventWhereInput
+}
+
 
 export type UserProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -716,6 +1220,10 @@ export type UserProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   journeys?: boolean | Prisma.UserProfile$journeysArgs<ExtArgs>
   subjects?: boolean | Prisma.UserProfile$subjectsArgs<ExtArgs>
   documentIntakes?: boolean | Prisma.UserProfile$documentIntakesArgs<ExtArgs>
+  entities?: boolean | Prisma.UserProfile$entitiesArgs<ExtArgs>
+  tasks?: boolean | Prisma.UserProfile$tasksArgs<ExtArgs>
+  consents?: boolean | Prisma.UserProfile$consentsArgs<ExtArgs>
+  accessEvents?: boolean | Prisma.UserProfile$accessEventsArgs<ExtArgs>
   _count?: boolean | Prisma.UserProfileCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userProfile"]>
 
@@ -757,6 +1265,10 @@ export type UserProfileInclude<ExtArgs extends runtime.Types.Extensions.Internal
   journeys?: boolean | Prisma.UserProfile$journeysArgs<ExtArgs>
   subjects?: boolean | Prisma.UserProfile$subjectsArgs<ExtArgs>
   documentIntakes?: boolean | Prisma.UserProfile$documentIntakesArgs<ExtArgs>
+  entities?: boolean | Prisma.UserProfile$entitiesArgs<ExtArgs>
+  tasks?: boolean | Prisma.UserProfile$tasksArgs<ExtArgs>
+  consents?: boolean | Prisma.UserProfile$consentsArgs<ExtArgs>
+  accessEvents?: boolean | Prisma.UserProfile$accessEventsArgs<ExtArgs>
   _count?: boolean | Prisma.UserProfileCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserProfileIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -768,6 +1280,10 @@ export type $UserProfilePayload<ExtArgs extends runtime.Types.Extensions.Interna
     journeys: Prisma.$JourneyInstancePayload<ExtArgs>[]
     subjects: Prisma.$JourneySubjectPayload<ExtArgs>[]
     documentIntakes: Prisma.$DocumentIntakePayload<ExtArgs>[]
+    entities: Prisma.$CanonicalEntityPayload<ExtArgs>[]
+    tasks: Prisma.$CitizenTaskPayload<ExtArgs>[]
+    consents: Prisma.$ConsentGrantPayload<ExtArgs>[]
+    accessEvents: Prisma.$AccessEventPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1175,6 +1691,10 @@ export interface Prisma__UserProfileClient<T, Null = never, ExtArgs extends runt
   journeys<T extends Prisma.UserProfile$journeysArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$journeysArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JourneyInstancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   subjects<T extends Prisma.UserProfile$subjectsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$subjectsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JourneySubjectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   documentIntakes<T extends Prisma.UserProfile$documentIntakesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$documentIntakesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentIntakePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  entities<T extends Prisma.UserProfile$entitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$entitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CanonicalEntityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  tasks<T extends Prisma.UserProfile$tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CitizenTaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  consents<T extends Prisma.UserProfile$consentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$consentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConsentGrantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  accessEvents<T extends Prisma.UserProfile$accessEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$accessEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AccessEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1674,6 +2194,102 @@ export type UserProfile$documentIntakesArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.DocumentIntakeScalarFieldEnum | Prisma.DocumentIntakeScalarFieldEnum[]
+}
+
+/**
+ * UserProfile.entities
+ */
+export type UserProfile$entitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CanonicalEntity
+   */
+  select?: Prisma.CanonicalEntitySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CanonicalEntity
+   */
+  omit?: Prisma.CanonicalEntityOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CanonicalEntityInclude<ExtArgs> | null
+  where?: Prisma.CanonicalEntityWhereInput
+  orderBy?: Prisma.CanonicalEntityOrderByWithRelationInput | Prisma.CanonicalEntityOrderByWithRelationInput[]
+  cursor?: Prisma.CanonicalEntityWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CanonicalEntityScalarFieldEnum | Prisma.CanonicalEntityScalarFieldEnum[]
+}
+
+/**
+ * UserProfile.tasks
+ */
+export type UserProfile$tasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CitizenTask
+   */
+  select?: Prisma.CitizenTaskSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CitizenTask
+   */
+  omit?: Prisma.CitizenTaskOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CitizenTaskInclude<ExtArgs> | null
+  where?: Prisma.CitizenTaskWhereInput
+  orderBy?: Prisma.CitizenTaskOrderByWithRelationInput | Prisma.CitizenTaskOrderByWithRelationInput[]
+  cursor?: Prisma.CitizenTaskWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CitizenTaskScalarFieldEnum | Prisma.CitizenTaskScalarFieldEnum[]
+}
+
+/**
+ * UserProfile.consents
+ */
+export type UserProfile$consentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ConsentGrant
+   */
+  select?: Prisma.ConsentGrantSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ConsentGrant
+   */
+  omit?: Prisma.ConsentGrantOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ConsentGrantInclude<ExtArgs> | null
+  where?: Prisma.ConsentGrantWhereInput
+  orderBy?: Prisma.ConsentGrantOrderByWithRelationInput | Prisma.ConsentGrantOrderByWithRelationInput[]
+  cursor?: Prisma.ConsentGrantWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ConsentGrantScalarFieldEnum | Prisma.ConsentGrantScalarFieldEnum[]
+}
+
+/**
+ * UserProfile.accessEvents
+ */
+export type UserProfile$accessEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AccessEvent
+   */
+  select?: Prisma.AccessEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AccessEvent
+   */
+  omit?: Prisma.AccessEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AccessEventInclude<ExtArgs> | null
+  where?: Prisma.AccessEventWhereInput
+  orderBy?: Prisma.AccessEventOrderByWithRelationInput | Prisma.AccessEventOrderByWithRelationInput[]
+  cursor?: Prisma.AccessEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AccessEventScalarFieldEnum | Prisma.AccessEventScalarFieldEnum[]
 }
 
 /**

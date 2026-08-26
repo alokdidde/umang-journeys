@@ -52,15 +52,24 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   UserProfile: 'UserProfile',
+  CanonicalEntity: 'CanonicalEntity',
+  EntityRelationship: 'EntityRelationship',
   JourneySubject: 'JourneySubject',
   JourneyTemplate: 'JourneyTemplate',
   JourneyInstance: 'JourneyInstance',
+  JourneyEntityLink: 'JourneyEntityLink',
+  JourneyTemplateVersion: 'JourneyTemplateVersion',
   DocumentIntake: 'DocumentIntake',
   JourneyNode: 'JourneyNode',
   JourneyEdge: 'JourneyEdge',
   Fact: 'Fact',
+  FactRevision: 'FactRevision',
   Evidence: 'Evidence',
   ExternalAction: 'ExternalAction',
+  ProviderCase: 'ProviderCase',
+  CitizenTask: 'CitizenTask',
+  ConsentGrant: 'ConsentGrant',
+  AccessEvent: 'AccessEvent',
   OutputDocument: 'OutputDocument',
   AuditEvent: 'AuditEvent'
 } as const
@@ -93,6 +102,33 @@ export const UserProfileScalarFieldEnum = {
 } as const
 
 export type UserProfileScalarFieldEnum = (typeof UserProfileScalarFieldEnum)[keyof typeof UserProfileScalarFieldEnum]
+
+
+export const CanonicalEntityScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  type: 'type',
+  displayName: 'displayName',
+  externalKey: 'externalKey',
+  dataJson: 'dataJson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CanonicalEntityScalarFieldEnum = (typeof CanonicalEntityScalarFieldEnum)[keyof typeof CanonicalEntityScalarFieldEnum]
+
+
+export const EntityRelationshipScalarFieldEnum = {
+  id: 'id',
+  fromId: 'fromId',
+  toId: 'toId',
+  kind: 'kind',
+  validFrom: 'validFrom',
+  validTo: 'validTo',
+  createdAt: 'createdAt'
+} as const
+
+export type EntityRelationshipScalarFieldEnum = (typeof EntityRelationshipScalarFieldEnum)[keyof typeof EntityRelationshipScalarFieldEnum]
 
 
 export const JourneySubjectScalarFieldEnum = {
@@ -131,6 +167,28 @@ export const JourneyInstanceScalarFieldEnum = {
 } as const
 
 export type JourneyInstanceScalarFieldEnum = (typeof JourneyInstanceScalarFieldEnum)[keyof typeof JourneyInstanceScalarFieldEnum]
+
+
+export const JourneyEntityLinkScalarFieldEnum = {
+  id: 'id',
+  journeyId: 'journeyId',
+  entityId: 'entityId',
+  role: 'role'
+} as const
+
+export type JourneyEntityLinkScalarFieldEnum = (typeof JourneyEntityLinkScalarFieldEnum)[keyof typeof JourneyEntityLinkScalarFieldEnum]
+
+
+export const JourneyTemplateVersionScalarFieldEnum = {
+  id: 'id',
+  templateKey: 'templateKey',
+  version: 'version',
+  lifeEvent: 'lifeEvent',
+  configJson: 'configJson',
+  createdAt: 'createdAt'
+} as const
+
+export type JourneyTemplateVersionScalarFieldEnum = (typeof JourneyTemplateVersionScalarFieldEnum)[keyof typeof JourneyTemplateVersionScalarFieldEnum]
 
 
 export const DocumentIntakeScalarFieldEnum = {
@@ -191,6 +249,21 @@ export const FactScalarFieldEnum = {
 export type FactScalarFieldEnum = (typeof FactScalarFieldEnum)[keyof typeof FactScalarFieldEnum]
 
 
+export const FactRevisionScalarFieldEnum = {
+  id: 'id',
+  factId: 'factId',
+  valueJson: 'valueJson',
+  sourceType: 'sourceType',
+  sourceRef: 'sourceRef',
+  confidence: 'confidence',
+  status: 'status',
+  supersedesId: 'supersedesId',
+  createdAt: 'createdAt'
+} as const
+
+export type FactRevisionScalarFieldEnum = (typeof FactRevisionScalarFieldEnum)[keyof typeof FactRevisionScalarFieldEnum]
+
+
 export const EvidenceScalarFieldEnum = {
   id: 'id',
   journeyId: 'journeyId',
@@ -217,13 +290,78 @@ export const ExternalActionScalarFieldEnum = {
 export type ExternalActionScalarFieldEnum = (typeof ExternalActionScalarFieldEnum)[keyof typeof ExternalActionScalarFieldEnum]
 
 
+export const ProviderCaseScalarFieldEnum = {
+  id: 'id',
+  journeyId: 'journeyId',
+  nodeKey: 'nodeKey',
+  provider: 'provider',
+  status: 'status',
+  scenario: 'scenario',
+  reasonCode: 'reasonCode',
+  nextTransitionAt: 'nextTransitionAt',
+  payloadJson: 'payloadJson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProviderCaseScalarFieldEnum = (typeof ProviderCaseScalarFieldEnum)[keyof typeof ProviderCaseScalarFieldEnum]
+
+
+export const CitizenTaskScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  journeyId: 'journeyId',
+  kind: 'kind',
+  title: 'title',
+  detail: 'detail',
+  status: 'status',
+  dueAt: 'dueAt',
+  reminderAt: 'reminderAt',
+  metadataJson: 'metadataJson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CitizenTaskScalarFieldEnum = (typeof CitizenTaskScalarFieldEnum)[keyof typeof CitizenTaskScalarFieldEnum]
+
+
+export const ConsentGrantScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  purpose: 'purpose',
+  scopeJson: 'scopeJson',
+  grantedAt: 'grantedAt',
+  expiresAt: 'expiresAt',
+  revokedAt: 'revokedAt'
+} as const
+
+export type ConsentGrantScalarFieldEnum = (typeof ConsentGrantScalarFieldEnum)[keyof typeof ConsentGrantScalarFieldEnum]
+
+
+export const AccessEventScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  actor: 'actor',
+  action: 'action',
+  resourceType: 'resourceType',
+  resourceId: 'resourceId',
+  metadataJson: 'metadataJson',
+  createdAt: 'createdAt'
+} as const
+
+export type AccessEventScalarFieldEnum = (typeof AccessEventScalarFieldEnum)[keyof typeof AccessEventScalarFieldEnum]
+
+
 export const OutputDocumentScalarFieldEnum = {
   id: 'id',
   journeyId: 'journeyId',
   nodeId: 'nodeId',
   type: 'type',
   synthetic: 'synthetic',
-  metadataJson: 'metadataJson'
+  metadataJson: 'metadataJson',
+  version: 'version',
+  supersedesId: 'supersedesId',
+  checksum: 'checksum'
 } as const
 
 export type OutputDocumentScalarFieldEnum = (typeof OutputDocumentScalarFieldEnum)[keyof typeof OutputDocumentScalarFieldEnum]
@@ -272,14 +410,6 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
-
-
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -287,4 +417,12 @@ export const JsonNullValueFilter = {
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 

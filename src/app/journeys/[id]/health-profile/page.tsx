@@ -18,6 +18,9 @@ export default function HealthProfilePage() {
     householdSize: state.facts["household.size"] ?? "3",
     currentCover: state.facts["health.currentCover"] ?? "yes",
     abhaStatus: state.facts["health.abhaStatus"] ?? "not_sure",
+    coverageFor: state.facts["health.coverageFor"] ?? "family",
+    careRoute: state.facts["health.careRoute"] ?? "not_sure",
+    activeClaim: state.facts["health.activeClaim"] ?? "no",
   }));
 
   useEffect(() => { if (id && state.journeyId !== id) void loadJourney(id); }, [id, loadJourney, state.journeyId]);
@@ -31,6 +34,9 @@ export default function HealthProfilePage() {
       "household.size": values.householdSize,
       "health.currentCover": values.currentCover,
       "health.abhaStatus": values.abhaStatus,
+      "health.coverageFor": values.coverageFor,
+      "health.careRoute": values.careRoute,
+      "health.activeClaim": values.activeClaim,
     });
     if (ok) window.setTimeout(() => router.push(`/journeys/${id}`), 120);
   }
@@ -57,6 +63,7 @@ export default function HealthProfilePage() {
           </section> : <section><h2>What you already have</h2><p>It is fine if you are unsure. We will show verification steps instead of guessing.</p>
             <label htmlFor="current-cover">Do you have a health policy or government scheme card?</label><select id="current-cover" {...field("currentCover")}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></select>
             <label htmlFor="abha-status">Do you already have an ABHA number?</label><select id="abha-status" {...field("abhaStatus")}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></select>
+            <details className="profile-exceptions"><summary>Are you covering dependants or dealing with planned care or a claim?</summary><div><label htmlFor="coverage-for">Who needs to be organised?</label><select id="coverage-for" {...field("coverageFor")}><option value="self">Only me</option><option value="family">Me and family members</option><option value="dependent">A dependant</option></select><label htmlFor="care-route">Likely care or claim route</label><select id="care-route" {...field("careRoute")}><option value="not_sure">I’m not sure</option><option value="cashless">Planned cashless care</option><option value="reimbursement">Reimbursement after treatment</option><option value="preauthorisation">Pre-authorisation already requested</option></select><label htmlFor="active-claim">Is an insurer or hospital waiting for your reply?</label><select id="active-claim" {...field("activeClaim")}><option value="no">No</option><option value="not_sure">I’m not sure</option><option value="yes">Yes</option></select></div></details>
           </section>
           }
           {state.error ? <p className="workflow-error" role="alert">{state.error}</p> : null}

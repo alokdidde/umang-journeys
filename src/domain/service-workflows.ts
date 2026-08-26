@@ -28,6 +28,8 @@ export const sandboxServiceKeys = [
 
 export type SandboxServiceKey = (typeof sandboxServiceKeys)[number];
 export type ServiceRunStatus = "running" | "waiting_external" | "completed" | "failed";
+export type ProviderCaseStatus = "submitted" | "acknowledged" | "under_review" | "action_required" | "approved" | "rejected" | "withdrawn" | "expired" | "appealed";
+export type ProviderScenario = "success" | "delayed" | "clarification" | "rejected";
 export type ArtifactItemStatus = "verified" | "ready" | "due" | "upcoming" | "review" | "information";
 
 export type ServiceEvent = {
@@ -62,6 +64,11 @@ export type SandboxServiceRun = {
   updatedAt: string;
   completedAt?: string;
   receipt: string;
+  caseStatus?: ProviderCaseStatus;
+  scenario?: ProviderScenario;
+  nextTransitionAt?: string;
+  reasonCode?: string;
+  actionMessage?: string;
   events: ServiceEvent[];
   artifact?: ServiceArtifact;
 };

@@ -6,6 +6,7 @@ export type JourneySubject = {
   id: string;
   type: "child" | "vehicle" | "person" | "residence" | "business";
   displayName: string;
+  canonicalEntityId?: string;
 };
 
 export type JourneyLifecycleStatus = "active" | "completed" | "abandoned";

@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       const type = String(form.get("type") ?? "");
       const file = form.get("file");
       if (!isEvidenceType(type) || !(file instanceof File)) return NextResponse.json({ code: "INVALID_EVIDENCE", message: "Choose an evidence type and file." }, { status: 400 });
-      evidence = ingestUploadedEvidence(type, { name: file.name, type: file.type, bytes: new Uint8Array(await file.arrayBuffer()) }, journey.facts);
+      evidence = await ingestUploadedEvidence(type, { name: file.name, type: file.type, bytes: new Uint8Array(await file.arrayBuffer()) }, journey.facts);
     } else {
       const parsed = sampleSchema.safeParse(await request.json().catch(() => ({})));
       if (!parsed.success || !isEvidenceType(parsed.data.type)) return NextResponse.json({ code: "INVALID_EVIDENCE", message: "Choose a supported sample document." }, { status: 400 });

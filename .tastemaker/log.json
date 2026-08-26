@@ -78,5 +78,15 @@
     "footer": "none; C1 sign-in form is the close",
     "knobs": "single-fold/illustration-bleed/shared-axis/left-aligned-content/low-motion",
     "brief": "UMANG Journeys · preserve the illustrated welcome while making the promise and demo form read as one stable composition"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "stateful case platform and final design review",
+    "macrostructure": "Guided Citizen Lane",
+    "nav": "familiar top navigation with secondary utilities consolidated into one options menu",
+    "hero": "one current action with evidence, provider, and exception depth progressively disclosed",
+    "footer": "none",
+    "knobs": "trust-boundary/task-inbox/server-callbacks/low-density/options-menu/responsive",
+    "brief": "UMANG Journeys · close case, evidence, provenance, document, task, and exception gaps without rebuilding a power-user workspace"
   }
 ]

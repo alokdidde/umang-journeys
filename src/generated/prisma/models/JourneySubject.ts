@@ -419,10 +419,6 @@ export type EnumJourneySubjectTypeFieldUpdateOperationsInput = {
   set?: $Enums.JourneySubjectType
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type JourneySubjectCreateNestedOneWithoutJourneysInput = {
   create?: Prisma.XOR<Prisma.JourneySubjectCreateWithoutJourneysInput, Prisma.JourneySubjectUncheckedCreateWithoutJourneysInput>
   connectOrCreate?: Prisma.JourneySubjectCreateOrConnectWithoutJourneysInput

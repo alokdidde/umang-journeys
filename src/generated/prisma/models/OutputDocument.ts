@@ -20,8 +20,18 @@ export type OutputDocumentModel = runtime.Types.Result.DefaultSelection<Prisma.$
 
 export type AggregateOutputDocument = {
   _count: OutputDocumentCountAggregateOutputType | null
+  _avg: OutputDocumentAvgAggregateOutputType | null
+  _sum: OutputDocumentSumAggregateOutputType | null
   _min: OutputDocumentMinAggregateOutputType | null
   _max: OutputDocumentMaxAggregateOutputType | null
+}
+
+export type OutputDocumentAvgAggregateOutputType = {
+  version: number | null
+}
+
+export type OutputDocumentSumAggregateOutputType = {
+  version: number | null
 }
 
 export type OutputDocumentMinAggregateOutputType = {
@@ -30,6 +40,9 @@ export type OutputDocumentMinAggregateOutputType = {
   nodeId: string | null
   type: string | null
   synthetic: boolean | null
+  version: number | null
+  supersedesId: string | null
+  checksum: string | null
 }
 
 export type OutputDocumentMaxAggregateOutputType = {
@@ -38,6 +51,9 @@ export type OutputDocumentMaxAggregateOutputType = {
   nodeId: string | null
   type: string | null
   synthetic: boolean | null
+  version: number | null
+  supersedesId: string | null
+  checksum: string | null
 }
 
 export type OutputDocumentCountAggregateOutputType = {
@@ -47,9 +63,20 @@ export type OutputDocumentCountAggregateOutputType = {
   type: number
   synthetic: number
   metadataJson: number
+  version: number
+  supersedesId: number
+  checksum: number
   _all: number
 }
 
+
+export type OutputDocumentAvgAggregateInputType = {
+  version?: true
+}
+
+export type OutputDocumentSumAggregateInputType = {
+  version?: true
+}
 
 export type OutputDocumentMinAggregateInputType = {
   id?: true
@@ -57,6 +84,9 @@ export type OutputDocumentMinAggregateInputType = {
   nodeId?: true
   type?: true
   synthetic?: true
+  version?: true
+  supersedesId?: true
+  checksum?: true
 }
 
 export type OutputDocumentMaxAggregateInputType = {
@@ -65,6 +95,9 @@ export type OutputDocumentMaxAggregateInputType = {
   nodeId?: true
   type?: true
   synthetic?: true
+  version?: true
+  supersedesId?: true
+  checksum?: true
 }
 
 export type OutputDocumentCountAggregateInputType = {
@@ -74,6 +107,9 @@ export type OutputDocumentCountAggregateInputType = {
   type?: true
   synthetic?: true
   metadataJson?: true
+  version?: true
+  supersedesId?: true
+  checksum?: true
   _all?: true
 }
 
@@ -115,6 +151,18 @@ export type OutputDocumentAggregateArgs<ExtArgs extends runtime.Types.Extensions
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: OutputDocumentAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: OutputDocumentSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: OutputDocumentMinAggregateInputType
@@ -145,6 +193,8 @@ export type OutputDocumentGroupByArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   _count?: OutputDocumentCountAggregateInputType | true
+  _avg?: OutputDocumentAvgAggregateInputType
+  _sum?: OutputDocumentSumAggregateInputType
   _min?: OutputDocumentMinAggregateInputType
   _max?: OutputDocumentMaxAggregateInputType
 }
@@ -156,7 +206,12 @@ export type OutputDocumentGroupByOutputType = {
   type: string
   synthetic: boolean
   metadataJson: runtime.JsonValue
+  version: number
+  supersedesId: string | null
+  checksum: string | null
   _count: OutputDocumentCountAggregateOutputType | null
+  _avg: OutputDocumentAvgAggregateOutputType | null
+  _sum: OutputDocumentSumAggregateOutputType | null
   _min: OutputDocumentMinAggregateOutputType | null
   _max: OutputDocumentMaxAggregateOutputType | null
 }
@@ -186,6 +241,9 @@ export type OutputDocumentWhereInput = {
   type?: Prisma.StringFilter<"OutputDocument"> | string
   synthetic?: Prisma.BoolFilter<"OutputDocument"> | boolean
   metadataJson?: Prisma.JsonFilter<"OutputDocument">
+  version?: Prisma.IntFilter<"OutputDocument"> | number
+  supersedesId?: Prisma.StringNullableFilter<"OutputDocument"> | string | null
+  checksum?: Prisma.StringNullableFilter<"OutputDocument"> | string | null
   journey?: Prisma.XOR<Prisma.JourneyInstanceScalarRelationFilter, Prisma.JourneyInstanceWhereInput>
   node?: Prisma.XOR<Prisma.JourneyNodeScalarRelationFilter, Prisma.JourneyNodeWhereInput>
 }
@@ -197,6 +255,9 @@ export type OutputDocumentOrderByWithRelationInput = {
   type?: Prisma.SortOrder
   synthetic?: Prisma.SortOrder
   metadataJson?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  supersedesId?: Prisma.SortOrderInput | Prisma.SortOrder
+  checksum?: Prisma.SortOrderInput | Prisma.SortOrder
   journey?: Prisma.JourneyInstanceOrderByWithRelationInput
   node?: Prisma.JourneyNodeOrderByWithRelationInput
 }
@@ -211,6 +272,9 @@ export type OutputDocumentWhereUniqueInput = Prisma.AtLeast<{
   type?: Prisma.StringFilter<"OutputDocument"> | string
   synthetic?: Prisma.BoolFilter<"OutputDocument"> | boolean
   metadataJson?: Prisma.JsonFilter<"OutputDocument">
+  version?: Prisma.IntFilter<"OutputDocument"> | number
+  supersedesId?: Prisma.StringNullableFilter<"OutputDocument"> | string | null
+  checksum?: Prisma.StringNullableFilter<"OutputDocument"> | string | null
   journey?: Prisma.XOR<Prisma.JourneyInstanceScalarRelationFilter, Prisma.JourneyInstanceWhereInput>
   node?: Prisma.XOR<Prisma.JourneyNodeScalarRelationFilter, Prisma.JourneyNodeWhereInput>
 }, "id">
@@ -222,9 +286,14 @@ export type OutputDocumentOrderByWithAggregationInput = {
   type?: Prisma.SortOrder
   synthetic?: Prisma.SortOrder
   metadataJson?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  supersedesId?: Prisma.SortOrderInput | Prisma.SortOrder
+  checksum?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.OutputDocumentCountOrderByAggregateInput
+  _avg?: Prisma.OutputDocumentAvgOrderByAggregateInput
   _max?: Prisma.OutputDocumentMaxOrderByAggregateInput
   _min?: Prisma.OutputDocumentMinOrderByAggregateInput
+  _sum?: Prisma.OutputDocumentSumOrderByAggregateInput
 }
 
 export type OutputDocumentScalarWhereWithAggregatesInput = {
@@ -237,6 +306,9 @@ export type OutputDocumentScalarWhereWithAggregatesInput = {
   type?: Prisma.StringWithAggregatesFilter<"OutputDocument"> | string
   synthetic?: Prisma.BoolWithAggregatesFilter<"OutputDocument"> | boolean
   metadataJson?: Prisma.JsonWithAggregatesFilter<"OutputDocument">
+  version?: Prisma.IntWithAggregatesFilter<"OutputDocument"> | number
+  supersedesId?: Prisma.StringNullableWithAggregatesFilter<"OutputDocument"> | string | null
+  checksum?: Prisma.StringNullableWithAggregatesFilter<"OutputDocument"> | string | null
 }
 
 export type OutputDocumentCreateInput = {
@@ -244,6 +316,9 @@ export type OutputDocumentCreateInput = {
   type: string
   synthetic?: boolean
   metadataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  supersedesId?: string | null
+  checksum?: string | null
   journey: Prisma.JourneyInstanceCreateNestedOneWithoutDocumentsInput
   node: Prisma.JourneyNodeCreateNestedOneWithoutDocumentsInput
 }
@@ -255,6 +330,9 @@ export type OutputDocumentUncheckedCreateInput = {
   type: string
   synthetic?: boolean
   metadataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  supersedesId?: string | null
+  checksum?: string | null
 }
 
 export type OutputDocumentUpdateInput = {
@@ -262,6 +340,9 @@ export type OutputDocumentUpdateInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   journey?: Prisma.JourneyInstanceUpdateOneRequiredWithoutDocumentsNestedInput
   node?: Prisma.JourneyNodeUpdateOneRequiredWithoutDocumentsNestedInput
 }
@@ -273,6 +354,9 @@ export type OutputDocumentUncheckedUpdateInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type OutputDocumentCreateManyInput = {
@@ -282,6 +366,9 @@ export type OutputDocumentCreateManyInput = {
   type: string
   synthetic?: boolean
   metadataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  supersedesId?: string | null
+  checksum?: string | null
 }
 
 export type OutputDocumentUpdateManyMutationInput = {
@@ -289,6 +376,9 @@ export type OutputDocumentUpdateManyMutationInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type OutputDocumentUncheckedUpdateManyInput = {
@@ -298,6 +388,9 @@ export type OutputDocumentUncheckedUpdateManyInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type OutputDocumentListRelationFilter = {
@@ -317,6 +410,13 @@ export type OutputDocumentCountOrderByAggregateInput = {
   type?: Prisma.SortOrder
   synthetic?: Prisma.SortOrder
   metadataJson?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  supersedesId?: Prisma.SortOrder
+  checksum?: Prisma.SortOrder
+}
+
+export type OutputDocumentAvgOrderByAggregateInput = {
+  version?: Prisma.SortOrder
 }
 
 export type OutputDocumentMaxOrderByAggregateInput = {
@@ -325,6 +425,9 @@ export type OutputDocumentMaxOrderByAggregateInput = {
   nodeId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   synthetic?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  supersedesId?: Prisma.SortOrder
+  checksum?: Prisma.SortOrder
 }
 
 export type OutputDocumentMinOrderByAggregateInput = {
@@ -333,6 +436,13 @@ export type OutputDocumentMinOrderByAggregateInput = {
   nodeId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   synthetic?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  supersedesId?: Prisma.SortOrder
+  checksum?: Prisma.SortOrder
+}
+
+export type OutputDocumentSumOrderByAggregateInput = {
+  version?: Prisma.SortOrder
 }
 
 export type OutputDocumentCreateNestedManyWithoutJourneyInput = {
@@ -424,6 +534,9 @@ export type OutputDocumentCreateWithoutJourneyInput = {
   type: string
   synthetic?: boolean
   metadataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  supersedesId?: string | null
+  checksum?: string | null
   node: Prisma.JourneyNodeCreateNestedOneWithoutDocumentsInput
 }
 
@@ -433,6 +546,9 @@ export type OutputDocumentUncheckedCreateWithoutJourneyInput = {
   type: string
   synthetic?: boolean
   metadataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  supersedesId?: string | null
+  checksum?: string | null
 }
 
 export type OutputDocumentCreateOrConnectWithoutJourneyInput = {
@@ -471,6 +587,9 @@ export type OutputDocumentScalarWhereInput = {
   type?: Prisma.StringFilter<"OutputDocument"> | string
   synthetic?: Prisma.BoolFilter<"OutputDocument"> | boolean
   metadataJson?: Prisma.JsonFilter<"OutputDocument">
+  version?: Prisma.IntFilter<"OutputDocument"> | number
+  supersedesId?: Prisma.StringNullableFilter<"OutputDocument"> | string | null
+  checksum?: Prisma.StringNullableFilter<"OutputDocument"> | string | null
 }
 
 export type OutputDocumentCreateWithoutNodeInput = {
@@ -478,6 +597,9 @@ export type OutputDocumentCreateWithoutNodeInput = {
   type: string
   synthetic?: boolean
   metadataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  supersedesId?: string | null
+  checksum?: string | null
   journey: Prisma.JourneyInstanceCreateNestedOneWithoutDocumentsInput
 }
 
@@ -487,6 +609,9 @@ export type OutputDocumentUncheckedCreateWithoutNodeInput = {
   type: string
   synthetic?: boolean
   metadataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  supersedesId?: string | null
+  checksum?: string | null
 }
 
 export type OutputDocumentCreateOrConnectWithoutNodeInput = {
@@ -521,6 +646,9 @@ export type OutputDocumentCreateManyJourneyInput = {
   type: string
   synthetic?: boolean
   metadataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  supersedesId?: string | null
+  checksum?: string | null
 }
 
 export type OutputDocumentUpdateWithoutJourneyInput = {
@@ -528,6 +656,9 @@ export type OutputDocumentUpdateWithoutJourneyInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.JourneyNodeUpdateOneRequiredWithoutDocumentsNestedInput
 }
 
@@ -537,6 +668,9 @@ export type OutputDocumentUncheckedUpdateWithoutJourneyInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type OutputDocumentUncheckedUpdateManyWithoutJourneyInput = {
@@ -545,6 +679,9 @@ export type OutputDocumentUncheckedUpdateManyWithoutJourneyInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type OutputDocumentCreateManyNodeInput = {
@@ -553,6 +690,9 @@ export type OutputDocumentCreateManyNodeInput = {
   type: string
   synthetic?: boolean
   metadataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  supersedesId?: string | null
+  checksum?: string | null
 }
 
 export type OutputDocumentUpdateWithoutNodeInput = {
@@ -560,6 +700,9 @@ export type OutputDocumentUpdateWithoutNodeInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   journey?: Prisma.JourneyInstanceUpdateOneRequiredWithoutDocumentsNestedInput
 }
 
@@ -569,6 +712,9 @@ export type OutputDocumentUncheckedUpdateWithoutNodeInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type OutputDocumentUncheckedUpdateManyWithoutNodeInput = {
@@ -577,6 +723,9 @@ export type OutputDocumentUncheckedUpdateManyWithoutNodeInput = {
   type?: Prisma.StringFieldUpdateOperationsInput | string
   synthetic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  supersedesId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  checksum?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -588,6 +737,9 @@ export type OutputDocumentSelect<ExtArgs extends runtime.Types.Extensions.Intern
   type?: boolean
   synthetic?: boolean
   metadataJson?: boolean
+  version?: boolean
+  supersedesId?: boolean
+  checksum?: boolean
   journey?: boolean | Prisma.JourneyInstanceDefaultArgs<ExtArgs>
   node?: boolean | Prisma.JourneyNodeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["outputDocument"]>
@@ -599,6 +751,9 @@ export type OutputDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   type?: boolean
   synthetic?: boolean
   metadataJson?: boolean
+  version?: boolean
+  supersedesId?: boolean
+  checksum?: boolean
   journey?: boolean | Prisma.JourneyInstanceDefaultArgs<ExtArgs>
   node?: boolean | Prisma.JourneyNodeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["outputDocument"]>
@@ -610,6 +765,9 @@ export type OutputDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   type?: boolean
   synthetic?: boolean
   metadataJson?: boolean
+  version?: boolean
+  supersedesId?: boolean
+  checksum?: boolean
   journey?: boolean | Prisma.JourneyInstanceDefaultArgs<ExtArgs>
   node?: boolean | Prisma.JourneyNodeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["outputDocument"]>
@@ -621,9 +779,12 @@ export type OutputDocumentSelectScalar = {
   type?: boolean
   synthetic?: boolean
   metadataJson?: boolean
+  version?: boolean
+  supersedesId?: boolean
+  checksum?: boolean
 }
 
-export type OutputDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "journeyId" | "nodeId" | "type" | "synthetic" | "metadataJson", ExtArgs["result"]["outputDocument"]>
+export type OutputDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "journeyId" | "nodeId" | "type" | "synthetic" | "metadataJson" | "version" | "supersedesId" | "checksum", ExtArgs["result"]["outputDocument"]>
 export type OutputDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   journey?: boolean | Prisma.JourneyInstanceDefaultArgs<ExtArgs>
   node?: boolean | Prisma.JourneyNodeDefaultArgs<ExtArgs>
@@ -650,6 +811,9 @@ export type $OutputDocumentPayload<ExtArgs extends runtime.Types.Extensions.Inte
     type: string
     synthetic: boolean
     metadataJson: runtime.JsonValue
+    version: number
+    supersedesId: string | null
+    checksum: string | null
   }, ExtArgs["result"]["outputDocument"]>
   composites: {}
 }
@@ -1081,6 +1245,9 @@ export interface OutputDocumentFieldRefs {
   readonly type: Prisma.FieldRef<"OutputDocument", 'String'>
   readonly synthetic: Prisma.FieldRef<"OutputDocument", 'Boolean'>
   readonly metadataJson: Prisma.FieldRef<"OutputDocument", 'Json'>
+  readonly version: Prisma.FieldRef<"OutputDocument", 'Int'>
+  readonly supersedesId: Prisma.FieldRef<"OutputDocument", 'String'>
+  readonly checksum: Prisma.FieldRef<"OutputDocument", 'String'>
 }
     
 

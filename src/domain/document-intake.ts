@@ -1,4 +1,4 @@
-export type DocumentKind = "vehicle_rc" | "vaccination_receipt" | "insurance_policy" | "health_insurance_policy" | "hospital_discharge_summary" | "residence_proof" | "business_premises_proof" | "retirement_account_statement" | "unknown";
+export type DocumentKind = "vehicle_rc" | "sale_agreement" | "vaccination_receipt" | "insurance_policy" | "health_insurance_policy" | "hospital_discharge_summary" | "residence_proof" | "business_premises_proof" | "retirement_account_statement" | "unknown";
 
 export type DocumentAnalysis = {
   kind: DocumentKind;
@@ -20,6 +20,7 @@ export type DocumentProposal = {
   description: string;
   toolName: "createVehicleJourneyFromRC" | "updateVehicleFromRC" | "recordVaccination" | "recordVehicleInsurance" | "createHealthJourneyFromPolicy" | "recordHealthInsurance" | "createChildJourneyFromDischargeSummary" | "updateChildFromDischargeSummary" | "createMoveJourneyFromResidenceProof" | "updateMoveFromResidenceProof" | "createBusinessJourneyFromPremisesProof" | "updateBusinessFromPremisesProof" | "createRetirementJourneyFromStatement" | "updateRetirementFromStatement" | null;
   changes: Array<{ label: string; value: string }>;
+  targetOptions?: Array<{ id: string; label: string; type: JourneyMatchCandidate["subject"]["type"] }>;
 };
 
 const vehicleChanges = (fields: Record<string, string>) => [

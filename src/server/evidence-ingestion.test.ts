@@ -1,7 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { createSampleEvidence } from "./evidence-ingestion";
+import { createSampleEvidence, ingestUploadedEvidence } from "./evidence-ingestion";
 
 describe("vehicle evidence ingestion", () => {
+  it("never fabricates journey facts for a user upload and leaves it for review", async () => {
+    const evidence = await ingestUploadedEvidence("vehicle_rc", {
+      name: "registration-certificate.pdf",
+      type: "application/pdf",
+      bytes: new Uint8Array(Buffer.from("%PDF-1.4\nsynthetic upload")),
+    }, {
+      "vehicle.registrationNumber": "TS09EV4321",
+      "vehicle.chassisLast5": "7K2P9",
+    });
+
+    expect(evidence.verificationStatus).toBe("needs_review");
+    expect(evidence.extractedFields).toEqual({});
+    expect(evidence.checksum).toMatch(/^[a-f0-9]{64}$/);
+    expect(evidence.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: "Visible fields", status: "failed" }),
+      expect.objectContaining({ label: "File safety", status: "passed" }),
+    ]));
+  });
+
   it("generates a real PDF and extracts journey-matching RC fields", async () => {
     const evidence = await createSampleEvidence("vehicle_rc", {
       "vehicle.registrationNumber": "TS09EV4321",

@@ -47,6 +47,16 @@ export { Prisma }
  */
 export type UserProfile = Prisma.UserProfileModel
 /**
+ * Model CanonicalEntity
+ * 
+ */
+export type CanonicalEntity = Prisma.CanonicalEntityModel
+/**
+ * Model EntityRelationship
+ * 
+ */
+export type EntityRelationship = Prisma.EntityRelationshipModel
+/**
  * Model JourneySubject
  * 
  */
@@ -61,6 +71,16 @@ export type JourneyTemplate = Prisma.JourneyTemplateModel
  * 
  */
 export type JourneyInstance = Prisma.JourneyInstanceModel
+/**
+ * Model JourneyEntityLink
+ * 
+ */
+export type JourneyEntityLink = Prisma.JourneyEntityLinkModel
+/**
+ * Model JourneyTemplateVersion
+ * 
+ */
+export type JourneyTemplateVersion = Prisma.JourneyTemplateVersionModel
 /**
  * Model DocumentIntake
  * 
@@ -82,6 +102,11 @@ export type JourneyEdge = Prisma.JourneyEdgeModel
  */
 export type Fact = Prisma.FactModel
 /**
+ * Model FactRevision
+ * 
+ */
+export type FactRevision = Prisma.FactRevisionModel
+/**
  * Model Evidence
  * 
  */
@@ -91,6 +116,26 @@ export type Evidence = Prisma.EvidenceModel
  * 
  */
 export type ExternalAction = Prisma.ExternalActionModel
+/**
+ * Model ProviderCase
+ * 
+ */
+export type ProviderCase = Prisma.ProviderCaseModel
+/**
+ * Model CitizenTask
+ * 
+ */
+export type CitizenTask = Prisma.CitizenTaskModel
+/**
+ * Model ConsentGrant
+ * 
+ */
+export type ConsentGrant = Prisma.ConsentGrantModel
+/**
+ * Model AccessEvent
+ * 
+ */
+export type AccessEvent = Prisma.AccessEventModel
 /**
  * Model OutputDocument
  * 

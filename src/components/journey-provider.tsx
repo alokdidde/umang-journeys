@@ -17,6 +17,7 @@ type JourneyContextValue = {
   completeProfileStep: (id: string, nodeKey: "move_profile" | "business_profile" | "retirement_profile", facts: Record<string, string>) => Promise<boolean>;
   updateJourneyFacts: (id: string, facts: Record<string, string>) => Promise<boolean>;
   addEvidence: (id: string, type: EvidenceType, file?: File) => Promise<boolean>;
+  reviewEvidence: (id: string, evidenceId: string, approved: boolean, fields?: Record<string, string>) => Promise<boolean>;
   resetJourney: () => Promise<void>;
 };
 
@@ -147,6 +148,22 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
+  const reviewEvidence = useCallback(async (id: string, evidenceId: string, approved: boolean, fields?: Record<string, string>) => {
+    dispatch({ type: "operation_started" });
+    try {
+      const journey = await requestJson<ServerJourney>(`/api/journeys/${encodeURIComponent(id)}/evidence/${encodeURIComponent(evidenceId)}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ approved, fields }),
+      });
+      dispatch({ type: "server_journey_loaded", journey });
+      return true;
+    } catch (error) {
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Evidence review could not be saved." });
+      return false;
+    }
+  }, [dispatch]);
+
   const submitRegistration = useCallback(async (id: string) => {
     dispatch({ type: "operation_started" });
     try {
@@ -191,7 +208,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
-  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, advanceService, completeVehicleDetails, completeHealthProfile, completeProfileStep, updateJourneyFacts, addEvidence, resetJourney }}>{children}</JourneyContext.Provider>;
+  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, advanceService, completeVehicleDetails, completeHealthProfile, completeProfileStep, updateJourneyFacts, addEvidence, reviewEvidence, resetJourney }}>{children}</JourneyContext.Provider>;
 }
 
 export function useJourney() {

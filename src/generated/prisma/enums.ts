@@ -52,6 +52,53 @@ export const ExternalActionStatus = {
 export type ExternalActionStatus = (typeof ExternalActionStatus)[keyof typeof ExternalActionStatus]
 
 
+export const CanonicalEntityType = {
+  PERSON: 'PERSON',
+  HOUSEHOLD: 'HOUSEHOLD',
+  ADDRESS: 'ADDRESS',
+  VEHICLE: 'VEHICLE',
+  BUSINESS: 'BUSINESS',
+  POLICY: 'POLICY',
+  ACCOUNT: 'ACCOUNT'
+} as const
+
+export type CanonicalEntityType = (typeof CanonicalEntityType)[keyof typeof CanonicalEntityType]
+
+
+export const FactRevisionStatus = {
+  ACTIVE: 'ACTIVE',
+  CORRECTED: 'CORRECTED',
+  RETRACTED: 'RETRACTED'
+} as const
+
+export type FactRevisionStatus = (typeof FactRevisionStatus)[keyof typeof FactRevisionStatus]
+
+
+export const ProviderCaseStatus = {
+  SUBMITTED: 'SUBMITTED',
+  ACKNOWLEDGED: 'ACKNOWLEDGED',
+  UNDER_REVIEW: 'UNDER_REVIEW',
+  ACTION_REQUIRED: 'ACTION_REQUIRED',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  WITHDRAWN: 'WITHDRAWN',
+  EXPIRED: 'EXPIRED',
+  APPEALED: 'APPEALED'
+} as const
+
+export type ProviderCaseStatus = (typeof ProviderCaseStatus)[keyof typeof ProviderCaseStatus]
+
+
+export const CitizenTaskStatus = {
+  OPEN: 'OPEN',
+  WAITING: 'WAITING',
+  COMPLETED: 'COMPLETED',
+  DISMISSED: 'DISMISSED'
+} as const
+
+export type CitizenTaskStatus = (typeof CitizenTaskStatus)[keyof typeof CitizenTaskStatus]
+
+
 export const JourneySubjectType = {
   CHILD: 'CHILD',
   VEHICLE: 'VEHICLE',

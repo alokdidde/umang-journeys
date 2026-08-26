@@ -134,6 +134,9 @@ test("newborn journey persists, completes every sandbox integration, downloads a
     await expect(page.locator(".service-artifact").getByRole("heading", { name: artifactTitle })).toBeVisible();
     await expect(page.locator(".service-timeline time")).toHaveCount(4);
     await expect(page.locator(".service-progress-card footer").getByText(/^Receipt SBX-/)).toBeVisible();
+    const serviceRecord = await page.request.get(`/api/journeys/${id}/services/${key}/download`);
+    expect(serviceRecord.ok()).toBeTruthy();
+    expect(serviceRecord.headers()["content-type"]).toBe("application/pdf");
   }
 
   const pdf = await page.request.get(`/api/journeys/${id}/certificate`);
@@ -400,7 +403,7 @@ test("the document assistant creates a vehicle journey from an approved sample R
   await openDocumentAssistant(page);
   await page.getByRole("button", { name: "Registration certificate" }).click();
   await expect(page.getByRole("heading", { name: "Start a journey for Tata Nexon EV" })).toBeVisible();
-  await expect(page.getByText("TS09EV4321", { exact: true })).toBeVisible();
+  await expect(page.locator('input[value="TS09EV4321"]')).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
   await expect(page.getByText("The RC was attached and the vehicle journey is ready for review.")).toBeVisible();
 
@@ -424,7 +427,7 @@ test("the document assistant records an approved vaccination receipt on the matc
   await openDocumentAssistant(page);
   await page.getByRole("button", { name: "Vaccination receipt" }).click();
   await expect(page.getByRole("heading", { name: "Record BCG for Aarav Sharma" })).toBeVisible();
-  await expect(page.getByText("Apollo Hospital", { exact: true })).toBeVisible();
+  await expect(page.locator('input[value="Apollo Hospital"]')).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
   await expect(page.getByText("The vaccination receipt was added and the child’s timeline was refreshed.")).toBeVisible();
 
@@ -448,7 +451,7 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   await openDocumentAssistant(page);
   await page.getByRole("button", { name: "Health policy" }).click();
   await expect(page.getByRole("heading", { name: "Start a health journey for Ananya Sharma" })).toBeVisible();
-  await expect(page.getByText("HLT-SBX-502781", { exact: true })).toBeVisible();
+  await expect(page.locator('input[value="HLT-SBX-502781"]')).toBeVisible();
   await page.getByRole("button", { name: /Approve update/i }).click();
   await expect(page.getByText("The health policy was added and the health journey is ready for review.")).toBeVisible();
   await page.getByRole("link", { name: "Open updated journey" }).click();
@@ -593,6 +596,7 @@ test("moving home, business, and retirement each complete from evidence to archi
     await page.goto("/documents");
     await expect(page.getByText(scenario.services.at(-1)![2], { exact: true })).toBeVisible();
     await page.goto("/activity");
+    await page.getByRole("tab", { name: "History" }).click();
     await expect(page.getByText(scenario.activity, { exact: true })).toBeVisible();
   }
   await page.request.post("/api/demo/reset");
@@ -634,7 +638,8 @@ test("document tools create and enrich journeys while the library and activity l
 
   await page.getByRole("link", { name: "Activity", exact: true }).click();
   await expect(page.getByRole("link", { name: "Activity", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("heading", { name: "What changed", exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "History" }).click();
+  await expect(page.getByRole("heading", { name: "What needs your attention", exact: true })).toBeVisible();
   await expect(page.getByText("Document update approved")).toHaveCount(3);
   await expect(page.getByText("Having a Baby journey started")).toBeVisible();
   await expect(page.getByText("Buying a Vehicle journey started")).toBeVisible();
@@ -676,6 +681,47 @@ test("an invalid uploaded document fails safely without mutating a journey", asy
   const body = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
   expect(body.journeys).toHaveLength(1);
   await page.request.post("/api/demo/reset");
+});
+
+test("provider callbacks pause for clarification and resume after the citizen responds", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  const id = await seedJourney(page);
+  await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "provider-registration" } });
+  await page.request.patch(`/api/journeys/${id}/facts`, { data: { facts: { "simulation.scenario.child_health_record": "clarification", "simulation.consent.child_health_record": new Date(Date.now() + 30 * 60 * 1000).toISOString() } } });
+  const started = await page.request.post(`/api/journeys/${id}/nodes/child_health_record/submit`, { data: { idempotencyKey: "provider-clarification-start" } });
+  expect(started.ok()).toBeTruthy();
+
+  await expect.poll(async () => {
+    const response = await page.request.get(`/api/journeys/${id}`);
+    const journey = await response.json() as { serviceRuns: { child_health_record?: { caseStatus?: string } } };
+    return journey.serviceRuns.child_health_record?.caseStatus;
+  }, { timeout: 6_000 }).toBe("action_required");
+  await page.goto(`/journeys/${id}/services/child_health_record`);
+  await expect(page.getByText("The provider needs more information")).toBeVisible();
+  await expect(page.getByText("Reason code: MORE_INFORMATION_REQUIRED")).toBeVisible();
+  await page.getByRole("button", { name: "Send clarification" }).click();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 8_000 });
+  await expect(page.getByRole("heading", { name: "Child health profile" })).toBeVisible();
+});
+
+test("a structurally valid upload cannot unlock a service without extracted and confirmed facts", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  const created = await page.request.post("/api/journeys", { data: { templateId: "vehicle-purchase.india.v1", facts: { "vehicle.registrationNumber": "TS09EV4321", "vehicle.makeModel": "Tata Nexon EV" } } });
+  const { id } = await created.json() as { id: string };
+  await page.request.post(`/api/journeys/${id}/nodes/vehicle_details/submit`, { data: {
+    "vehicle.registrationNumber": "TS09EV4321", "vehicle.makeModel": "Tata Nexon EV", "vehicle.purchaseDate": "2026-08-25", "vehicle.sellerName": "Vikram Rao", "vehicle.chassisLast5": "7K2P9", "vehicle.transferScope": "same_state", "vehicle.acquisitionRoute": "sale", "vehicle.hypothecation": "no", "vehicle.pendingDues": "no", idempotencyKey: "upload-trust-boundary",
+  } });
+  const upload = await page.request.post(`/api/journeys/${id}/evidence`, { multipart: { type: "vehicle_rc", file: { name: "registration-certificate.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\nvalid container without readable fields") } } });
+  expect(upload.ok()).toBeTruthy();
+  const journey = await upload.json() as { evidence: Array<{ verificationStatus: string; extractedFields: Record<string, string> }> };
+  expect(journey.evidence.at(-1)).toMatchObject({ verificationStatus: "needs_review", extractedFields: {} });
+  const blocked = await page.request.post(`/api/journeys/${id}/nodes/ownership_transfer/submit`, { data: { idempotencyKey: "blocked-unreviewed-evidence" } });
+  expect(blocked.status()).toBe(409);
+  await page.goto(`/journeys/${id}/services/ownership_transfer`);
+  await expect(page.getByText("No supported values were found. Upload a clearer copy.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm and use" })).toBeDisabled();
 });
 
 test("authenticated workflow pages have no serious accessibility violations", async ({ page }) => {

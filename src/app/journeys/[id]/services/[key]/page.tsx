@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Activity,
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
@@ -29,6 +30,7 @@ import {
   isSandboxServiceKey,
   serviceWorkflowDefinitions,
   type ArtifactItemStatus,
+  type ProviderScenario,
   type SandboxServiceRun,
   type ServiceArtifact,
 } from "@/domain/service-workflows";
@@ -84,11 +86,12 @@ function statusLabel(status: ArtifactItemStatus) {
 
 export default function SandboxServicePage() {
   const { id, key } = useParams<{ id: string; key: string }>();
-  const { state, loadJourney, advanceService, addEvidence, updateJourneyFacts } = useJourney();
+  const { state, loadJourney, advanceService, addEvidence, reviewEvidence, updateJourneyFacts } = useJourney();
   const validKey = isSandboxServiceKey(key) ? key : null;
   const definition = validKey ? serviceWorkflowDefinitions[validKey] : null;
   const node = state.projection.nodes.find((candidate) => candidate.key === key);
   const run = validKey ? state.serviceRuns[validKey] : undefined;
+  const [scenario, setScenario] = useState<ProviderScenario>("success");
   const artifactHeadingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -97,9 +100,9 @@ export default function SandboxServicePage() {
 
   useEffect(() => {
     if (!validKey || !run || run.status === "completed" || run.status === "failed" || state.pending || state.error) return;
-    const timer = window.setTimeout(() => void advanceService(id, validKey), 850);
+    const timer = window.setTimeout(() => void loadJourney(id), 850);
     return () => window.clearTimeout(timer);
-  }, [advanceService, id, run, state.error, state.pending, validKey]);
+  }, [id, loadJourney, run, state.error, state.pending, validKey]);
 
   useEffect(() => {
     if (run?.status === "completed") artifactHeadingRef.current?.focus();
@@ -113,6 +116,12 @@ export default function SandboxServicePage() {
   const completed = run?.status === "completed";
   const nextStage = definition.stages[run?.currentStage ?? 0];
   const guidance = guidanceLinks[validKey];
+
+  async function startService() {
+    if (!validKey) return false;
+    const saved = await updateJourneyFacts(id, { [`simulation.scenario.${validKey}`]: scenario, [`simulation.consent.${validKey}`]: new Date(Date.now() + 30 * 60 * 1000).toISOString() });
+    return saved ? advanceService(id, validKey) : false;
+  }
 
   return (
     <main className="page service-page">
@@ -132,7 +141,7 @@ export default function SandboxServicePage() {
             <span>{completed ? <BadgeCheck /> : run ? <LoaderCircle className="service-spinner" /> : <ShieldCheck />}</span>
             <div>
               <small>Current state</small>
-              <strong>{completed ? "Completed" : run?.status === "waiting_external" ? "Waiting for provider" : run ? "Processing securely" : "Ready to connect"}</strong>
+              <strong>{completed ? "Approved" : run?.caseStatus === "action_required" ? "Your response is needed" : run?.caseStatus === "rejected" ? "Provider decision: rejected" : run?.status === "waiting_external" ? "Waiting for provider" : run ? (run.caseStatus ?? "processing").replaceAll("_", " ") : "Ready to connect"}</strong>
               <p>{completed ? `Finished ${formatTimestamp(run.completedAt ?? run.updatedAt)}` : run ? `${run.progress}% complete · ${definition.turnaround}` : "No data has been sent yet"}</p>
             </div>
           </div> : null}
@@ -149,9 +158,12 @@ export default function SandboxServicePage() {
                 pending={state.pending}
                 error={state.error}
                 action={definition.action}
+                scenario={scenario}
+                setScenario={setScenario}
                 addEvidence={addEvidence}
+                reviewEvidence={reviewEvidence}
                 updateFacts={updateJourneyFacts}
-                start={() => advanceService(id, validKey)}
+                start={startService}
               />
             ) : !run ? (
               <section className="service-start-card panel">
@@ -163,7 +175,8 @@ export default function SandboxServicePage() {
                   <span><CheckCircle2 />Required facts available</span>
                   <span><CheckCircle2 />Sandbox connection healthy</span>
                 </div>
-                <button className="primary-cta service-action" type="button" disabled={state.pending} onClick={() => void advanceService(id, validKey)}>
+                <ProviderScenarioPicker value={scenario} onChange={setScenario} />
+                <button className="primary-cta service-action" type="button" disabled={state.pending} onClick={() => void startService()}>
                   {definition.action}<ArrowRight />
                 </button>
                 <p className="service-consent-note"><ShieldCheck />This runs a simulation only. No production government service is contacted.</p>
@@ -171,10 +184,10 @@ export default function SandboxServicePage() {
             ) : (
               <>
                 <ServiceProgress run={run} stages={definition.stages} nextStageTitle={nextStage?.title} pending={state.pending} />
-                {state.error ? (
+                {state.error || run.status === "failed" ? (
                   <section className="service-recovery panel" role="alert">
-                    <div><RotateCw /><span><strong>Progress is saved</strong><p>{state.error} Retry from the last completed check.</p></span></div>
-                    <button type="button" className="secondary-button" onClick={() => void advanceService(id, validKey)}>Retry provider check</button>
+                    <div><RotateCw /><span><strong>{run.caseStatus === "action_required" ? "The provider needs more information" : run.caseStatus === "rejected" ? "This synthetic case was rejected" : "Progress is saved"}</strong><p>{state.error ?? run.actionMessage ?? "Retry from the last completed check."}</p>{run.reasonCode ? <small>Reason code: {run.reasonCode}</small> : null}</span></div>
+                    {run?.caseStatus === "action_required" ? <button type="button" className="secondary-button" onClick={() => void updateJourneyFacts(id, { [`simulation.response.${validKey}`]: new Date().toISOString() }).then((saved) => saved && advanceService(id, validKey))}>Send clarification</button> : run?.caseStatus === "rejected" ? <button type="button" className="secondary-button" onClick={() => void updateJourneyFacts(id, { [`simulation.appeal.${validKey}`]: new Date().toISOString() }).then((saved) => saved && advanceService(id, validKey))}>Correct and appeal</button> : <button type="button" className="secondary-button" onClick={() => void advanceService(id, validKey)}>Retry provider check</button>}
                   </section>
                 ) : null}
                 {completed && run.artifact ? <ServiceArtifactView artifact={run.artifact} headingRef={artifactHeadingRef} /> : null}
@@ -207,8 +220,8 @@ export default function SandboxServicePage() {
 
         {completed ? (
           <div className="service-footer-actions">
-            {validKey === "birth_certificate" ? <Link className="primary-cta" href={`/api/journeys/${id}/certificate`} prefetch={false}><FileDown />Download sandbox PDF</Link> : null}
-            <Link className={validKey === "birth_certificate" ? "secondary-button" : "primary-cta"} href={`/journeys/${id}`}><Check />Continue journey</Link>
+            <Link className="primary-cta" href={`/api/journeys/${id}/services/${validKey}/download`} prefetch={false}><FileDown />Download service record</Link>
+            <Link className="secondary-button" href={`/journeys/${id}`}><Check />Continue journey</Link>
           </div>
         ) : null}
       </div>
@@ -216,7 +229,7 @@ export default function SandboxServicePage() {
   );
 }
 
-function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, action, addEvidence, updateFacts, start }: {
+function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, action, scenario, setScenario, addEvidence, reviewEvidence, updateFacts, start }: {
   id: string;
   nodeKey: SandboxServiceRun["nodeKey"];
   evidence: JourneyEvidence[];
@@ -224,7 +237,10 @@ function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, acti
   pending: boolean;
   error: string | null;
   action: string;
+  scenario: ProviderScenario;
+  setScenario: (value: ProviderScenario) => void;
   addEvidence: (id: string, type: EvidenceType, file?: File) => Promise<boolean>;
+  reviewEvidence: (id: string, evidenceId: string, approved: boolean, fields?: Record<string, string>) => Promise<boolean>;
   updateFacts: (id: string, facts: Record<string, string>) => Promise<boolean>;
   start: () => Promise<boolean>;
 }) {
@@ -257,13 +273,16 @@ function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, acti
   return <section className="panel vehicle-service-preparation">
     <header><h2>{missing.length ? `${missing.length} ${missing.length === 1 ? "item" : "items"} needed before submission` : "Review and authorise this simulation"}</h2><p>The provider run stays locked until each required input has been verified.</p></header>
     {required.length ? <div className="evidence-requirements">{required.map((type) => {
-      const item = evidence.find((candidate) => candidate.type === type);
+      const item = evidence.findLast((candidate) => candidate.type === type && candidate.verificationStatus !== "rejected")
+        ?? evidence.findLast((candidate) => candidate.type === type);
       const label = evidenceLabels[type];
-      return <article className={item ? "verified" : "missing"} key={type}>
-        <span>{item ? <CheckCircle2 /> : <FileUp />}</span><div><strong>{label.title}</strong><p>{label.description}</p>
-          {item ? <><small>{item.fileName} · {(item.size / 1024).toFixed(1)} KB · {item.source === "sample" ? "Synthetic sample" : "Uploaded"}</small><details className="evidence-details"><summary>View extracted details</summary><dl>{Object.entries(item.extractedFields).map(([key, value]) => <div key={key}><dt>{key.replace(/([A-Z])/g, " $1")}</dt><dd>{value}</dd></div>)}</dl></details></> : null}
+      const verified = item?.verificationStatus === "verified";
+      return <article className={verified ? "verified" : "missing"} key={type}>
+        <span>{verified ? <CheckCircle2 /> : item ? <AlertTriangle /> : <FileUp />}</span><div><strong>{label.title}</strong><p>{item?.verificationStatus === "needs_review" ? "Check the values read from this document before it can be used." : item?.verificationStatus === "rejected" ? "This copy was not accepted. Upload another document." : label.description}</p>
+          {item ? <><small>{item.fileName} · {(item.size / 1024).toFixed(1)} KB · {item.source === "sample" ? "Synthetic sample" : "Uploaded"} · {item.verificationStatus === "verified" ? "Verified" : item.verificationStatus === "needs_review" ? "Needs your review" : "Rejected"}</small>{verified ? <details className="evidence-details"><summary>View verified details</summary><dl>{Object.entries(item.extractedFields).map(([key, value]) => <div key={key}><dt>{key.replace(/([A-Z])/g, " $1")}</dt><dd>{value}</dd></div>)}</dl></details> : null}</> : null}
+          {item?.verificationStatus === "needs_review" ? <EvidenceReview item={item} pending={pending} onReview={(approved, fields) => reviewEvidence(id, item.id, approved, fields)} /> : null}
         </div>
-        <div className="evidence-actions">{item ? <a href={`/api/journeys/${id}/evidence/${item.id}`} target="_blank" rel="noreferrer"><Eye />Preview</a> : <>
+        <div className="evidence-actions">{item ? <><a href={`/api/journeys/${id}/evidence/${item.id}`} target="_blank" rel="noreferrer"><Eye />Preview</a>{item.verificationStatus === "rejected" ? <label><FileUp />Replace<input type="file" accept="application/pdf,image/png,image/jpeg" onChange={(event) => { const file = event.target.files?.[0]; if (file) void addEvidence(id, type, file); }} /></label> : null}</> : <>
           <label><FileUp />Upload<input type="file" accept="application/pdf,image/png,image/jpeg" onChange={(event) => { const file = event.target.files?.[0]; if (file) void addEvidence(id, type, file); }} /></label>
           <button type="button" onClick={() => void addEvidence(id, type)}>Use sample evidence</button>
         </>}</div>
@@ -272,10 +291,40 @@ function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, acti
     {nodeKey === "fastag_setup" ? <div className="fastag-inputs"><label htmlFor="mobile-last-four">Mobile number ending</label><span className="field-helper">Enter only the last four digits; the sandbox simulates OTP verification.</span><input id="mobile-last-four" inputMode="numeric" maxLength={4} pattern="[0-9]{4}" value={mobileLast4} onChange={(event) => setMobileLast4(event.target.value.replace(/\D/g, ""))} /><label htmlFor="fastag-issuer">Issuer</label><select id="fastag-issuer" value={issuer} onChange={(event) => setIssuer(event.target.value)}><option>NHAI FASTag</option><option>State Bank of India</option><option>ICICI Bank</option></select></div> : null}
     {nodeKey === "public_scheme_check" ? <div className="fastag-inputs"><label htmlFor="household-record">Do you have a ration card or another household record?</label><span className="field-helper">This only changes the verification checklist. It does not decide eligibility.</span><select id="household-record" value={householdRecord} onChange={(event) => setHouseholdRecord(event.target.value)}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></select></div> : null}
     {nodeKey === "cashless_readiness" ? <div className="fastag-inputs"><label htmlFor="care-city">City where you are likely to seek care</label><span className="field-helper">The final pack will remind you to verify the hospital’s current network status.</span><input id="care-city" value={careCity} onChange={(event) => setCareCity(event.target.value)} /></div> : null}
+    <ProviderScenarioPicker value={scenario} onChange={setScenario} />
     <label className="simulation-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span><strong>I authorise this evaluation-only submission</strong><small>No production provider, bank account, or government record will be changed.</small></span></label>
     {error ? <p className="workflow-error" role="alert">{error}</p> : null}
     <button className="primary-cta service-action" type="button" disabled={pending || missing.length > 0 || !fastagReady || !healthReady || !consent} onClick={() => void begin()}>{pending ? "Saving requirements…" : action}<ArrowRight /></button>
   </section>;
+}
+
+function ProviderScenarioPicker({ value, onChange }: { value: ProviderScenario; onChange: (value: ProviderScenario) => void }) {
+  return <details className="provider-scenario-picker">
+    <summary>Test a different provider outcome</summary>
+    <label htmlFor="provider-scenario">Synthetic case outcome</label>
+    <select id="provider-scenario" value={value} onChange={(event) => onChange(event.target.value as ProviderScenario)}>
+      <option value="success">Approved after review</option>
+      <option value="delayed">Longer provider delay</option>
+      <option value="clarification">Provider asks a question</option>
+      <option value="rejected">Rejected, then appealed</option>
+    </select>
+    <p>This changes only the evaluation simulator so recovery paths can be tested.</p>
+  </details>;
+}
+
+function EvidenceReview({ item, pending, onReview }: {
+  item: JourneyEvidence;
+  pending: boolean;
+  onReview: (approved: boolean, fields?: Record<string, string>) => Promise<boolean>;
+}) {
+  const [fields, setFields] = useState(item.extractedFields);
+  const failed = item.checks?.some((check) => check.status === "failed") ?? false;
+  return <div className="evidence-review" role="group" aria-label={`Review ${item.fileName}`}>
+    <div className="evidence-review-summary"><strong>{Math.round((item.analysisConfidence ?? 0) * 100)}% analysis confidence</strong><span>{item.scanStatus === "clean" ? "Safety check passed" : "Safety check needs attention"}</span></div>
+    {item.checks?.length ? <ul>{item.checks.map((check) => <li className={check.status} key={`${check.label}-${check.detail}`}><span>{check.status === "passed" ? <Check /> : <AlertTriangle />}</span><div><strong>{check.label}</strong><p>{check.detail}</p></div></li>)}</ul> : null}
+    {Object.keys(fields).length ? <fieldset><legend>Values read from the document</legend>{Object.entries(fields).map(([fieldKey, value]) => <label key={fieldKey}><span>{fieldKey.replace(/([A-Z])/g, " $1")}</span><input value={value} onChange={(event) => setFields((current) => ({ ...current, [fieldKey]: event.target.value }))} /></label>)}</fieldset> : <p className="workflow-error">No supported values were found. Upload a clearer copy.</p>}
+    <div className="evidence-review-actions"><button type="button" className="secondary-button" disabled={pending} onClick={() => void onReview(false)}>Reject this copy</button><button type="button" disabled={pending || failed || !Object.keys(fields).length} onClick={() => void onReview(true, fields)}>Confirm and use</button></div>
+  </div>;
 }
 
 function ServiceProgress({ run, stages, nextStageTitle, pending }: {

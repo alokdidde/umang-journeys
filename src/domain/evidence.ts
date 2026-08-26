@@ -12,6 +12,13 @@ export type JourneyEvidence = {
   source: EvidenceSource;
   verificationStatus: "verified" | "needs_review" | "rejected";
   extractedFields: Record<string, string>;
+  analysisConfidence?: number;
+  checks?: Array<{ label: string; status: "passed" | "review" | "failed"; detail: string }>;
+  checksum?: string;
+  scanStatus?: "clean" | "flagged";
+  retentionExpiresAt?: string;
+  version?: number;
+  reviewedAt?: string;
   createdAt: string;
 };
 

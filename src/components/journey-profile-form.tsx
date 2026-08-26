@@ -96,6 +96,8 @@ function defaults(kind: ProfileKind, facts: Record<string, string>): Record<stri
     "move.occupancy": facts["move.occupancy"] ?? "rented",
     "household.size": facts["household.size"] ?? "3",
     "move.hasEpic": facts["move.hasEpic"] ?? "yes",
+    "move.utilityAppointment": facts["move.utilityAppointment"] ?? "not_sure",
+    "move.landlordConsent": facts["move.landlordConsent"] ?? "not_sure",
   };
   if (kind === "business") return {
     "business.name": facts["business.name"] ?? "Ananya Design Studio",
@@ -108,6 +110,10 @@ function defaults(kind: ProfileKind, facts: Record<string, string>): Record<stri
     "business.occupancy": facts["business.occupancy"] ?? "rented",
     "business.expectedTurnover": facts["business.expectedTurnover"] ?? "800000",
     "business.interstateSupplies": facts["business.interstateSupplies"] ?? "no",
+    "business.promoters": facts["business.promoters"] ?? "1",
+    "business.signatoryReady": facts["business.signatoryReady"] ?? "yes",
+    "business.bankReady": facts["business.bankReady"] ?? "not_sure",
+    "business.sectorLicence": facts["business.sectorLicence"] ?? "not_sure",
   };
   return {
     "person.name": facts["person.name"] ?? "Ananya Sharma",
@@ -117,6 +123,9 @@ function defaults(kind: ProfileKind, facts: Record<string, string>): Record<stri
     "retirement.accountType": facts["retirement.accountType"] ?? "epfo",
     "retirement.serviceYears": facts["retirement.serviceYears"] ?? "14",
     "retirement.pensionStarted": facts["retirement.pensionStarted"] ?? "no",
+    "retirement.recordDispute": facts["retirement.recordDispute"] ?? "no",
+    "retirement.nomineeUpdated": facts["retirement.nomineeUpdated"] ?? "not_sure",
+    "retirement.bankKyc": facts["retirement.bankKyc"] ?? "not_sure",
   };
 }
 
@@ -140,6 +149,7 @@ function MoveFields({ values, set, part }: { values: Record<string, string>; set
     <Select id="move.occupancy" label="How do you occupy the new home?" value={values["move.occupancy"]} set={set}><option value="rented">Rented</option><option value="owned">Owned</option><option value="family">With family</option><option value="not_sure">I’m not sure</option></Select>
     <Input id="household.size" label="People moving" value={values["household.size"]} set={set} type="number" min={1} max={20} required />
     <Select id="move.hasEpic" label="Do you have a voter ID or EPIC number?" value={values["move.hasEpic"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select>
+    <details className="profile-exceptions"><summary>Do utilities, a landlord, or appointments need coordination?</summary><div><Select id="move.utilityAppointment" label="Will a meter or utility visit be needed?" value={values["move.utilityAppointment"]} set={set}><option value="no">No</option><option value="not_sure">I’m not sure</option><option value="yes">Yes</option></Select><Select id="move.landlordConsent" label="Is owner or landlord consent available?" value={values["move.landlordConsent"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select></div></details>
   </section>;
 }
 
@@ -156,6 +166,7 @@ function BusinessFields({ values, set, part }: { values: Record<string, string>;
     <Select id="business.occupancy" label="Nature of possession" value={values["business.occupancy"]} set={set}><option value="rented">Rented</option><option value="owned">Owned</option><option value="consent">With owner consent</option><option value="shared">Shared</option></Select>
     <Input id="business.expectedTurnover" label="Expected annual turnover (₹)" value={values["business.expectedTurnover"]} set={set} type="number" inputMode="numeric" min={0} required />
     <Select id="business.interstateSupplies" label="Will you supply outside your state?" value={values["business.interstateSupplies"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select>
+    <details className="profile-exceptions"><summary>Are there partners, signatories, banking, or sector permissions to organise?</summary><div><Input id="business.promoters" label="Promoters or partners" value={values["business.promoters"]} set={set} type="number" min={1} max={20} required /><Select id="business.signatoryReady" label="Is an authorised signatory decided?" value={values["business.signatoryReady"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select><Select id="business.bankReady" label="Is a business bank route ready?" value={values["business.bankReady"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select><Select id="business.sectorLicence" label="Could your activity need a sector or local licence?" value={values["business.sectorLicence"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select></div></details>
   </section>;
 }
 
@@ -169,5 +180,6 @@ function RetirementFields({ values, set, part }: { values: Record<string, string
     <Select id="retirement.accountType" label="Main retirement record" value={values["retirement.accountType"]} set={set}><option value="epfo">EPFO / EPS</option><option value="nps">NPS</option><option value="employer_pension">Employer pension</option><option value="multiple">More than one</option><option value="not_sure">I’m not sure</option></Select>
     <Input id="retirement.serviceYears" label="Years of eligible or recorded service" value={values["retirement.serviceYears"]} set={set} type="number" min={0} max={60} required />
     <Select id="retirement.pensionStarted" label="Has a pension already started?" value={values["retirement.pensionStarted"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select>
+    <details className="profile-exceptions"><summary>Is there a service-record dispute or any KYC, bank, or nominee work?</summary><div><Select id="retirement.recordDispute" label="Do you disagree with the recorded service?" value={values["retirement.recordDispute"]} set={set}><option value="no">No</option><option value="not_sure">I’m not sure</option><option value="yes">Yes</option></Select><Select id="retirement.nomineeUpdated" label="Are nominee or family details current?" value={values["retirement.nomineeUpdated"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select><Select id="retirement.bankKyc" label="Are bank and KYC details current?" value={values["retirement.bankKyc"]} set={set}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></Select></div></details>
   </section>;
 }

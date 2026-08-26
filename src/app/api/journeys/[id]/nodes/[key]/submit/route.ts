@@ -14,6 +14,9 @@ const vehicleDetailsSchema = z.object({
   "vehicle.sellerName": z.string().trim().min(2),
   "vehicle.chassisLast5": z.string().trim().regex(/^[A-Z0-9]{5}$/),
   "vehicle.transferScope": z.enum(["same_state", "interstate"]),
+  "vehicle.acquisitionRoute": z.enum(["sale", "inheritance", "auction"]),
+  "vehicle.hypothecation": z.enum(["yes", "not_sure", "no"]),
+  "vehicle.pendingDues": z.enum(["yes", "not_sure", "no"]),
   idempotencyKey: z.string().min(8),
 });
 const healthProfileSchema = z.object({
@@ -23,6 +26,9 @@ const healthProfileSchema = z.object({
   "household.size": z.string().regex(/^\d{1,2}$/),
   "health.currentCover": z.enum(["yes", "not_sure", "no"]),
   "health.abhaStatus": z.enum(["yes", "not_sure", "no"]),
+  "health.coverageFor": z.enum(["self", "family", "dependent"]),
+  "health.careRoute": z.enum(["not_sure", "cashless", "reimbursement", "preauthorisation"]),
+  "health.activeClaim": z.enum(["yes", "not_sure", "no"]),
   idempotencyKey: z.string().min(8),
 });
 const moveProfileSchema = z.object({
@@ -35,6 +41,8 @@ const moveProfileSchema = z.object({
   "move.occupancy": z.enum(["rented", "owned", "family", "not_sure"]),
   "household.size": z.string().regex(/^\d{1,2}$/),
   "move.hasEpic": z.enum(["yes", "not_sure", "no"]),
+  "move.utilityAppointment": z.enum(["yes", "not_sure", "no"]),
+  "move.landlordConsent": z.enum(["yes", "not_sure", "no"]),
   idempotencyKey: z.string().min(8),
 });
 const businessProfileSchema = z.object({
@@ -48,6 +56,10 @@ const businessProfileSchema = z.object({
   "business.occupancy": z.enum(["rented", "owned", "consent", "shared"]),
   "business.expectedTurnover": z.string().regex(/^\d{1,12}$/),
   "business.interstateSupplies": z.enum(["yes", "not_sure", "no"]),
+  "business.promoters": z.string().regex(/^\d{1,2}$/),
+  "business.signatoryReady": z.enum(["yes", "not_sure", "no"]),
+  "business.bankReady": z.enum(["yes", "not_sure", "no"]),
+  "business.sectorLicence": z.enum(["yes", "not_sure", "no"]),
   idempotencyKey: z.string().min(8),
 });
 const retirementProfileSchema = z.object({
@@ -58,6 +70,9 @@ const retirementProfileSchema = z.object({
   "retirement.accountType": z.enum(["epfo", "nps", "employer_pension", "multiple", "not_sure"]),
   "retirement.serviceYears": z.string().regex(/^\d{1,2}$/),
   "retirement.pensionStarted": z.enum(["yes", "not_sure", "no"]),
+  "retirement.recordDispute": z.enum(["yes", "not_sure", "no"]),
+  "retirement.nomineeUpdated": z.enum(["yes", "not_sure", "no"]),
+  "retirement.bankKyc": z.enum(["yes", "not_sure", "no"]),
   idempotencyKey: z.string().min(8),
 });
 export async function POST(request: Request, { params }: { params: Promise<{ id: string; key: string }> }) {

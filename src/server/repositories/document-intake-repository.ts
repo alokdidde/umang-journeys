@@ -113,8 +113,10 @@ export class PrismaDocumentIntakeRepository implements DocumentIntakeRepository 
   }
 
   async get(sessionId: string, id: string) {
-    const record = await getPrisma().documentIntake.findFirst({ where: { id, profile: { sessionId } } });
+    const prisma = getPrisma();
+    const record = await prisma.documentIntake.findFirst({ where: { id, profile: { sessionId } } });
     if (!record) return null;
+    await prisma.accessEvent.create({ data: { profileId: record.profileId, actor: "demo_user", action: "READ", resourceType: "document_intake", resourceId: record.id, metadataJson: { fileName: record.fileName } } });
     return {
       id: record.id,
       sessionId,

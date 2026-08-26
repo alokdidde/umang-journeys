@@ -115,6 +115,18 @@ function formatShortDate(value: string | undefined) {
   return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
 }
 
+function addDays(value: string | undefined, days: number) {
+  if (!value) return "Date not recorded";
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.valueOf())) return "Date not recorded";
+  date.setUTCDate(date.getUTCDate() + days);
+  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
+}
+
+function recorded(value: string | undefined) {
+  return value?.trim() || "Not recorded";
+}
+
 function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: string, facts: Record<string, string> = {}): ServiceArtifact {
   const reference = numericReference(journeyId, nodeKey);
   switch (nodeKey) {
@@ -126,7 +138,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceValue: `CRS-${reference.slice(0, 4)}-${reference.slice(4, 10)}`,
         facts: [
           { label: "Registration match", value: "Verified", status: "verified" },
-          { label: "Authority", value: "Greater Hyderabad sandbox", status: "information" },
+          { label: "Authority", value: facts["birth.place.ward"] ? `${facts["birth.place.ward"]} sandbox` : `${recorded(facts["birth.city"])} civil-registry sandbox`, status: "information" },
           { label: "Document integrity", value: "Sandbox signature valid", status: "verified" },
         ],
         groups: [{ title: "Available document", items: [{ title: "Birth certificate PDF", meta: "Watermarked · Not official", detail: `Receipt ${receipt}`, status: "ready" }] }],
@@ -148,7 +160,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
           description: "No clinical finding or immunisation is inferred from the birth registration.",
           items: [
             { title: "Newborn profile", meta: "Name, birth date, guardian", status: "ready" },
-            { title: "Birth summary", meta: "Apollo Hospital · synthetic", status: "ready" },
+            { title: "Birth summary", meta: `${recorded(facts["birth.hospital"])} · synthetic`, status: "ready" },
             { title: "Immunisation records", meta: "Waiting for a provider record", status: "review" },
           ],
         }],
@@ -159,11 +171,11 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
       const administeredOn = facts["vaccination.last.administeredOn"];
       return {
         title: "Vaccination timeline",
-        subtitle: "Calculated from the recorded birth date of 24 August 2026",
+        subtitle: `Calculated from the recorded birth date of ${formatShortDate(facts["child.dateOfBirth"])}`,
         referenceLabel: "Schedule reference",
         referenceValue: `UWIN-SBX-${reference.slice(-8)}`,
         facts: [
-          { label: "Schedule anchor", value: "24 August 2026", status: "verified" },
+          { label: "Schedule anchor", value: formatShortDate(facts["child.dateOfBirth"]), status: facts["child.dateOfBirth"] ? "verified" : "review" },
           recordedVaccine
             ? { label: "Recorded dose", value: `${recordedVaccine} · ${formatShortDate(administeredOn)}`, status: "verified" }
             : { label: "Birth doses", value: "Administration not confirmed", status: "review" },
@@ -176,9 +188,9 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
             recordedVaccine
               ? { title: `${recordedVaccine} recorded`, meta: `${formatShortDate(administeredOn)} · ${facts["vaccination.last.provider"] || "Provider receipt"}`, detail: "Verified from the attached synthetic provider receipt.", status: "verified" }
               : { title: "Birth-dose review", meta: "BCG · OPV-0 · Hepatitis B birth dose", detail: "Ask the birth facility to confirm what was administered.", status: "due" },
-            { title: "6-week visit", meta: "Due 5 October 2026", detail: "First primary-series milestone", status: "upcoming" },
-            { title: "10-week visit", meta: "Due 2 November 2026", detail: "Second primary-series milestone", status: "upcoming" },
-            { title: "14-week visit", meta: "Due 30 November 2026", detail: "Third primary-series milestone", status: "upcoming" },
+            { title: "6-week visit", meta: `Due ${addDays(facts["child.dateOfBirth"], 42)}`, detail: "First primary-series milestone", status: "upcoming" },
+            { title: "10-week visit", meta: `Due ${addDays(facts["child.dateOfBirth"], 70)}`, detail: "Second primary-series milestone", status: "upcoming" },
+            { title: "14-week visit", meta: `Due ${addDays(facts["child.dateOfBirth"], 98)}`, detail: "Third primary-series milestone", status: "upcoming" },
           ],
         }],
         notice: "This is planning guidance, not a clinical record. Only a vaccination provider can confirm doses and medical suitability.",
@@ -212,7 +224,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Screening reference",
         referenceValue: `BEN-SBX-${reference.slice(-8)}`,
         facts: [
-          { label: "State", value: "Telangana", status: "verified" },
+          { label: "State", value: recorded(facts["birth.state"]), status: facts["birth.state"] ? "verified" : "review" },
           { label: "Hospital type", value: "Needs confirmation", status: "review" },
           { label: "Eligibility decision", value: "Not made", status: "information" },
         ],
@@ -228,22 +240,26 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         notice: "A department or authorised field worker must confirm eligibility and required documents before any application.",
       };
     case "ownership_transfer":
+      const acquisitionRoute = facts["vehicle.acquisitionRoute"] ?? "sale";
+      const interstate = facts["vehicle.transferScope"] === "interstate";
       return {
         title: "Ownership transfer acknowledgement",
-        subtitle: "Synthetic Form 29/30 submission accepted by the VAHAN sandbox",
+        subtitle: acquisitionRoute === "inheritance" ? "Synthetic succession transfer prepared for authority review" : acquisitionRoute === "auction" ? "Synthetic auction transfer prepared for authority review" : "Synthetic sale transfer accepted by the VAHAN sandbox",
         referenceLabel: "Application reference",
         referenceValue: `VAHAN-SBX-${reference.slice(-8)}`,
         facts: [
           { label: "RC match", value: "Verified from evidence", status: "verified" },
-          { label: "Transfer route", value: "Normal sale · within Telangana", status: "information" },
+          { label: "Transfer route", value: `${acquisitionRoute === "inheritance" ? "Owner death / succession" : acquisitionRoute === "auction" ? "Public auction" : "Normal sale"}${interstate ? " · interstate" : " · same state"}`, status: "information" },
           { label: "Application status", value: "Sandbox acknowledged", status: "ready" },
         ],
         groups: [{
           title: "Prepared application",
           description: "The real service may require originals, state-specific documents, fees, or an RTO visit.",
           items: [
-            { title: "Form 29 notice", meta: "Seller transfer notice · synthetic", status: "ready" },
-            { title: "Form 30 application", meta: "Buyer ownership application · synthetic", status: "ready" },
+            acquisitionRoute === "inheritance" ? { title: "Form 31 pathway", meta: "Succession documents and legal-heir declarations required", status: "review" } : acquisitionRoute === "auction" ? { title: "Form 32 pathway", meta: "Auction order and authorised sale certificate required", status: "review" } : { title: "Form 29 notice", meta: "Seller transfer notice · synthetic", status: "ready" },
+            acquisitionRoute === "sale" ? { title: "Form 30 application", meta: "Buyer ownership application · synthetic", status: "ready" } : { title: "Authority evidence", meta: "The responsible RTO must verify the special transfer basis", status: "review" },
+            ...(interstate ? [{ title: "Interstate NOC and tax review", meta: "Check both registering authorities before submission", status: "due" as const }] : []),
+            ...(facts["vehicle.hypothecation"] === "yes" ? [{ title: "Financier / hypothecation action", meta: "Resolve the recorded financier interest before transfer", status: "due" as const }] : []),
             { title: "RTO document review", meta: "Not performed in this sandbox", detail: `Receipt ${receipt}`, status: "review" },
           ],
         }],
@@ -257,13 +273,13 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceValue: `POL-SBX-${reference.slice(-8)}`,
         facts: [
           { label: "Vehicle match", value: "Verified", status: "verified" },
-          { label: "Cover valid until", value: "31 July 2027", status: "ready" },
+          { label: "Cover valid until", value: formatShortDate(facts["insurance.validUntil"]), status: facts["insurance.validUntil"] ? "ready" : "review" },
           { label: "Owner endorsement", value: "Contact insurer within 14 days", status: "due" },
         ],
         groups: [{ title: "Next insurance actions", items: [
           { title: "Request ownership endorsement", meta: "Share the completed RC transfer acknowledgement", status: "due" },
           { title: "Preserve continuous cover", meta: "Do not drive until the insurer confirms the endorsement", status: "review" },
-          { title: "Renewal reminder", meta: "Reminder set for 1 July 2027", status: "upcoming" },
+          { title: "Renewal reminder", meta: facts["insurance.validUntil"] ? `Set before ${formatShortDate(facts["insurance.validUntil"])}` : "Add the policy end date before setting a reminder", status: "upcoming" },
         ] }],
         notice: "Only the issuing insurer can confirm cover or endorse the new owner; this result is a simulation.",
       };
@@ -311,7 +327,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Policy review reference",
         referenceValue: `HLT-POL-${reference.slice(-8)}`,
         facts: [
-          { label: "Insured person", value: facts["person.name"] ?? "Ananya Sharma", status: "verified" },
+          { label: "Insured person", value: recorded(facts["person.name"]), status: facts["person.name"] ? "verified" : "review" },
           { label: "Sum insured", value: "₹5,00,000 · sample policy", status: "information" },
           { label: "Valid until", value: "31 March 2027", status: "ready" },
         ],
@@ -367,7 +383,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Coverage pack reference",
         referenceValue: `CARE-SBX-${reference.slice(-8)}`,
         facts: [
-          { label: "Preferred care city", value: facts["health.careCity"] ?? "Hyderabad", status: "verified" },
+          { label: "Preferred care city", value: recorded(facts["health.careCity"]), status: facts["health.careCity"] ? "verified" : "review" },
           { label: "Network hospital", value: "Must be confirmed before admission", status: "due" },
           { label: "Cashless authorization", value: "Not requested", status: "information" },
         ],
@@ -387,7 +403,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Evidence review reference",
         referenceValue: `ADDR-EVD-${reference.slice(-8)}`,
         facts: [
-          { label: "New address", value: facts["move.newAddress"] ?? "12 Lake View Road, Hyderabad 500081", status: "verified" },
+          { label: "New address", value: recorded(facts["move.newAddress"]), status: facts["move.newAddress"] ? "verified" : "review" },
           { label: "Document", value: "Synthetic rent agreement", status: "verified" },
           { label: "Universal acceptance", value: "Not assumed", status: "information" },
         ],
@@ -405,7 +421,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Draft reference",
         referenceValue: `UIDAI-DRAFT-${reference.slice(-7)}`,
         facts: [
-          { label: "Address", value: facts["move.newAddress"] ?? "12 Lake View Road, Hyderabad 500081", status: "verified" },
+          { label: "Address", value: recorded(facts["move.newAddress"]), status: facts["move.newAddress"] ? "verified" : "review" },
           { label: "Authentication", value: "OTP, face, or centre step still required", status: "due" },
           { label: "Submission", value: "Not submitted", status: "information" },
         ],
@@ -423,7 +439,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Preparation reference",
         referenceValue: `ECI-F8-${reference.slice(-8)}`,
         facts: [
-          { label: "Present residence", value: facts["move.newAddress"] ?? "12 Lake View Road, Hyderabad 500081", status: "verified" },
+          { label: "Present residence", value: recorded(facts["move.newAddress"]), status: facts["move.newAddress"] ? "verified" : "review" },
           { label: "EPIC", value: facts["move.hasEpic"] === "yes" ? "User says available" : "Confirm before submission", status: "review" },
           { label: "Electoral-roll change", value: "Not performed", status: "information" },
         ],
@@ -460,8 +476,8 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Premises review reference",
         referenceValue: `BIZ-ADDR-${reference.slice(-8)}`,
         facts: [
-          { label: "Business", value: facts["business.name"] ?? "Ananya Design Studio", status: "verified" },
-          { label: "Principal place", value: facts["business.address"] ?? "4 Creative Lane, Hyderabad 500033", status: "verified" },
+          { label: "Business", value: recorded(facts["business.name"]), status: facts["business.name"] ? "verified" : "review" },
+          { label: "Principal place", value: recorded(facts["business.address"]), status: facts["business.address"] ? "verified" : "review" },
           { label: "Possession", value: facts["business.occupancy"] ?? "Rented", status: "review" },
         ],
         groups: [{ title: "Evidence combinations", items: [
@@ -478,8 +494,8 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Readiness reference",
         referenceValue: `UDYAM-GUIDE-${reference.slice(-7)}`,
         facts: [
-          { label: "Enterprise", value: facts["business.name"] ?? "Ananya Design Studio", status: "verified" },
-          { label: "Structure", value: facts["business.structure"]?.replaceAll("_", " ") ?? "Sole proprietorship", status: "verified" },
+          { label: "Enterprise", value: recorded(facts["business.name"]), status: facts["business.name"] ? "verified" : "review" },
+          { label: "Structure", value: recorded(facts["business.structure"]?.replaceAll("_", " ")), status: facts["business.structure"] ? "verified" : "review" },
           { label: "Official registration", value: "Not filed", status: "information" },
         ],
         groups: [{ title: "Official flow", items: [
@@ -497,7 +513,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "GST screening reference",
         referenceValue: `GST-GUIDE-${reference.slice(-8)}`,
         facts: [
-          { label: "Expected annual turnover", value: facts["business.expectedTurnover"] ?? "₹8,00,000", status: "verified" },
+          { label: "Expected annual turnover", value: facts["business.expectedTurnover"] ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(facts["business.expectedTurnover"])) : "Not recorded", status: facts["business.expectedTurnover"] ? "verified" : "review" },
           { label: "Interstate supplies", value: facts["business.interstateSupplies"] === "yes" ? "Planned" : "Not currently planned", status: "review" },
           { label: "Registration decision", value: "Professional or official check required", status: "review" },
         ],
@@ -516,7 +532,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Launch pack reference",
         referenceValue: `BIZ-LAUNCH-${reference.slice(-7)}`,
         facts: [
-          { label: "Business", value: facts["business.name"] ?? "Ananya Design Studio", status: "verified" },
+          { label: "Business", value: recorded(facts["business.name"]), status: facts["business.name"] ? "verified" : "review" },
           { label: "Start date", value: formatShortDate(facts["business.startDate"]), status: "verified" },
           { label: "Compliance status", value: "Not declared", status: "information" },
         ],
@@ -535,13 +551,13 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Record review reference",
         referenceValue: `RET-REC-${reference.slice(-8)}`,
         facts: [
-          { label: "Member", value: facts["person.name"] ?? "Ananya Sharma", status: "verified" },
+          { label: "Member", value: recorded(facts["person.name"]), status: facts["person.name"] ? "verified" : "review" },
           { label: "Primary record", value: facts["retirement.accountType"] === "nps" ? "NPS" : "EPFO / EPS", status: "verified" },
           { label: "Official balance", value: "Not queried", status: "information" },
         ],
         groups: [{ title: "Record gaps to check", items: [
           { title: "Name, birth date, and bank details", meta: "Must match the responsible authority’s record", status: "review" },
-          { title: "Employment and eligible service", meta: `${facts["retirement.serviceYears"] ?? "14"} years stated in this evaluation`, status: "review" },
+          { title: "Employment and eligible service", meta: facts["retirement.serviceYears"] ? `${facts["retirement.serviceYears"]} years stated in this evaluation` : "Years of service not recorded", status: "review" },
           { title: "Nominee and family details", meta: "Verify before a claim is needed", status: "due" },
           { title: "Tax and contact details", meta: "Confirm with the appropriate provider", status: "information" },
         ] }],
@@ -592,7 +608,7 @@ function createArtifact(journeyId: string, nodeKey: SandboxServiceKey, receipt: 
         referenceLabel: "Retirement pack reference",
         referenceValue: `RET-PACK-${reference.slice(-8)}`,
         facts: [
-          { label: "Person", value: facts["person.name"] ?? "Ananya Sharma", status: "verified" },
+          { label: "Person", value: recorded(facts["person.name"]), status: facts["person.name"] ? "verified" : "review" },
           { label: "Retirement date", value: formatShortDate(facts["retirement.date"]), status: "verified" },
           { label: "Pension sanction", value: "Not issued", status: "information" },
         ],
@@ -616,23 +632,44 @@ export function advanceSimulatedService(
 ): SandboxServiceRun {
   if (current?.status === "completed") return current;
   const definition = serviceWorkflowDefinitions[nodeKey];
+  const scenarioValue = facts[`simulation.scenario.${nodeKey}`];
+  const scenario = current?.scenario ?? (scenarioValue === "delayed" || scenarioValue === "clarification" || scenarioValue === "rejected" ? scenarioValue : "success");
+  const responseReceived = Boolean(facts[`simulation.response.${nodeKey}`]);
+  const appealReceived = Boolean(facts[`simulation.appeal.${nodeKey}`]);
+  if (current?.caseStatus === "action_required" && !responseReceived) return current;
+  if (current?.caseStatus === "rejected" && !appealReceived) return current;
   const nextStageNumber = Math.min((current?.currentStage ?? 0) + 1, definition.stages.length);
   const stage = definition.stages[nextStageNumber - 1];
   const occurredAt = now.toISOString();
   const receipt = current?.receipt ?? simulateExternalService(journeyId, nodeKey).receipt;
+  const needsClarification = scenario === "clarification" && nextStageNumber === 2 && !responseReceived;
+  const rejected = scenario === "rejected" && nextStageNumber === 3 && !appealReceived;
+  const completed = stage.state === "completed";
+  const caseStatus = needsClarification ? "action_required" as const
+    : rejected ? "rejected" as const
+    : current?.caseStatus === "rejected" && appealReceived ? "appealed" as const
+    : completed ? "approved" as const
+    : nextStageNumber === 1 ? "submitted" as const
+    : nextStageNumber === 2 ? "acknowledged" as const
+    : "under_review" as const;
   const run: SandboxServiceRun = {
     runId: current?.runId ?? `RUN-${receipt.slice(4)}`,
     nodeKey,
     provider: definition.agency,
-    status: stage.state,
+    status: needsClarification || rejected ? "failed" : stage.state,
     progress: stage.progress,
     currentStage: nextStageNumber,
     startedAt: current?.startedAt ?? occurredAt,
     updatedAt: occurredAt,
     completedAt: stage.state === "completed" ? occurredAt : undefined,
     receipt,
+    caseStatus,
+    scenario,
+    nextTransitionAt: needsClarification || rejected || completed ? undefined : new Date(now.getTime() + (scenario === "delayed" ? 4_000 : 700)).toISOString(),
+    reasonCode: needsClarification ? "MORE_INFORMATION_REQUIRED" : rejected ? "RECORD_MISMATCH" : undefined,
+    actionMessage: needsClarification ? "The provider needs one clarification before it can continue." : rejected ? "The provider found a record mismatch. You can correct the details and appeal this synthetic decision." : undefined,
     events: [...(current?.events ?? []), { stageKey: stage.key, title: stage.title, detail: stage.detail, occurredAt }],
   };
-  if (stage.state === "completed") run.artifact = createArtifact(journeyId, nodeKey, receipt, facts);
+  if (completed) run.artifact = createArtifact(journeyId, nodeKey, receipt, facts);
   return run;
 }

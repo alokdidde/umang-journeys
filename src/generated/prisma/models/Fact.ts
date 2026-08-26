@@ -237,6 +237,7 @@ export type FactWhereInput = {
   sourceRef?: Prisma.StringNullableFilter<"Fact"> | string | null
   confirmed?: Prisma.BoolFilter<"Fact"> | boolean
   journey?: Prisma.XOR<Prisma.JourneyInstanceScalarRelationFilter, Prisma.JourneyInstanceWhereInput>
+  revisions?: Prisma.FactRevisionListRelationFilter
 }
 
 export type FactOrderByWithRelationInput = {
@@ -249,6 +250,7 @@ export type FactOrderByWithRelationInput = {
   sourceRef?: Prisma.SortOrderInput | Prisma.SortOrder
   confirmed?: Prisma.SortOrder
   journey?: Prisma.JourneyInstanceOrderByWithRelationInput
+  revisions?: Prisma.FactRevisionOrderByRelationAggregateInput
 }
 
 export type FactWhereUniqueInput = Prisma.AtLeast<{
@@ -265,6 +267,7 @@ export type FactWhereUniqueInput = Prisma.AtLeast<{
   sourceRef?: Prisma.StringNullableFilter<"Fact"> | string | null
   confirmed?: Prisma.BoolFilter<"Fact"> | boolean
   journey?: Prisma.XOR<Prisma.JourneyInstanceScalarRelationFilter, Prisma.JourneyInstanceWhereInput>
+  revisions?: Prisma.FactRevisionListRelationFilter
 }, "id" | "journeyId_key">
 
 export type FactOrderByWithAggregationInput = {
@@ -306,6 +309,7 @@ export type FactCreateInput = {
   sourceRef?: string | null
   confirmed?: boolean
   journey: Prisma.JourneyInstanceCreateNestedOneWithoutFactsInput
+  revisions?: Prisma.FactRevisionCreateNestedManyWithoutFactInput
 }
 
 export type FactUncheckedCreateInput = {
@@ -317,6 +321,7 @@ export type FactUncheckedCreateInput = {
   sourceType: $Enums.SourceType
   sourceRef?: string | null
   confirmed?: boolean
+  revisions?: Prisma.FactRevisionUncheckedCreateNestedManyWithoutFactInput
 }
 
 export type FactUpdateInput = {
@@ -328,6 +333,7 @@ export type FactUpdateInput = {
   sourceRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   confirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   journey?: Prisma.JourneyInstanceUpdateOneRequiredWithoutFactsNestedInput
+  revisions?: Prisma.FactRevisionUpdateManyWithoutFactNestedInput
 }
 
 export type FactUncheckedUpdateInput = {
@@ -339,6 +345,7 @@ export type FactUncheckedUpdateInput = {
   sourceType?: Prisma.EnumSourceTypeFieldUpdateOperationsInput | $Enums.SourceType
   sourceRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   confirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  revisions?: Prisma.FactRevisionUncheckedUpdateManyWithoutFactNestedInput
 }
 
 export type FactCreateManyInput = {
@@ -427,6 +434,11 @@ export type FactSumOrderByAggregateInput = {
   confidence?: Prisma.SortOrder
 }
 
+export type FactScalarRelationFilter = {
+  is?: Prisma.FactWhereInput
+  isNot?: Prisma.FactWhereInput
+}
+
 export type FactCreateNestedManyWithoutJourneyInput = {
   create?: Prisma.XOR<Prisma.FactCreateWithoutJourneyInput, Prisma.FactUncheckedCreateWithoutJourneyInput> | Prisma.FactCreateWithoutJourneyInput[] | Prisma.FactUncheckedCreateWithoutJourneyInput[]
   connectOrCreate?: Prisma.FactCreateOrConnectWithoutJourneyInput | Prisma.FactCreateOrConnectWithoutJourneyInput[]
@@ -481,6 +493,20 @@ export type EnumSourceTypeFieldUpdateOperationsInput = {
   set?: $Enums.SourceType
 }
 
+export type FactCreateNestedOneWithoutRevisionsInput = {
+  create?: Prisma.XOR<Prisma.FactCreateWithoutRevisionsInput, Prisma.FactUncheckedCreateWithoutRevisionsInput>
+  connectOrCreate?: Prisma.FactCreateOrConnectWithoutRevisionsInput
+  connect?: Prisma.FactWhereUniqueInput
+}
+
+export type FactUpdateOneRequiredWithoutRevisionsNestedInput = {
+  create?: Prisma.XOR<Prisma.FactCreateWithoutRevisionsInput, Prisma.FactUncheckedCreateWithoutRevisionsInput>
+  connectOrCreate?: Prisma.FactCreateOrConnectWithoutRevisionsInput
+  upsert?: Prisma.FactUpsertWithoutRevisionsInput
+  connect?: Prisma.FactWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FactUpdateToOneWithWhereWithoutRevisionsInput, Prisma.FactUpdateWithoutRevisionsInput>, Prisma.FactUncheckedUpdateWithoutRevisionsInput>
+}
+
 export type FactCreateWithoutJourneyInput = {
   id?: string
   key: string
@@ -489,6 +515,7 @@ export type FactCreateWithoutJourneyInput = {
   sourceType: $Enums.SourceType
   sourceRef?: string | null
   confirmed?: boolean
+  revisions?: Prisma.FactRevisionCreateNestedManyWithoutFactInput
 }
 
 export type FactUncheckedCreateWithoutJourneyInput = {
@@ -499,6 +526,7 @@ export type FactUncheckedCreateWithoutJourneyInput = {
   sourceType: $Enums.SourceType
   sourceRef?: string | null
   confirmed?: boolean
+  revisions?: Prisma.FactRevisionUncheckedCreateNestedManyWithoutFactInput
 }
 
 export type FactCreateOrConnectWithoutJourneyInput = {
@@ -541,6 +569,66 @@ export type FactScalarWhereInput = {
   confirmed?: Prisma.BoolFilter<"Fact"> | boolean
 }
 
+export type FactCreateWithoutRevisionsInput = {
+  id?: string
+  key: string
+  valueJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  confidence?: number | null
+  sourceType: $Enums.SourceType
+  sourceRef?: string | null
+  confirmed?: boolean
+  journey: Prisma.JourneyInstanceCreateNestedOneWithoutFactsInput
+}
+
+export type FactUncheckedCreateWithoutRevisionsInput = {
+  id?: string
+  journeyId: string
+  key: string
+  valueJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  confidence?: number | null
+  sourceType: $Enums.SourceType
+  sourceRef?: string | null
+  confirmed?: boolean
+}
+
+export type FactCreateOrConnectWithoutRevisionsInput = {
+  where: Prisma.FactWhereUniqueInput
+  create: Prisma.XOR<Prisma.FactCreateWithoutRevisionsInput, Prisma.FactUncheckedCreateWithoutRevisionsInput>
+}
+
+export type FactUpsertWithoutRevisionsInput = {
+  update: Prisma.XOR<Prisma.FactUpdateWithoutRevisionsInput, Prisma.FactUncheckedUpdateWithoutRevisionsInput>
+  create: Prisma.XOR<Prisma.FactCreateWithoutRevisionsInput, Prisma.FactUncheckedCreateWithoutRevisionsInput>
+  where?: Prisma.FactWhereInput
+}
+
+export type FactUpdateToOneWithWhereWithoutRevisionsInput = {
+  where?: Prisma.FactWhereInput
+  data: Prisma.XOR<Prisma.FactUpdateWithoutRevisionsInput, Prisma.FactUncheckedUpdateWithoutRevisionsInput>
+}
+
+export type FactUpdateWithoutRevisionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  valueJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  sourceType?: Prisma.EnumSourceTypeFieldUpdateOperationsInput | $Enums.SourceType
+  sourceRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  confirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  journey?: Prisma.JourneyInstanceUpdateOneRequiredWithoutFactsNestedInput
+}
+
+export type FactUncheckedUpdateWithoutRevisionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  journeyId?: Prisma.StringFieldUpdateOperationsInput | string
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  valueJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  sourceType?: Prisma.EnumSourceTypeFieldUpdateOperationsInput | $Enums.SourceType
+  sourceRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  confirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+}
+
 export type FactCreateManyJourneyInput = {
   id?: string
   key: string
@@ -559,6 +647,7 @@ export type FactUpdateWithoutJourneyInput = {
   sourceType?: Prisma.EnumSourceTypeFieldUpdateOperationsInput | $Enums.SourceType
   sourceRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   confirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  revisions?: Prisma.FactRevisionUpdateManyWithoutFactNestedInput
 }
 
 export type FactUncheckedUpdateWithoutJourneyInput = {
@@ -569,6 +658,7 @@ export type FactUncheckedUpdateWithoutJourneyInput = {
   sourceType?: Prisma.EnumSourceTypeFieldUpdateOperationsInput | $Enums.SourceType
   sourceRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   confirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  revisions?: Prisma.FactRevisionUncheckedUpdateManyWithoutFactNestedInput
 }
 
 export type FactUncheckedUpdateManyWithoutJourneyInput = {
@@ -582,6 +672,35 @@ export type FactUncheckedUpdateManyWithoutJourneyInput = {
 }
 
 
+/**
+ * Count Type FactCountOutputType
+ */
+
+export type FactCountOutputType = {
+  revisions: number
+}
+
+export type FactCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  revisions?: boolean | FactCountOutputTypeCountRevisionsArgs
+}
+
+/**
+ * FactCountOutputType without action
+ */
+export type FactCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FactCountOutputType
+   */
+  select?: Prisma.FactCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * FactCountOutputType without action
+ */
+export type FactCountOutputTypeCountRevisionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FactRevisionWhereInput
+}
+
 
 export type FactSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -593,6 +712,8 @@ export type FactSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   sourceRef?: boolean
   confirmed?: boolean
   journey?: boolean | Prisma.JourneyInstanceDefaultArgs<ExtArgs>
+  revisions?: boolean | Prisma.Fact$revisionsArgs<ExtArgs>
+  _count?: boolean | Prisma.FactCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["fact"]>
 
 export type FactSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -633,6 +754,8 @@ export type FactSelectScalar = {
 export type FactOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "journeyId" | "key" | "valueJson" | "confidence" | "sourceType" | "sourceRef" | "confirmed", ExtArgs["result"]["fact"]>
 export type FactInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   journey?: boolean | Prisma.JourneyInstanceDefaultArgs<ExtArgs>
+  revisions?: boolean | Prisma.Fact$revisionsArgs<ExtArgs>
+  _count?: boolean | Prisma.FactCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type FactIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   journey?: boolean | Prisma.JourneyInstanceDefaultArgs<ExtArgs>
@@ -645,6 +768,7 @@ export type $FactPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "Fact"
   objects: {
     journey: Prisma.$JourneyInstancePayload<ExtArgs>
+    revisions: Prisma.$FactRevisionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1050,6 +1174,7 @@ readonly fields: FactFieldRefs;
 export interface Prisma__FactClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   journey<T extends Prisma.JourneyInstanceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JourneyInstanceDefaultArgs<ExtArgs>>): Prisma.Prisma__JourneyInstanceClient<runtime.Types.Result.GetResult<Prisma.$JourneyInstancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  revisions<T extends Prisma.Fact$revisionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Fact$revisionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FactRevisionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1485,6 +1610,30 @@ export type FactDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Limit how many Facts to delete.
    */
   limit?: number
+}
+
+/**
+ * Fact.revisions
+ */
+export type Fact$revisionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FactRevision
+   */
+  select?: Prisma.FactRevisionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FactRevision
+   */
+  omit?: Prisma.FactRevisionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FactRevisionInclude<ExtArgs> | null
+  where?: Prisma.FactRevisionWhereInput
+  orderBy?: Prisma.FactRevisionOrderByWithRelationInput | Prisma.FactRevisionOrderByWithRelationInput[]
+  cursor?: Prisma.FactRevisionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FactRevisionScalarFieldEnum | Prisma.FactRevisionScalarFieldEnum[]
 }
 
 /**

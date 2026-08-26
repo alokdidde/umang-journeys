@@ -18,6 +18,9 @@ export default function VehicleDetailsPage() {
     sellerName: state.facts["vehicle.sellerName"] ?? "Vikram Rao",
     chassisLast5: state.facts["vehicle.chassisLast5"] ?? "7K2P9",
     transferScope: state.facts["vehicle.transferScope"] ?? "same_state",
+    acquisitionRoute: state.facts["vehicle.acquisitionRoute"] ?? "sale",
+    hypothecation: state.facts["vehicle.hypothecation"] ?? "not_sure",
+    pendingDues: state.facts["vehicle.pendingDues"] ?? "not_sure",
   }));
 
   useEffect(() => { if (id && state.journeyId !== id) void loadJourney(id); }, [id, loadJourney, state.journeyId]);
@@ -31,6 +34,9 @@ export default function VehicleDetailsPage() {
       "vehicle.sellerName": values.sellerName,
       "vehicle.chassisLast5": values.chassisLast5.toUpperCase(),
       "vehicle.transferScope": values.transferScope,
+      "vehicle.acquisitionRoute": values.acquisitionRoute,
+      "vehicle.hypothecation": values.hypothecation,
+      "vehicle.pendingDues": values.pendingDues,
     });
     // Let the submit interaction settle before replacing the route. This keeps
     // keyboard/pointer activation reliable while the provider publishes the
@@ -60,6 +66,7 @@ export default function VehicleDetailsPage() {
             <label htmlFor="purchase-date">Purchase date</label><input id="purchase-date" type="date" required {...field("purchaseDate")} />
             <label htmlFor="seller-name">Seller’s name</label><input id="seller-name" required {...field("sellerName")} />
             <label htmlFor="transfer-scope">Where was the vehicle registered?</label><select id="transfer-scope" {...field("transferScope")}><option value="same_state">Same state as my address</option><option value="interstate">Another state</option></select>
+            <details className="profile-exceptions"><summary>Is this an inheritance, auction, financed vehicle, or a case with pending dues?</summary><div><label htmlFor="acquisition-route">How did you get the vehicle?</label><select id="acquisition-route" {...field("acquisitionRoute")}><option value="sale">Regular purchase</option><option value="inheritance">Inheritance after an owner’s death</option><option value="auction">Public auction</option></select><label htmlFor="hypothecation">Is a loan or hypothecation recorded?</label><select id="hypothecation" {...field("hypothecation")}><option value="no">No</option><option value="not_sure">I’m not sure</option><option value="yes">Yes</option></select><label htmlFor="pending-dues">Any tax, challan, or compliance issue?</label><select id="pending-dues" {...field("pendingDues")}><option value="no">No known issue</option><option value="not_sure">I’m not sure</option><option value="yes">Yes</option></select></div></details>
           </section>
           }
           {state.error ? <p className="workflow-error" role="alert">{state.error}</p> : null}

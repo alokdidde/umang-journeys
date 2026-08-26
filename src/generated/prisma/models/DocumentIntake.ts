@@ -669,10 +669,6 @@ export type FloatFieldUpdateOperationsInput = {
   divide?: number
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type DocumentIntakeCreateWithoutProfileInput = {
   id?: string
   status?: string

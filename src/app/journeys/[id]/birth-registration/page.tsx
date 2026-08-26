@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -24,10 +24,13 @@ const wards = [
 ];
 
 export default function RegistrationPage() {
-  const { state, dispatch, loadJourney, submitRegistration } = useJourney();
+  const { state, dispatch, loadJourney, submitRegistration, updateJourneyFacts } = useJourney();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const answered = Number(Boolean(state.form.childName.trim())) + Number(Boolean(state.form.localWard));
+  const [birthRoute, setBirthRoute] = useState(state.facts["birth.route"] ?? "hospital");
+  const [informant, setInformant] = useState(state.facts["birth.informant"] ?? "mother");
+  const [delayed, setDelayed] = useState(state.facts["birth.delayed"] ?? "no");
 
   useEffect(() => {
     if (id && state.journeyId !== id) void loadJourney(id);
@@ -38,7 +41,8 @@ export default function RegistrationPage() {
     const valid = state.form.childName.trim() && state.form.localWard.trim();
     dispatch({ type: "submit_registration" });
     if (!valid) return;
-    if (await submitRegistration(id)) router.push(`/journeys/${id}/success`);
+    const saved = await updateJourneyFacts(id, { "birth.route": birthRoute, "birth.informant": informant, "birth.delayed": delayed });
+    if (saved && await submitRegistration(id)) router.push(`/journeys/${id}/success`);
   }
 
   if (state.journeyId !== id && !state.error) return <main className="page workflow-state"><p>Loading the prepared application…</p></main>;
@@ -50,8 +54,8 @@ export default function RegistrationPage() {
 
       <header className="ai-registration-hero content-layer">
         <span className="eyebrow"><Sparkles /> UMANG Assist</span>
-        <h1>Two answers, then you’re done.</h1>
-        <p>UMANG matched the hospital record with your demo profile and prepared the rest.</p>
+        <h1>Complete the birth registration</h1>
+        <p>Check the prepared details, answer the two required questions, and tell us if this birth needs a different route.</p>
       </header>
 
       <div className="assist-layout content-layer">
@@ -61,6 +65,11 @@ export default function RegistrationPage() {
             <div><strong>Let’s finish this together</strong><small>Birth registration assistant · Demo</small></div>
             <span className="online-dot">Ready</span>
           </div>
+
+          <details className="registration-exceptions">
+            <summary>Was this a home birth, delayed registration, or different informant?</summary>
+            <div><label>Where did the birth take place?<select value={birthRoute} onChange={(event) => setBirthRoute(event.target.value)}><option value="hospital">Hospital or registered facility</option><option value="home">Home or outside a facility</option></select></label><label>Who is providing the information?<select value={informant} onChange={(event) => setInformant(event.target.value)}><option value="mother">Mother</option><option value="father">Father</option><option value="guardian">Guardian or authorised informant</option><option value="facility">Facility representative</option></select></label><label>Is this being registered after the usual reporting period?<select value={delayed} onChange={(event) => setDelayed(event.target.value)}><option value="no">No</option><option value="yes">Yes or not sure</option></select></label><p>{birthRoute === "home" || delayed === "yes" ? "The sandbox will add an authority-review task and request supporting declarations before approval." : "The standard hospital-record route will be used."}</p></div>
+          </details>
 
           <div className="conversation-body">
             <section className="conversation-turn">
@@ -149,17 +158,17 @@ export default function RegistrationPage() {
           </div>
 
           <div className="source-match">
-            <span><Building2 /> Apollo Hospital record</span>
+            <span><Building2 /> {state.facts["birth.hospital"] || "Hospital record not yet named"}</span>
             <span><UserRound /> Ananya’s demo profile</span>
             <small><CheckCircle2 /> Sources matched successfully</small>
           </div>
 
           <div className="prepared-facts">
             <Fact Icon={Baby} label="Child" value={state.form.childName || "Waiting for your answer"} pending={!state.form.childName} source="Your answer" />
-            <Fact Icon={CalendarDays} label="Birth" value="24 Aug 2026 · 08:24 AM · Female · 3.12 kg" source="Hospital" />
-            <Fact Icon={UserRound} label="Parents" value="Ananya Sharma · Rahul Sharma" source="Profile" />
-            <Fact Icon={Building2} label="Hospital" value="Apollo Hospital · Hyderabad" source="Hospital" />
-            <Fact Icon={House} label="Home" value="12, Jubilee Hills · Hyderabad · 500033" source="Profile" />
+            <Fact Icon={CalendarDays} label="Birth" value={[state.facts["child.dateOfBirth"], state.facts["birth.time"], state.facts["child.sex"], state.facts["birth.weight"]].filter(Boolean).join(" · ") || "Birth details not recorded"} source="Hospital" />
+            <Fact Icon={UserRound} label="Parents" value={[state.facts["parent.mother.name"], state.facts["parent.father.name"]].filter(Boolean).join(" · ") || "Parent details not recorded"} source="Profile" />
+            <Fact Icon={Building2} label="Hospital" value={[state.facts["birth.hospital"], state.facts["birth.city"]].filter(Boolean).join(" · ") || (birthRoute === "home" ? "Home birth" : "Hospital not recorded")} source="Hospital" />
+            <Fact Icon={House} label="Home" value={state.facts["family.address"] || state.facts["address.home"] || "Home address not recorded"} source="Profile" />
             <Fact Icon={MapPin} label="Local ward" value={state.form.localWard || "Waiting for your answer"} pending={!state.form.localWard} source="Your answer" />
           </div>
 

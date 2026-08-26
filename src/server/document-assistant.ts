@@ -1,5 +1,5 @@
 import { proposeDocumentAction, type DocumentAnalysis } from "@/domain/document-intake";
-import type { EvidenceType } from "@/domain/evidence";
+import { isEvidenceType, type EvidenceType } from "@/domain/evidence";
 import type { JourneyRepository } from "@/server/repositories/journey-repository";
 import type { DocumentIntakeRepository, StoredDocumentIntake } from "@/server/repositories/document-intake-repository";
 
@@ -101,7 +101,11 @@ export class DocumentAssistantService {
 
   async propose(sessionId: string, input: ProposedDocumentInput): Promise<StoredDocumentIntake> {
     const journeys = await this.journeys.list(sessionId);
-    const proposal = proposeDocumentAction(input.analysis, journeys);
+    const baseProposal = proposeDocumentAction(input.analysis, journeys);
+    const proposal = baseProposal.canApply ? baseProposal : {
+      ...baseProposal,
+      targetOptions: journeys.map((journey) => ({ id: journey.id, label: journey.subject.displayName, type: journey.subject.type })),
+    };
     return this.documents.create(sessionId, {
       fileName: input.fileName,
       mimeType: input.mimeType,
@@ -113,7 +117,7 @@ export class DocumentAssistantService {
     });
   }
 
-  async apply(sessionId: string, documentId: string, approved: boolean): Promise<AppliedDocumentResult> {
+  async apply(sessionId: string, documentId: string, approved: boolean, options?: { targetJourneyId?: string; fields?: Record<string, string> }): Promise<AppliedDocumentResult> {
     const intake = await this.documents.get(sessionId, documentId);
     if (!intake) throw Object.assign(new Error("Document proposal not found."), { code: "DOCUMENT_NOT_FOUND" });
     if (intake.status === "applied") return {
@@ -134,35 +138,49 @@ export class DocumentAssistantService {
       await this.documents.setDecision(sessionId, documentId, "rejected");
       return { documentId, status: "rejected", journeyId: null, message: "No journey data was changed." };
     }
-    if (!intake.proposal.canApply || !intake.proposal.toolName) {
+    const manualTool = options?.targetJourneyId ? ({
+      vehicle_rc: "updateVehicleFromRC",
+      vaccination_receipt: "recordVaccination",
+      insurance_policy: "recordVehicleInsurance",
+      health_insurance_policy: "recordHealthInsurance",
+      hospital_discharge_summary: "updateChildFromDischargeSummary",
+      residence_proof: "updateMoveFromResidenceProof",
+      business_premises_proof: "updateBusinessFromPremisesProof",
+      retirement_account_statement: "updateRetirementFromStatement",
+    } as const)[intake.analysis.kind as Exclude<typeof intake.analysis.kind, "unknown" | "sale_agreement">] : undefined;
+    const toolName = intake.proposal.toolName ?? manualTool;
+    if ((!intake.proposal.canApply && !options?.targetJourneyId) || !toolName) {
       throw Object.assign(new Error("This proposal needs review before it can be applied."), { code: "PROPOSAL_NOT_APPLICABLE" });
     }
 
-    let journeyId = intake.proposal.targetJourneyId;
-    const facts = compactFacts(documentFacts(intake.analysis));
-    if (intake.proposal.toolName === "createVehicleJourneyFromRC") {
+    let journeyId = options?.targetJourneyId ?? intake.proposal.targetJourneyId;
+    if (journeyId && !(await this.journeys.get(sessionId, journeyId))) throw Object.assign(new Error("Choose a journey from this account."), { code: "JOURNEY_NOT_FOUND" });
+    const analysis = { ...intake.analysis, fields: options?.fields ?? intake.analysis.fields };
+    const facts = compactFacts(documentFacts(analysis));
+    if (toolName === "createVehicleJourneyFromRC") {
       const journey = await this.journeys.create(sessionId, facts, "vehicle-purchase.india.v1");
       journeyId = journey.id;
-    } else if (intake.proposal.toolName === "createChildJourneyFromDischargeSummary") {
+    } else if (toolName === "createChildJourneyFromDischargeSummary") {
       const journey = await this.journeys.create(sessionId, facts, "new-baby.india.v1");
       journeyId = journey.id;
-    } else if (intake.proposal.toolName === "createHealthJourneyFromPolicy") {
+    } else if (toolName === "createHealthJourneyFromPolicy") {
       const journey = await this.journeys.create(sessionId, facts, "health-insurance.india.v1");
       journeyId = journey.id;
-    } else if (intake.proposal.toolName === "createMoveJourneyFromResidenceProof") {
+    } else if (toolName === "createMoveJourneyFromResidenceProof") {
       const journey = await this.journeys.create(sessionId, facts, "moving-home.india.v1");
       journeyId = journey.id;
-    } else if (intake.proposal.toolName === "createBusinessJourneyFromPremisesProof") {
+    } else if (toolName === "createBusinessJourneyFromPremisesProof") {
       const journey = await this.journeys.create(sessionId, facts, "business-setup.india.v1");
       journeyId = journey.id;
-    } else if (intake.proposal.toolName === "createRetirementJourneyFromStatement") {
+    } else if (toolName === "createRetirementJourneyFromStatement") {
       const journey = await this.journeys.create(sessionId, facts, "retirement.india.v1");
       journeyId = journey.id;
     } else if (journeyId) {
-      await this.journeys.updateFacts(sessionId, journeyId, facts);
+      await this.journeys.updateFacts(sessionId, journeyId, facts, { source: "document", sourceRef: documentId });
     }
     if (!journeyId) throw Object.assign(new Error("The matching journey is no longer available."), { code: "JOURNEY_NOT_FOUND" });
 
+    if (!isEvidenceType(intake.analysis.kind)) throw Object.assign(new Error("This document type cannot be attached as journey evidence."), { code: "PROPOSAL_NOT_APPLICABLE" });
     await this.journeys.addEvidence(sessionId, journeyId, {
       type: intake.analysis.kind as EvidenceType,
       fileName: intake.fileName,
@@ -170,11 +188,16 @@ export class DocumentAssistantService {
       size: intake.size,
       source: intake.source,
       verificationStatus: intake.analysis.confidence >= 0.9 ? "verified" : "needs_review",
-      extractedFields: intake.analysis.fields,
+      extractedFields: analysis.fields,
+      analysisConfidence: intake.analysis.confidence,
+      checks: [{ label: "Citizen review", status: "passed", detail: "The citizen selected the destination and approved the included values." }],
+      scanStatus: "clean",
+      version: 1,
+      reviewedAt: new Date().toISOString(),
       contentBase64: intake.contentBase64,
     });
 
-    if (intake.proposal.toolName === "recordVaccination") {
+    if (toolName === "recordVaccination") {
       const journey = await this.journeys.get(sessionId, journeyId);
       const vaccination = journey?.projection.nodes.find((node) => node.key === "vaccination_timeline");
       if (vaccination && vaccination.status !== "locked" && vaccination.status !== "completed") {

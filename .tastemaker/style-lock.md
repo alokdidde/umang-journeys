@@ -51,6 +51,7 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Desktop uses a familiar 76px top bar with Home, Journeys, Documents, and Activity.
 - Mobile uses a compact brand bar and four labeled bottom-navigation targets.
 - Demo controls stay visually secondary to citizen tasks.
+- Language, read-aloud, demo reset, and external help stay inside one “Options” menu; only demo status and sign-out remain visible beside navigation.
 
 ## Screen structure
 - The signed-out front door is one illustrated Poster Fold: one promise, one short explanation, and one pre-filled demo sign-in form on a shared foreground axis. The background scenery may stay asymmetric, but the headline and form share a left edge and width. It must not become an editorial split, feature grid, or long marketing page.
@@ -69,6 +70,8 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Active journey roadmaps stay collapsed behind “See the whole journey”; completed roadmaps may open so finished work remains inspectable.
 - Forms with more than one conceptual group use two short parts with Back/Continue controls and a visible “Part 1 of 2” label.
 - Evidence details, provider checks, generated-result groups, and less-used sample documents are progressively disclosed.
+- Evidence stays pending until the citizen reviews analysed values; confidence, checks, and conflicts appear inside the evidence card rather than as a separate technical workspace.
+- Provider failures, evidence review, deadlines, and journey exceptions surface as plain tasks in Activity; the audit ledger remains a separate History tab.
 - Completion screens offer exactly one recommended next action, with the full journey available as a secondary link.
 - Authentication keeps the pre-filled gateway visually stable: password visibility is user-controlled, errors stay beside the fields, pending actions show progress, and sign-out is an explicit desktop label rather than an ambiguous account avatar. Mobile keeps the same sign-out action as a 44px icon control with an accessible name.
 

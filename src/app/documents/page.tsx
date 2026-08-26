@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Armchair, ArrowRight, Baby, BriefcaseBusiness, Car, Download, Files, Filter, HeartPulse, House, LoaderCircle, Plus, Search, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Armchair, ArrowRight, Baby, BriefcaseBusiness, Car, Download, Files, Filter, HeartPulse, House, LoaderCircle, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { DocumentDesk } from "@/components/document-desk";
 import { useCitizenHub } from "@/components/use-citizen-hub";
 import type { DocumentLibraryItem } from "@/domain/citizen-hub";
@@ -11,8 +12,10 @@ type LibraryFilter = "all" | "uploaded" | "issued" | "needs_review";
 
 export default function DocumentsPage() {
   const { snapshot, loading, error, refresh } = useCitizenHub();
+  const router = useRouter();
   const [filter, setFilter] = useState<LibraryFilter>("all");
   const [query, setQuery] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const visible = useMemo(() => snapshot.documents.filter((document) => {
     if (filter === "uploaded" && document.origin !== "uploaded") return false;
     if (filter === "issued" && document.origin !== "issued") return false;
@@ -42,6 +45,7 @@ export default function DocumentsPage() {
       {visible.length ? <div className="document-list">{visible.map((document) => <DocumentRow document={document} key={document.id} />)}</div> : <div className="collection-state"><Files /><h3>{query ? `No documents match “${query}”` : "No documents in this view"}</h3><p>{query ? "Clear the search or choose another filter." : "Choose another filter to find your records."}</p>{query ? <button type="button" className="secondary-button" onClick={() => setQuery("")}>Clear search</button> : null}</div>}
       </> : <div className="collection-state document-empty-state"><Files /><h2 id="library-heading">No documents yet</h2><p>Add a document above, or finish a journey step that creates a record.</p></div>}
     </section>
+    <details className="data-controls content-layer"><summary>Export or delete my evaluation data</summary><div><p>Uploads are retained for 30 days in this demo unless you reset or delete them sooner. Exported JSON excludes binary file contents.</p><a className="secondary-button" href="/api/account/data"><Download />Export account data</a><button type="button" disabled={deleting} onClick={() => { if (!window.confirm("Delete all synthetic journeys and documents? This cannot be undone.")) return; setDeleting(true); void fetch("/api/account/data", { method: "DELETE" }).then(() => { router.push("/"); router.refresh(); }); }}><Trash2 />{deleting ? "Deleting…" : "Delete all demo data"}</button></div></details>
   </main>;
 }
 

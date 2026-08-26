@@ -6,13 +6,16 @@ const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 const acceptedMimeTypes = new Set(["application/pdf", "image/png", "image/jpeg"]);
 
 const analysisSchema = z.object({
-  kind: z.enum(["vehicle_rc", "vaccination_receipt", "insurance_policy", "health_insurance_policy", "hospital_discharge_summary", "residence_proof", "business_premises_proof", "retirement_account_statement", "unknown"]),
+  kind: z.enum(["vehicle_rc", "sale_agreement", "vaccination_receipt", "insurance_policy", "health_insurance_policy", "hospital_discharge_summary", "residence_proof", "business_premises_proof", "retirement_account_statement", "unknown"]),
   confidence: z.number().min(0).max(1),
   fields: z.object({
     registrationNumber: z.string().optional(),
     makeModel: z.string().optional(),
     chassisLast5: z.string().optional(),
     registeredOwner: z.string().optional(),
+    sellerName: z.string().optional(),
+    buyerName: z.string().optional(),
+    saleDate: z.string().optional(),
     city: z.string().optional(),
     state: z.string().optional(),
     childName: z.string().optional(),
@@ -57,6 +60,8 @@ function filenameFallback(fileName: string): DocumentAnalysis {
   const normalized = fileName.toLowerCase();
   const kind: DocumentKind = /discharge|hospital-summary|birth-summary/.test(normalized)
     ? "hospital_discharge_summary"
+    : /sale[-_ ]?(agreement|deed)|delivery[-_ ]?note/.test(normalized)
+      ? "sale_agreement"
     : /health[-_ ]?(insurance|policy)|mediclaim|health-cover/.test(normalized)
       ? "health_insurance_policy"
     : /insurance|policy|motor-cover/.test(normalized)
@@ -93,7 +98,7 @@ export async function analyzeUploadedDocument(file: {
         content: [
           {
             type: "text",
-            text: `Classify this Indian citizen-service document. Extract only visibly supported fields. Return vehicle_rc, vaccination_receipt, insurance_policy for motor cover, health_insurance_policy for personal health cover, hospital_discharge_summary, residence_proof for address evidence, business_premises_proof for a commercial premises document, retirement_account_statement for EPFO/EPS/NPS records, or unknown. Dates must use YYYY-MM-DD. Never invent an identifier, person, vaccine, policy, date, provider, diagnosis, entitlement, eligibility, or confidence.${file.context ? ` The citizen added this context: "${file.context}". Use it only to understand the intended document category; do not treat it as evidence and do not extract facts unless they are visible in the document.` : ""}`,
+            text: `Classify this Indian citizen-service document. Extract only visibly supported fields. Return vehicle_rc, sale_agreement for a vehicle sale or delivery record, vaccination_receipt, insurance_policy for motor cover, health_insurance_policy for personal health cover, hospital_discharge_summary, residence_proof for address evidence, business_premises_proof for a commercial premises document, retirement_account_statement for EPFO/EPS/NPS records, or unknown. Dates must use YYYY-MM-DD. Never invent an identifier, person, vaccine, policy, date, provider, diagnosis, entitlement, eligibility, or confidence.${file.context ? ` The citizen added this context: "${file.context}". Use it only to understand the intended document category; do not treat it as evidence and do not extract facts unless they are visible in the document.` : ""}`,
           },
           { type: "file", mediaType: file.mimeType, data: file.bytes, filename: file.fileName },
         ],

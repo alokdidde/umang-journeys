@@ -6,7 +6,8 @@ import type { CitizenHubSnapshot } from "@/domain/citizen-hub";
 const emptySnapshot: CitizenHubSnapshot = {
   documents: [],
   activity: [],
-  summary: { uploaded: 0, issued: 0, needsReview: 0, activity: 0 },
+  tasks: [],
+  summary: { uploaded: 0, issued: 0, needsReview: 0, activity: 0, tasks: 0 },
 };
 
 export function useCitizenHub() {
