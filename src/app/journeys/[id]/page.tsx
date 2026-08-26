@@ -8,6 +8,7 @@ import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { useJourney } from "@/components/journey-provider";
 import { JourneyMapDrawer } from "@/components/journey-map-drawer";
 import { JourneyObligations } from "@/components/journey-obligations";
+import { isJourneyComplete } from "@/domain/journey-engine";
 import { selectJourneyNextAction } from "@/domain/journey-summary";
 
 export default function JourneyRevealPage() {
@@ -24,15 +25,18 @@ export default function JourneyRevealPage() {
   if (state.projection.templateId === "business-setup.india.v1") return <AdditionalJourney id={id} kind="business" />;
   if (state.projection.templateId === "retirement.india.v1") return <AdditionalJourney id={id} kind="retirement" />;
   const nextAction = selectJourneyNextAction({ id, projection: state.projection, facts: state.facts, serviceRuns: state.serviceRuns });
+  const complete = isJourneyComplete(state.projection);
   return (
     <main className="page journey-page">
       <ScenicBackdrop />
       <Link href="/journeys" className="floating-back content-layer"><ArrowLeft />All journeys</Link>
       <section className="journey-heading content-layer"><p className="eyebrow"><Baby />New baby</p><h1>Aarav’s journey</h1><p>Take the next step now. Everything else can wait.</p></section>
       <div className="primary-cta-wrap content-layer">
-        {nextAction
-          ? <Link href={nextAction.href} className="primary-cta"><Baby />{nextAction.nodeKey === "birth_registration" ? "Review birth registration" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link>
-          : <p className="journey-complete-cta"><CheckCircle2 />All services in this journey are complete</p>}
+        {complete
+          ? <p className="journey-complete-cta"><CheckCircle2 />All services in this journey are complete</p>
+          : nextAction
+            ? <Link href={nextAction.href} className="primary-cta"><Baby />{nextAction.nodeKey === "birth_registration" ? "Review birth registration" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link>
+            : null}
         <TrustNote>Your information stays within this evaluation sandbox.</TrustNote>
       </div>
       <details className="journey-about content-layer">
@@ -53,6 +57,7 @@ export default function JourneyRevealPage() {
 function AdditionalJourney({ id, kind }: { id: string; kind: "move" | "business" | "retirement" }) {
   const { state } = useJourney();
   const nextAction = selectJourneyNextAction({ id, projection: state.projection, facts: state.facts, serviceRuns: state.serviceRuns });
+  const complete = isJourneyComplete(state.projection);
   const config: { Icon: LucideIcon; label: string; title: string; intro: string; cta: string; complete: string; steps: string; trust: string; facts: Array<[LucideIcon, string, string, string]> } = kind === "move" ? {
     Icon: House,
     label: "Moving home",
@@ -104,7 +109,7 @@ function AdditionalJourney({ id, kind }: { id: string; kind: "move" | "business"
     <ScenicBackdrop />
     <Link href="/journeys" className="floating-back content-layer"><ArrowLeft />All journeys</Link>
     <section className="journey-heading content-layer"><p className="eyebrow"><Icon />{config.label}</p><h1>{config.title}</h1><p>{config.intro}</p></section>
-    <div className="primary-cta-wrap content-layer">{nextAction ? <Link href={nextAction.href} className="primary-cta"><Icon />{nextAction.nodeKey.endsWith("_profile") ? config.cta : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : <p className="journey-complete-cta"><CheckCircle2 />{config.complete}</p>}<TrustNote>{config.trust}</TrustNote></div>
+    <div className="primary-cta-wrap content-layer">{complete ? <p className="journey-complete-cta"><CheckCircle2 />{config.complete}</p> : nextAction ? <Link href={nextAction.href} className="primary-cta"><Icon />{nextAction.nodeKey.endsWith("_profile") ? config.cta : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : null}<TrustNote>{config.trust}</TrustNote></div>
     <details className="journey-about content-layer"><summary>About this journey</summary><section className="context-strip">{config.facts.map(([FactIcon, label, value, note], index) => <article key={label}><span className={`mini-icon ${["green", "purple", "blue", "amber"][index]}`}><FactIcon /></span><div><small>{label}</small><strong>{value}</strong><em>{note}</em></div></article>)}</section></details>
     <JourneyObligations projection={state.projection} facts={state.facts} />
     <JourneyMapDrawer id={id} title={config.steps} />
@@ -114,11 +119,12 @@ function AdditionalJourney({ id, kind }: { id: string; kind: "move" | "business"
 function HealthInsuranceJourney({ id }: { id: string }) {
   const { state } = useJourney();
   const nextAction = selectJourneyNextAction({ id, projection: state.projection, facts: state.facts, serviceRuns: state.serviceRuns });
+  const complete = isJourneyComplete(state.projection);
   return <main className="page journey-page health-insurance-journey-page">
     <ScenicBackdrop />
     <Link href="/journeys" className="floating-back content-layer"><ArrowLeft />All journeys</Link>
     <section className="journey-heading content-layer"><p className="eyebrow"><HeartPulse />Health &amp; insurance</p><h1>{state.facts["person.name"] ?? "Ananya Sharma"}</h1><p>Understand this person’s cover now, before care is needed.</p></section>
-    <div className="primary-cta-wrap content-layer">{nextAction ? <Link href={nextAction.href} className="primary-cta"><ShieldCheck />{nextAction.nodeKey === "health_profile" ? "Confirm health profile" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : <p className="journey-complete-cta"><CheckCircle2 />Coverage pack is ready</p>}<TrustNote>Every match, identifier, and provider response in this journey is synthetic.</TrustNote></div>
+    <div className="primary-cta-wrap content-layer">{complete ? <p className="journey-complete-cta"><CheckCircle2 />Coverage pack is ready</p> : nextAction ? <Link href={nextAction.href} className="primary-cta"><ShieldCheck />{nextAction.nodeKey === "health_profile" ? "Confirm health profile" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : null}<TrustNote>Every match, identifier, and provider response in this journey is synthetic.</TrustNote></div>
     <details className="journey-about content-layer">
       <summary>About this health plan</summary>
       <section className="context-strip">
@@ -136,12 +142,13 @@ function HealthInsuranceJourney({ id }: { id: string }) {
 function VehicleJourney({ id }: { id: string }) {
   const { state } = useJourney();
   const nextAction = selectJourneyNextAction({ id, projection: state.projection, facts: state.facts, serviceRuns: state.serviceRuns });
+  const complete = isJourneyComplete(state.projection);
   const registration = state.facts["vehicle.registrationNumber"] ?? "Registration pending";
   return <main className="page journey-page vehicle-journey-page">
     <ScenicBackdrop />
     <Link href="/" className="floating-back content-layer"><ArrowLeft />All journeys</Link>
     <section className="journey-heading content-layer"><p className="eyebrow"><Car />Vehicle</p><h1>{state.facts["vehicle.makeModel"] ?? "Your vehicle"}</h1><p>Take the next step now. We’ll keep the rest organised.</p></section>
-    <div className="primary-cta-wrap content-layer">{nextAction ? <Link href={nextAction.href} className="primary-cta"><FileCheck2 />{nextAction.nodeKey === "vehicle_details" ? "Confirm vehicle details" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : <p className="journey-complete-cta"><CheckCircle2 />All vehicle actions are complete</p>}<TrustNote>Every receipt and document in this vehicle journey is synthetic.</TrustNote></div>
+    <div className="primary-cta-wrap content-layer">{complete ? <p className="journey-complete-cta"><CheckCircle2 />All vehicle actions are complete</p> : nextAction ? <Link href={nextAction.href} className="primary-cta"><FileCheck2 />{nextAction.nodeKey === "vehicle_details" ? "Confirm vehicle details" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : null}<TrustNote>Every receipt and document in this vehicle journey is synthetic.</TrustNote></div>
     <details className="journey-about content-layer">
       <summary>About this vehicle</summary>
       <section className="context-strip">

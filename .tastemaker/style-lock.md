@@ -13,9 +13,10 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Dark mode: not needed; this evaluation app ships in light mode.
 
 ## Color contract
-- Text-safe: primary text and muted text on Background or Surface; white on Primary.
-- UI-safe only: accent and state colors may be used for borders, icons, and large labels.
+- Text-safe: ink/text/muted on Background or Surface; white on Primary; white and muted-light text on the dark closing surface; white surfaces against Accent, Rose, Amber, Danger, and Primary.
+- UI-safe only: Green on white; Primary, Accent, Rose, and Amber against the strong line token; state colors may be used for borders, icons, and large labels.
 - Decorative pairings must never be the only carrier of state.
+- Verified with `scripts/check_contrast.py --matrix` on 2026-08-26; Primary/white is 6.17:1, muted/Surface is 4.90:1, and ink/Surface is 17.57:1.
 
 ## Typography
 - Display and body: Inter.
@@ -33,12 +34,13 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - One primary action per first viewport; at most three clearly secondary shortcuts.
 - Supporting facts and technical metadata use native disclosures and are closed by default.
 - Pivotal cards and forms use 18–30px padding; 44px minimum interactive targets.
+- Signed-out marketing sections use fixed generous whitespace: 112px on mobile and 160–168px on desktop. Authenticated screens keep the tighter guided-screen scale above.
 
 ## Reference intelligence
-- Design read: guided public-service app for a broad, occasional-use audience, mode Operate.
-- Dials: variance 3/10, motion 2/10, density 3/10, art direction 6/10.
+- Design read: guided public-service app for a broad, occasional-use audience, mode Operate; signed-out public front door for citizens and evaluators, mode Persuade.
+- Dials: authenticated variance 3/10, motion 2/10, density 3/10, art direction 6/10; signed-out variance 7/10, motion 5/10, density 3/10, art direction 8/10.
 - Foundation: existing React 19, Next.js 16, Tailwind 4 stack; existing primitives are sufficient.
-- Direction contract: a familiar top navigation, one next action on Home, readable single-column forms, and full journey dependency maps revealed only on request; preserve the existing UMANG identity.
+- Direction contract: a familiar top navigation, a public promise demonstrated by real workflow fragments, one next action on authenticated Home, readable single-column forms, and full journey dependency maps revealed only on request; preserve the existing UMANG identity.
 - Anti-references: power-user SaaS dashboard, permanent dark rail, KPI strip, two-column workbench, full-screen chatbot, giant upload card, or raw provider internals.
 
 ## Taste memory
@@ -54,7 +56,7 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Language, read-aloud, demo reset, and external help stay inside one “Options” menu; only demo status and sign-out remain visible beside navigation.
 
 ## Screen structure
-- The signed-out front door is one illustrated Poster Fold: one promise, one short explanation, and one pre-filled demo sign-in form on a shared foreground axis. The background scenery may stay asymmetric, but the headline and form share a left edge and width. It must not become an editorial split, feature grid, or long marketing page.
+- The signed-out front door uses a short Long-Scroll Narrative: promise and branching journey preview; the agency-fragmentation problem; a sticky 3-step guided-intake story; document-to-journey matching; implemented-scope proof; and the pre-filled demo sign-in close. It stays low-density, avoids generic feature grids, and never applies this marketing rhythm inside the authenticated product.
 - Home shows one saved journey and its next action before anything else.
 - Home ignores completed journeys when choosing the next action; when all work is done, it shows one “all caught up” state linked to the archive.
 - Starting another journey is collapsed by default.
@@ -85,7 +87,7 @@ Calm, trustworthy, guided, humane.
 
 ## Assets
 - Anchor asset: `public/assets/journey-landscape.png`, used at low opacity.
-- Signed-out use: the same landscape may bleed at both viewport edges to frame life stages while the centre remains quiet enough for the gateway.
+- Signed-out use: the landscape frames the opening and demo-access close; constructed product fragments carry the sections between them.
 - Icons: Lucide, consistent outline stroke.
 - Existing UMANG CSS mark is preserved.
 
@@ -93,8 +95,9 @@ Calm, trustworthy, guided, humane.
 - Feel: quick and restrained.
 - Curves: cubic-bezier(0.23, 1, 0.32, 1).
 - Durations: press 120ms, hover 140ms, panel/state 180–240ms.
-- Animate only state changes and active progress; do not animate reading content for decoration.
+- Authenticated screens animate only state changes and active progress. The public page uses GSAP/ScrollTrigger for one 4-beat hero entrance, restrained section reveals, a journey-progress draw, and subtle scenery parallax.
 - Reduced motion: spatial motion and spinners are disabled while state feedback remains visible.
+- Verified by `scripts/audit_motion.py` and desktop/mobile browser review on 2026-08-26.
 
 ## Do not
 - Do not turn the homepage into a dashboard, workbench, or chat transcript.

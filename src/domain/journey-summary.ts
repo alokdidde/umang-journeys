@@ -76,10 +76,12 @@ function actionTimingLabel(nodeKey: string, fallback: string, facts: Record<stri
 }
 
 export function selectJourneyNextAction(journey: JourneyActionSource): JourneyNextAction | null {
-  const actionable = journey.projection.nodes.filter(
+  const candidates = journey.projection.nodes.filter(
     (node): node is typeof node & { status: JourneyNextAction["status"] } =>
-      node.actionable && node.contributesToCompletion && !["locked", "completed", "skipped"].includes(node.status),
+      node.actionable && !["locked", "completed", "skipped"].includes(node.status),
   );
+  const completionActions = candidates.filter((node) => node.contributesToCompletion);
+  const actionable = completionActions.length > 0 ? completionActions : candidates;
   const nextNode =
     actionable.find((node) => node.status === "waiting_external" || node.status === "in_progress" || node.status === "blocked") ??
     actionable.find((node) => node.recommended) ??

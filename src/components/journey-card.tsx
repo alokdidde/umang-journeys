@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Armchair, ArrowRight, Baby, BriefcaseBusiness, Car, Check, Clock3, CreditCard, FileHeart, FileText, FolderClock, Gift, HeartPulse, House, IdCard, Landmark, MapPinned, Rocket, ShieldCheck, ShieldPlus, Syringe, UserRound } from "lucide-react";
+import { Armchair, ArrowRight, Baby, BriefcaseBusiness, Car, Check, Clock3, CreditCard, FileHeart, FileText, FolderClock, Gift, HeartPulse, House, IdCard, Landmark, MapPinned, Rocket, ScanLine, ShieldCheck, ShieldPlus, Syringe, UserRound } from "lucide-react";
 import type { JourneySummary } from "@/domain/journey-summary";
 
 export function JourneyCard({ journey }: { journey: JourneySummary }) {
@@ -30,6 +30,7 @@ function ActionIcon({ nodeKey }: { nodeKey: string }) {
   if (nodeKey === "child_identity") return <IdCard />;
   if (nodeKey === "eligible_benefits") return <Gift />;
   if (nodeKey === "insurance_cover") return <ShieldCheck />;
+  if (nodeKey === "policy_owner_match") return <ScanLine />;
   if (nodeKey === "fastag_setup") return <CreditCard />;
   if (nodeKey === "compliance_calendar") return <Clock3 />;
   if (nodeKey === "vehicle_details") return <Car />;

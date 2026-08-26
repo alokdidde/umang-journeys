@@ -186,13 +186,15 @@ test("newborn journey persists, completes every synthetic agency review, downloa
   await expectJourneyNodesComplete(page, id, 6);
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Your journeys are up to date" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Nothing needs your attention." })).toBeVisible();
-  await page.getByRole("link", { name: "View completed journeys" }).click();
-  await expect(page).toHaveURL(/\/journeys#completed-journeys$/);
+  await expect(page.getByRole("heading", { name: "Continue where you left off" })).toBeVisible();
+  const nextForYou = page.getByRole("region", { name: "Next for you" });
+  await expect(nextForYou.getByRole("heading", { name: "Hospital birth report" })).toBeVisible();
+  await expect(nextForYou.getByRole("progressbar", { name: "Aarav Sharma journey progress" })).toHaveAttribute("aria-valuenow", "100");
+  await page.getByRole("link", { name: /My journeys/i }).click();
+  await expect(page).toHaveURL(/\/journeys$/);
   await expect(page.getByRole("heading", { name: "Completed journeys" })).toBeVisible();
   await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
-  await expect(page.getByText("Nothing needs your attention", { exact: true })).toBeVisible();
+  await expect(page.getByText("Hospital birth report", { exact: true })).toBeVisible();
 
   await page.request.post("/api/demo/reset");
   expect((await page.request.get(`/api/journeys/${id}`)).status()).toBe(404);
@@ -381,6 +383,19 @@ test("opening intake directly starts empty and does not submit to AI", async ({ 
   await expect(page.getByText("AI analysis did not finish", { exact: true })).toHaveCount(0);
   await page.waitForTimeout(250);
   expect(resolveCalls).toBe(0);
+});
+
+test("the journey composer shows one rounded focus treatment", async ({ page }) => {
+  await login(page, { mockIntake: false });
+  await page.goto("/");
+
+  const statement = page.getByLabel("Tell us what happened");
+  await statement.focus();
+
+  await expect(statement).toHaveCSS("outline-style", "none");
+  const composer = statement.locator('xpath=ancestor::*[@data-slot="input-group"]');
+  await expect(composer).toHaveCSS("border-radius", "16px");
+  await expect(composer).not.toHaveCSS("box-shadow", "none");
 });
 
 test("the vehicle intake starts in context and offers a reviewable sample RC", async ({ page }) => {
@@ -623,12 +638,15 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await page.getByRole("button", { name: "Build compliance calendar" }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
 
+  await page.goto("/activity");
+  await expect(page.getByText("Match policy and RC owner", { exact: true })).toBeVisible();
   await page.goto("/");
+  await expect(page.getByText("Match policy and RC owner", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
   await page.goto("/journeys");
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${babyId}/services/birth_certificate`);
+  await expect(page.getByLabel("In progress").getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${babyId}/services/birth_certificate`);
   await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Tata Nexon" })).toBeVisible();
   await page.request.post("/api/demo/reset");
 });

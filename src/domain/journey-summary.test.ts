@@ -62,6 +62,30 @@ describe("journey summary", () => {
     expect(summary.nextAction?.href).toBe("/journeys/journey-vehicle/vehicle-details");
   });
 
+  it("keeps a completed journey's remaining supporting task visible as its next action", () => {
+    let projection = compileJourney(vehiclePurchaseTemplate);
+    for (const nodeKey of ["vehicle_details", "ownership_transfer", "insurance_cover", "compliance_calendar"]) {
+      projection = completeNode(projection, nodeKey);
+    }
+
+    const summary = buildJourneySummary({
+      id: "journey-vehicle",
+      status: "active",
+      subject: { id: "vehicle-1", type: "vehicle", displayName: "Tata Nexon" },
+      projection,
+      facts: {},
+      serviceRuns: {},
+      createdAt: "2026-08-25T10:00:00.000Z",
+      updatedAt: "2026-08-25T10:10:00.000Z",
+    });
+
+    expect(summary.status).toBe("completed");
+    expect(summary.nextAction).toMatchObject({
+      nodeKey: "policy_owner_match",
+      title: "Match policy and RC owner",
+    });
+  });
+
   it("summarises a personal health journey with its profile route", () => {
     const summary = buildJourneySummary({
       id: "journey-health",

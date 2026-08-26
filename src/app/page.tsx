@@ -59,20 +59,31 @@ export default function HomePage() {
 }
 
 function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string, journey?: IntakeJourneyKey) => void; loadError: string | null }) {
-  const activeJourney = journeys.find((journey) => journey.status !== "completed");
+  const attentionJourney = journeys.find((journey) => journey.status !== "completed" && journey.nextAction)
+    ?? journeys.find((journey) => journey.nextAction)
+    ?? journeys.find((journey) => journey.status !== "completed");
+  const additionalAttention = journeys.filter((journey) => journey.id !== attentionJourney?.id && journey.nextAction).slice(0, 2);
   const completedCount = journeys.filter((journey) => journey.status === "completed").length;
   return (
     <main className="page returning-home">
       <ScenicBackdrop />
       <section className="dashboard-intro content-layer">
-        <div><p className="eyebrow"><Sparkles size={15} />Welcome back</p><h1>{activeJourney ? "Continue where you left off" : "Your journeys are up to date"}</h1><p>{activeJourney ? "Your next unfinished step is ready below." : "Start another journey or review your completed records."}</p></div>
+        <div><p className="eyebrow"><Sparkles size={15} />Welcome back</p><h1>{attentionJourney ? "Continue where you left off" : "Your journeys are up to date"}</h1><p>{attentionJourney ? "Your next useful step is ready below." : "Start another journey or review your completed records."}</p></div>
       </section>
       {loadError && <p className="workflow-error content-layer" role="alert">{loadError}</p>}
 
       <section className="home-next-step content-layer" aria-labelledby="active-journeys-heading">
-        {activeJourney ? <>
+        {attentionJourney ? <>
           <div className="dashboard-section-heading"><div><span>What to do now</span><h2 id="active-journeys-heading">Next for you</h2></div></div>
-          <JourneyCard journey={activeJourney} />
+          <JourneyCard journey={attentionJourney} />
+          {additionalAttention.length ? <div className="home-additional-attention" aria-label="Other things to do">
+            <p>Also to do</p>
+            {additionalAttention.map((journey) => <Link href={journey.nextAction!.href} key={journey.id}>
+              <span><Activity /></span>
+              <div><small>{journey.subject.displayName}</small><strong>{journey.nextAction!.title}</strong></div>
+              <ArrowRight />
+            </Link>)}
+          </div> : null}
         </> : <div className="all-caught-up panel">
           <span><CheckCircle2 /></span>
           <div><p>You’re all caught up</p><h2 id="active-journeys-heading">Nothing needs your attention.</h2><small>Your completed journeys and records are still saved.</small></div>

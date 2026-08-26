@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, CircleHelp, Files, House, Languages, LoaderCircle, LogOut, MoreHorizontal, RotateCcw, Route, ShieldCheck, Volume2 } from "lucide-react";
+import { Activity, ArrowRight, CircleHelp, Files, House, Languages, LoaderCircle, LogOut, MoreHorizontal, RotateCcw, Route, ShieldCheck, Volume2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useJourney } from "./journey-provider";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -72,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
   const labels = locale === "hi-IN" ? { home: "होम", journeys: "यात्राएँ", documents: "दस्तावेज़", activity: "काम", reset: "रीसेट", help: "सहायता", signOut: "साइन आउट" } : { home: "Home", journeys: "Journeys", documents: "Documents", activity: "Activity", reset: "Reset", help: "Help", signOut: "Sign out" };
   if (pathname === "/login") {
-    return <><header className="login-header"><Brand /><span className="prototype-pill"><ShieldCheck size={15} /> Evaluation demo</span></header><div id="main-content" tabIndex={-1}>{children}</div></>;
+    return <><header className="login-header"><Brand /><nav className="public-header-nav" aria-label="On this page"><a href="#why-umang">Why UMANG</a><a href="#how-it-works">How it works</a><a href="#journeys">Journeys</a></nav><div className="public-header-actions"><span className="prototype-pill"><ShieldCheck size={15} /> Evaluation demo</span><a className="public-header-action" href="#demo-access"><span>Open demo</span><ArrowRight size={16} /></a></div></header><div id="main-content" tabIndex={-1}>{children}</div></>;
   }
 
   return (
