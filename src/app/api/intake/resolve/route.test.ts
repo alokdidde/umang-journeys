@@ -40,6 +40,29 @@ describe("POST /api/intake/resolve", () => {
     expect(mocks.resolveIntake).toHaveBeenCalledWith("We are moving home");
   });
 
+  it("passes a citizen-selected Life Event to the AI boundary", async () => {
+    mocks.resolveIntake.mockResolvedValue({
+      supported: true,
+      resolver: "ai_gateway",
+      lifeEvent: { value: "buying_a_vehicle", confidence: 0.97 },
+      facts: [],
+      clarification: {
+        key: "vehicle.ownershipTransferred",
+        question: "Is the registration certificate already in your name?",
+        choices: ["yes", "not_sure", "no"],
+      },
+    });
+
+    const response = await POST(new Request("http://localhost/api/intake/resolve", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ statement: "I bought a used car", selectedLifeEvent: "buying_a_vehicle" }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.resolveIntake).toHaveBeenCalledWith("I bought a used car", { expectedLifeEvent: "buying_a_vehicle" });
+  });
+
   it("serializes an AI SDK failure as a retryable 503", async () => {
     mocks.resolveIntake.mockRejectedValue(Object.assign(new Error("AI could not analyse that request. Please try again."), {
       code: "AI_INTAKE_FAILED",

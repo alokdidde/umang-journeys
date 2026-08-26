@@ -3,6 +3,15 @@ import type { IntakeResult } from "./intake-analysis";
 import { initialIntakeResolutionState, intakeResolutionReducer } from "./intake-resolution-state";
 
 describe("intake language-analysis state", () => {
+  it("does not analyse anything until the citizen deliberately submits a statement", () => {
+    expect(initialIntakeResolutionState).toEqual({
+      phase: "idle",
+      resolution: null,
+      analysedStatement: null,
+      error: null,
+    });
+  });
+
   it("shows the AI result only after structured language analysis succeeds", () => {
     const resolution: IntakeResult = {
       supported: true,

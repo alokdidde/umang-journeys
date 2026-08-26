@@ -118,5 +118,15 @@
     "footer": "none",
     "knobs": "input-driven-ai/relevant-scope/search/collapsed-obligations/explicit-failure/low-density",
     "brief": "UMANG Journeys · make external-service simulations input-driven and inspectable while keeping researched graphs and deadlines approachable"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "journey intake, with Buying a Vehicle as the reference flow",
+    "macrostructure": "Journey-Specific Guided Start",
+    "nav": "existing familiar top navigation and one back action",
+    "hero": "one selected life event, one text-or-document entrance, one reviewable AI proposal",
+    "footer": "none",
+    "knobs": "empty-by-default/selected-context/document-or-text/typed-ai-review/one-rigid-question/explicit-failure",
+    "brief": "UMANG Journeys · let AI understand a vehicle purchase without letting it invent or silently switch the government-service workflow"
   }
 ]

@@ -6,9 +6,10 @@ import { Baby, Car, CheckCircle2, LoaderCircle, Plus, Route, ShieldPlus, Users }
 import { JourneyCard } from "@/components/journey-card";
 import { useJourney } from "@/components/journey-provider";
 import type { JourneySummary } from "@/domain/journey-summary";
+import type { IntakeJourneyKey } from "@/domain/intake-experience";
 
 export default function JourneysPage() {
-  const { state, dispatch } = useJourney();
+  const { dispatch } = useJourney();
   const [journeys, setJourneys] = useState<JourneySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,12 +31,15 @@ export default function JourneysPage() {
       });
     return () => controller.abort();
   }, []);
-  function start(statement: string) { dispatch({ type: "set_statement", value: statement || state.statement }); router.push("/intake"); }
+  function start(journey?: IntakeJourneyKey) {
+    dispatch({ type: "set_statement", value: "" });
+    router.push(journey ? `/intake?journey=${journey}` : "/intake");
+  }
   const activeJourneys = journeys.filter((journey) => journey.status !== "completed");
   const completedJourneys = journeys.filter((journey) => journey.status === "completed");
   const householdGroups = [...new Map(journeys.filter((journey) => journey.subject.householdId && (journey.subject.type === "person" || journey.subject.type === "child")).map((journey) => [journey.subject.householdId!, journeys.filter((candidate) => candidate.subject.householdId === journey.subject.householdId && (candidate.subject.type === "person" || candidate.subject.type === "child"))])).values()].filter((group) => group.length > 1);
   return <main className="page hub-page journeys-index-page">
-    <header className="hub-page-header content-layer"><div><p className="eyebrow"><Route />Journeys</p><h1>Your journeys</h1><p>Pick up where you left off.</p></div><button className="secondary-button" type="button" onClick={() => start("")}><Plus />Start another</button></header>
+    <header className="hub-page-header content-layer"><div><p className="eyebrow"><Route />Journeys</p><h1>Your journeys</h1><p>Pick up where you left off.</p></div><button className="secondary-button" type="button" onClick={() => start()}><Plus />Start another</button></header>
     {error ? <p className="workflow-error content-layer" role="alert">{error}</p> : null}
     {!loading && householdGroups.map((group) => <section className="household-journey-group content-layer" key={group[0]?.subject.householdId}><Users aria-hidden="true" /><div><strong>Family journeys stay separate</strong><p>{group.map((journey) => journey.subject.displayName).join(" · ")}</p></div><small>Each person keeps their own evidence, decisions and progress.</small></section>)}
     {loading ? <div className="collection-state content-layer" role="status"><LoaderCircle className="service-spinner" /><p>Loading your journeys…</p></div> : journeys.length ? <>
@@ -47,6 +51,6 @@ export default function JourneysPage() {
         <header><div><h2 id="completed-journeys-title">Completed journeys</h2><p>Open a journey whenever you need its records or documents.</p></div><span>{completedJourneys.length}</span></header>
         <div className="journey-card-grid">{completedJourneys.map((journey) => <JourneyCard journey={journey} key={journey.id} />)}</div>
       </section> : null}
-    </> : <section className="collection-state panel content-layer"><Route /><h2>No journeys yet</h2><p>Start with a life event and the app will assemble the relevant service plan.</p><div><button type="button" className="primary-cta" onClick={() => start("We had a baby yesterday at Apollo Hospital in Hyderabad.")}><Baby />Start a baby journey</button><button type="button" className="secondary-button" onClick={() => start("I bought a used Tata Nexon in Hyderabad.")}><Car />Start a vehicle journey</button><button type="button" className="secondary-button" onClick={() => start("I want to understand my health insurance and prepare for cashless care in Hyderabad.")}><ShieldPlus />Start health &amp; insurance</button></div></section>}
+    </> : <section className="collection-state panel content-layer"><Route /><h2>No journeys yet</h2><p>Start with a life event and the app will assemble the relevant service plan.</p><div><button type="button" className="primary-cta" onClick={() => start("baby")}><Baby />Start a baby journey</button><button type="button" className="secondary-button" onClick={() => start("vehicle")}><Car />Start a vehicle journey</button><button type="button" className="secondary-button" onClick={() => start("health")}><ShieldPlus />Start health &amp; insurance</button></div></section>}
   </main>;
 }

@@ -26,6 +26,7 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import type { DocumentDeskRecord } from "@/domain/document-desk-reducer";
+import type { IntakeExperience } from "@/domain/intake-experience";
 
 type ComposerPhase = "idle" | "analysing" | "proposal" | "applying" | "error";
 type ProposalResponse = { document: DocumentDeskRecord; message?: string };
@@ -35,15 +36,33 @@ export function JourneyStarterComposer({
   query,
   setQuery,
   start,
+  experience,
 }: {
   query: string;
   setQuery: (value: string) => void;
   start: (statement?: string) => void;
+  experience?: IntakeExperience | null;
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<ComposerPhase>("idle");
   const [document, setDocument] = useState<DocumentDeskRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function analyseDocument(form: FormData) {
+    setPhase("analysing");
+    setError(null);
+    try {
+      const response = await fetch("/api/assistant/documents", { method: "POST", body: form });
+      const body = await response.json() as ProposalResponse;
+      if (!response.ok) throw new Error(body.message ?? "The document could not be read.");
+      setDocument(body.document);
+      setPhase("proposal");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The document could not be read.");
+      setPhase("error");
+      throw caught;
+    }
+  }
 
   async function submit(message: PromptInputMessage) {
     const statement = message.text.trim();
@@ -61,22 +80,25 @@ export function JourneyStarterComposer({
       return;
     }
 
-    setPhase("analysing");
-    setError(null);
+    const blob = await fetch(attachment.url).then((response) => response.blob());
+    const form = new FormData();
+    form.set("file", new File([blob], attachment.filename ?? "document", { type: attachment.mediaType ?? blob.type }));
+    const context = statement || (experience ? `This document is for the ${experience.label} journey.` : "");
+    if (context) form.set("context", context);
+    if (experience) form.set("expectedKind", experience.sampleType);
+    await analyseDocument(form);
+  }
+
+  async function handleSampleDocument() {
+    if (!experience) return;
+    const form = new FormData();
+    form.set("sampleType", experience.sampleType);
+    form.set("expectedKind", experience.sampleType);
+    form.set("context", `This sample is for the ${experience.label} journey.`);
     try {
-      const blob = await fetch(attachment.url).then((response) => response.blob());
-      const form = new FormData();
-      form.set("file", new File([blob], attachment.filename ?? "document", { type: attachment.mediaType ?? blob.type }));
-      if (statement) form.set("context", statement);
-      const response = await fetch("/api/assistant/documents", { method: "POST", body: form });
-      const body = await response.json() as ProposalResponse;
-      if (!response.ok) throw new Error(body.message ?? "The document could not be read.");
-      setDocument(body.document);
-      setPhase("proposal");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The document could not be read.");
-      setPhase("error");
-      throw caught;
+      await analyseDocument(form);
+    } catch {
+      // analyseDocument keeps the visible error and restores an actionable state.
     }
   }
 
@@ -127,10 +149,10 @@ export function JourneyStarterComposer({
         <ComposerAttachments />
         <PromptInputBody>
           <PromptInputTextarea
-            aria-label="Tell us what happened"
+            aria-label={experience?.promptLabel ?? "Tell us what happened"}
             maxLength={300}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="I had a baby, we moved home, I bought a vehicle…"
+            placeholder={experience?.placeholder ?? "I had a baby, we moved home, I bought a vehicle…"}
             value={query}
           />
         </PromptInputBody>
@@ -140,12 +162,15 @@ export function JourneyStarterComposer({
               <PromptInputActionMenuTrigger aria-label="Attach a document"><Paperclip /></PromptInputActionMenuTrigger>
               <PromptInputActionMenuContent><PromptInputActionAddAttachments label="Choose a document" /></PromptInputActionMenuContent>
             </PromptInputActionMenu>
-            <span>Attach a document, if you have one</span>
+            <span>{experience?.documentLabel ?? "Attach a document, if you have one"}</span>
           </PromptInputTools>
-          <PromptInputSubmit aria-label="Show my steps" className="journey-composer-submit">Show my steps<ArrowRight /></PromptInputSubmit>
+          <PromptInputSubmit aria-label={experience ? "Use this description" : "Show my steps"} className="journey-composer-submit">{experience ? "Use this description" : "Show my steps"}<ArrowRight /></PromptInputSubmit>
         </PromptInputFooter>
       </PromptInput>
-      <p className="journey-composer-note">You can type, attach a PDF or photo, or do both. We’ll ask before updating anything.</p>
+      <div className="journey-composer-after">
+        <p className="journey-composer-note">You can type, attach a PDF or photo, or do both. We’ll ask before updating anything.</p>
+        {experience ? <button type="button" className="sample-document-link" onClick={() => void handleSampleDocument()}>{experience.sampleLabel}</button> : null}
+      </div>
       {error ? <div className="journey-composer-error" role="alert"><X /><span>{error}</span></div> : null}
     </> : null}
 

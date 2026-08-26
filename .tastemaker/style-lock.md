@@ -63,6 +63,7 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Documents expose “Add a document” as a disclosure above a plain library.
 - Service provider and data-sharing metadata are available under “Provider and data details.”
 - Intake is one narrow column with a short progress label; extracted facts are optional detail.
+- Selecting a life event opens a journey-specific intake with its own prompt, evidence shortcut, and sample document. AI may extract typed facts and choose from the journey's valid clarification questions, but the selected journey graph remains authoritative and a mismatch must fail visibly.
 - Activity stays chronological, readable, and filterable without summary tiles.
 - Health & Insurance keeps its required cover-readiness path distinct from optional public-scheme and digital-record branches; none of these outputs may look like approval or guaranteed cover.
 - Moving Home, Starting a Business, and Retirement distinguish a short required path from optional authority-specific branches. Synthetic readiness, registration, pension, and entitlement outputs must never look like official approval.

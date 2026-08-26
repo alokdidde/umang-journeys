@@ -10,6 +10,7 @@ import { useJourney } from "@/components/journey-provider";
 import type { JourneySummary } from "@/domain/journey-summary";
 import { JourneyCard } from "@/components/journey-card";
 import { JourneyStarterComposer } from "@/components/journey-starter-composer";
+import type { IntakeJourneyKey } from "@/domain/intake-experience";
 
 type JourneyListResponse = { journeys: JourneySummary[] };
 
@@ -39,9 +40,13 @@ export default function HomePage() {
     return () => controller.abort();
   }, []);
 
-  function start(statement?: string) {
-    dispatch({ type: "set_statement", value: (statement ?? query.trim()) || state.statement });
-    router.push("/intake");
+  function start(statement?: string, journey?: IntakeJourneyKey) {
+    const nextStatement = journey ? "" : (statement ?? query).trim();
+    dispatch({ type: "set_statement", value: nextStatement });
+    const params = new URLSearchParams();
+    if (journey) params.set("journey", journey);
+    else if (nextStatement) params.set("analyse", "1");
+    router.push(params.size ? `/intake?${params.toString()}` : "/intake");
   }
 
   if (loading) {
@@ -53,7 +58,7 @@ export default function HomePage() {
     : <FirstVisitHome query={query} setQuery={setQuery} start={start} loadError={loadError} />;
 }
 
-function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string) => void; loadError: string | null }) {
+function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string, journey?: IntakeJourneyKey) => void; loadError: string | null }) {
   const activeJourney = journeys.find((journey) => journey.status !== "completed");
   const completedCount = journeys.filter((journey) => journey.status === "completed").length;
   return (
@@ -90,7 +95,7 @@ function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummar
   );
 }
 
-function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; setQuery: (value: string) => void; start: (statement?: string) => void; loadError: string | null }) {
+function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; setQuery: (value: string) => void; start: (statement?: string, journey?: IntakeJourneyKey) => void; loadError: string | null }) {
   return (
     <main className="page home-page">
       <ScenicBackdrop />
@@ -108,10 +113,10 @@ function FirstVisitHome({ query, setQuery, start, loadError }: { query: string; 
   );
 }
 
-function LifeEventGrid({ start, returning = false }: { start: (statement?: string) => void; returning?: boolean }) {
+function LifeEventGrid({ start, returning = false }: { start: (statement?: string, journey?: IntakeJourneyKey) => void; returning?: boolean }) {
   return <section className={`event-grid content-layer ${returning ? "compact-event-grid" : ""}`} aria-label="Life events">
     {lifeEvents.map(({ key, label, Icon, active, tone }) => (
-      <button key={key} className={`event-card ${active ? "available" : ""}`} onClick={active ? () => start(key === "vehicle" ? "I bought a used Tata Nexon in Hyderabad." : key === "health" ? "I want to understand my health insurance and prepare for cashless care in Hyderabad." : key === "home" ? "We are moving to a rented home in Hyderabad next month." : key === "business" ? "I am starting a design business from a rented office in Hyderabad." : key === "retirement" ? "I retire from private employment next month and have an EPFO account." : "We had a baby yesterday at Apollo Hospital in Hyderabad.") : undefined} type="button" aria-disabled={!active}>
+      <button key={key} className={`event-card ${active ? "available" : ""}`} onClick={active ? () => start(undefined, key) : undefined} type="button" aria-disabled={!active}>
         {active && returning ? <span className="selected-badge"><Plus size={15} /></span> : null}
         {!active && <span className="preview-badge">Preview</span>}
         <span className={`event-icon ${tone}`}><Icon /></span><strong>{returning && active ? `Another: ${label}` : label}</strong>

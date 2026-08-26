@@ -60,6 +60,17 @@ describe("AI intake boundary", () => {
     });
   });
 
+  it("distinguishes rejected AI Gateway credentials from a transient provider failure", async () => {
+    const authenticationError = new Error("Unauthenticated request to AI Gateway.");
+    authenticationError.name = "GatewayAuthenticationError";
+    const model = new MockLanguageModelV3({ doGenerate: async () => { throw authenticationError; } });
+
+    await expect(resolveIntake("I bought a car", { model })).rejects.toMatchObject({
+      code: "AI_GATEWAY_AUTH_FAILED",
+      message: "The AI assistant could not sign in to Vercel AI Gateway. Ask the demo owner to replace its AI Gateway key.",
+    });
+  });
+
   it("rejects invalid structured output instead of using phrase matching", async () => {
     const model = new MockLanguageModelV3({
       doGenerate: {
@@ -117,6 +128,32 @@ describe("AI intake boundary", () => {
     await expect(resolveIntake("Write a poem about rain", { model })).rejects.toMatchObject({
       code: "UNSUPPORTED_LIFE_EVENT",
       message: "AI could not match that request to a supported Life Event.",
+    });
+  });
+
+  it("rejects AI output that contradicts the Life Event the citizen selected", async () => {
+    const model = new MockLanguageModelV3({
+      doGenerate: {
+        content: [{ type: "text", text: JSON.stringify({
+          supported: true,
+          lifeEvent: { value: "managing_health_cover", confidence: 0.93 },
+          facts: [],
+          clarification: { key: "health.currentCover", question: "Do you have health cover?", choices: ["yes", "not_sure", "no"] },
+        }) }],
+        finishReason: { unified: "stop", raw: "stop" },
+        usage: {
+          inputTokens: { total: 16, noCache: 16, cacheRead: 0, cacheWrite: 0 },
+          outputTokens: { total: 18, text: 18, reasoning: 0 },
+        },
+        warnings: [],
+      },
+    });
+
+    await expect(resolveIntake("I bought a used car", {
+      model,
+      expectedLifeEvent: "buying_a_vehicle",
+    })).rejects.toMatchObject({
+      code: "AI_LIFE_EVENT_MISMATCH",
     });
   });
 });

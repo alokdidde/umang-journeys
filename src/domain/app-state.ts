@@ -51,14 +51,12 @@ export type AppAction =
   | { type: "operation_failed"; message: string }
   | { type: "reset" };
 
-export const goldenStatement = "We had a baby yesterday at Apollo Hospital in Hyderabad.";
-
 export const pristineState: AppState = {
   hydrated: false,
   journeyId: null,
   pending: false,
   error: null,
-  statement: goldenStatement,
+  statement: "",
   hospitalRegistered: null,
   vehicleOwnershipTransferred: null,
   healthCoverageKnown: null,

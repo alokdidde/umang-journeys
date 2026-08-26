@@ -5,6 +5,28 @@ import { documentAssistant } from "@/server/document-assistant-instance";
 import { getDemoSession } from "@/server/session";
 import { journeyRepository } from "@/server/repositories/journey-repository";
 
+const journeyDocumentKinds = new Set([
+  "vehicle_rc",
+  "health_insurance_policy",
+  "hospital_discharge_summary",
+  "residence_proof",
+  "business_premises_proof",
+  "retirement_account_statement",
+]);
+
+const documentKindLabels: Record<string, string> = {
+  vehicle_rc: "a registration certificate",
+  health_insurance_policy: "a health policy or scheme card",
+  hospital_discharge_summary: "a hospital discharge summary",
+  residence_proof: "an address document",
+  business_premises_proof: "a business premises document",
+  retirement_account_statement: "a retirement account statement",
+  vaccination_receipt: "a vaccination receipt",
+  insurance_policy: "a motor insurance policy",
+  sale_agreement: "a vehicle sale document",
+  unknown: "an unsupported document",
+};
+
 function publicRecord(record: Awaited<ReturnType<typeof documentAssistant.propose>>) {
   return {
     id: record.id,
@@ -29,6 +51,7 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const sampleType = String(form.get("sampleType") ?? "");
     const context = String(form.get("context") ?? "").trim().slice(0, 300);
+    const expectedKind = String(form.get("expectedKind") ?? "");
     let fileName: string;
     let mimeType: string;
     let bytes: Uint8Array;
@@ -83,6 +106,13 @@ export async function POST(request: Request) {
       bytes = new Uint8Array(await file.arrayBuffer());
       source = "user_upload";
       analysis = await analyzeUploadedDocument({ fileName, mimeType, bytes, context });
+    }
+
+    if (journeyDocumentKinds.has(expectedKind) && analysis.kind !== expectedKind) {
+      return NextResponse.json({
+        code: "DOCUMENT_KIND_MISMATCH",
+        message: `AI identified ${documentKindLabels[analysis.kind] ?? "a different document"}. Add ${documentKindLabels[expectedKind]} for this journey, or go back and choose the matching journey. Nothing was saved.`,
+      }, { status: 422 });
     }
 
     const record = await documentAssistant.propose(sessionId, { fileName, mimeType, bytes, source, analysis });

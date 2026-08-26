@@ -1,9 +1,12 @@
 import { z } from "zod";
 
+export const lifeEventValueSchema = z.enum(["having_a_baby", "buying_a_vehicle", "managing_health_cover", "moving_home", "starting_a_business", "retirement"]);
+export type LifeEventValue = z.infer<typeof lifeEventValueSchema>;
+
 const supportedIntakeSchema = z.object({
   supported: z.literal(true),
   lifeEvent: z.object({
-    value: z.enum(["having_a_baby", "buying_a_vehicle", "managing_health_cover", "moving_home", "starting_a_business", "retirement"]),
+    value: lifeEventValueSchema,
     confidence: z.number().min(0).max(1),
   }),
   facts: z.array(z.object({
