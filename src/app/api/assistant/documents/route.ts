@@ -53,11 +53,11 @@ export async function POST(request: Request) {
       } : sampleType === "business_premises_proof" ? {
         "business.name": business?.facts["business.name"] ?? "Ananya Design Studio",
         "business.address": business?.facts["business.address"] ?? "4 Creative Lane, Jubilee Hills, Hyderabad 500033",
-        "business.occupancy": business?.facts["business.occupancy"] ?? "Rented premises",
+        "business.occupancy": business?.facts["business.occupancy"] ?? "rented",
       } : sampleType === "retirement_account_statement" ? {
         "person.name": person?.subject.displayName ?? "Ananya Sharma",
-        "retirement.accountType": person?.facts["retirement.accountType"] ?? "epfo_eps",
-        "retirement.serviceYears": person?.facts["retirement.serviceYears"] ?? "14 years",
+        "retirement.accountType": person?.facts["retirement.accountType"] ?? "epfo",
+        "retirement.serviceYears": person?.facts["retirement.serviceYears"] ?? "14",
       } : sampleType === "vehicle_rc" || sampleType === "insurance_policy" ? {
         "vehicle.registrationNumber": vehicle?.facts["vehicle.registrationNumber"] ?? "TS09EV4321",
         "vehicle.makeModel": vehicle?.facts["vehicle.makeModel"] ?? "Tata Nexon EV",

@@ -4,6 +4,47 @@ import { analyzeUploadedDocument, validateDocumentFile } from "./document-analys
 
 afterEach(() => vi.unstubAllEnvs());
 
+const emptyDocumentFields = {
+  registrationNumber: null,
+  makeModel: null,
+  chassisLast5: null,
+  registeredOwner: null,
+  sellerName: null,
+  buyerName: null,
+  saleDate: null,
+  city: null,
+  state: null,
+  childName: null,
+  dateOfBirth: null,
+  vaccine: null,
+  administeredOn: null,
+  provider: null,
+  batchNumber: null,
+  policyNumber: null,
+  insuredName: null,
+  insurer: null,
+  sumInsured: null,
+  validFrom: null,
+  validUntil: null,
+  dischargeReference: null,
+  residentName: null,
+  address: null,
+  documentType: null,
+  issuedOn: null,
+  businessName: null,
+  residenceOccupancy: null,
+  businessOccupancy: null,
+  memberName: null,
+  retirementAccountType: null,
+  accountReference: null,
+  retirementServiceYears: null,
+  statementDate: null,
+};
+
+function documentFields(overrides: Record<string, string | null>) {
+  return { ...emptyDocumentFields, ...overrides };
+}
+
 describe("document analysis boundary", () => {
   it("accepts supported files only when their signatures match", () => {
     expect(() => validateDocumentFile({
@@ -45,7 +86,7 @@ describe("document analysis boundary", () => {
         content: [{ type: "text", text: JSON.stringify({
           kind: "vaccination_receipt",
           confidence: 0.96,
-          fields: { childName: "Aarav Sharma", vaccine: "BCG", administeredOn: "2026-08-25" },
+          fields: documentFields({ childName: "Aarav Sharma", vaccine: "BCG", administeredOn: "2026-08-25" }),
         }) }],
         finishReason: { unified: "stop", raw: "stop" },
         usage: {
@@ -88,5 +129,29 @@ describe("document analysis boundary", () => {
       code: "AI_DOCUMENT_ANALYSIS_FAILED",
       message: "AI could not analyse that document. Please try again or upload a clearer copy.",
     });
+  });
+
+  it("rejects free-text values where the AI contract requires canonical journey values", async () => {
+    const model = new MockLanguageModelV3({
+      doGenerate: {
+        content: [{ type: "text", text: JSON.stringify({
+          kind: "retirement_account_statement",
+          confidence: 0.94,
+          fields: documentFields({ memberName: "Ananya Sharma", retirementAccountType: "EPFO / EPS", retirementServiceYears: "fourteen years" }),
+        }) }],
+        finishReason: { unified: "stop", raw: "stop" },
+        usage: {
+          inputTokens: { total: 30, noCache: 30, cacheRead: 0, cacheWrite: 0 },
+          outputTokens: { total: 20, text: 20, reasoning: 0 },
+        },
+        warnings: [],
+      },
+    });
+
+    await expect(analyzeUploadedDocument({
+      fileName: "retirement.pdf",
+      mimeType: "application/pdf",
+      bytes: new Uint8Array(Buffer.from("%PDF synthetic")),
+    }, { model })).rejects.toMatchObject({ code: "AI_DOCUMENT_ANALYSIS_FAILED" });
   });
 });

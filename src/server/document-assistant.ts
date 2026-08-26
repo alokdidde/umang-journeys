@@ -18,20 +18,6 @@ export type AppliedDocumentResult = {
   message: string;
 };
 
-function occupancyFromText(value: string | undefined) {
-  const normalized = value?.toLocaleLowerCase("en-IN");
-  if (normalized?.includes("rent")) return "rented";
-  if (normalized?.includes("own") || normalized?.includes("property")) return "owned";
-  return undefined;
-}
-
-function retirementAccountFromText(value: string | undefined) {
-  const normalized = value?.toLocaleLowerCase("en-IN");
-  if (normalized?.includes("nps")) return "nps";
-  if (normalized?.match(/epfo|eps/)) return "epfo";
-  return undefined;
-}
-
 function documentFacts(analysis: DocumentAnalysis) {
   if (analysis.kind === "vehicle_rc") return {
     "vehicle.registrationNumber": analysis.fields.registrationNumber,
@@ -81,7 +67,7 @@ function documentFacts(analysis: DocumentAnalysis) {
     "move.newAddress": analysis.fields.address,
     "move.newCity": analysis.fields.city,
     "move.newState": analysis.fields.state,
-    "move.occupancy": occupancyFromText(analysis.fields.documentType),
+    "move.occupancy": analysis.fields.residenceOccupancy,
     "intake.source": "residence_proof",
   };
   if (analysis.kind === "business_premises_proof") return {
@@ -89,14 +75,14 @@ function documentFacts(analysis: DocumentAnalysis) {
     "business.address": analysis.fields.address,
     "business.city": analysis.fields.city,
     "business.state": analysis.fields.state,
-    "business.occupancy": occupancyFromText(analysis.fields.occupancy),
+    "business.occupancy": analysis.fields.businessOccupancy,
     "intake.source": "business_premises_proof",
   };
   if (analysis.kind === "retirement_account_statement") return {
     "person.name": analysis.fields.memberName,
-    "retirement.accountType": retirementAccountFromText(analysis.fields.accountType),
+    "retirement.accountType": analysis.fields.retirementAccountType,
     "retirement.accountReference": analysis.fields.accountReference,
-    "retirement.serviceYears": analysis.fields.eligibleService?.match(/\d+/)?.[0],
+    "retirement.serviceYears": analysis.fields.retirementServiceYears,
     "intake.source": "retirement_account_statement",
   };
   return {};

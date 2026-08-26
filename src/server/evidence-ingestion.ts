@@ -48,19 +48,20 @@ function extractedFields(type: EvidenceType, facts: Record<string, string>): Rec
     residentName: facts["person.name"] ?? "Ananya Sharma",
     address: facts["move.newAddress"] ?? "12 Lake View Road, Madhapur, Hyderabad 500081",
     documentType: facts["move.occupancy"] === "owned" ? "Property tax receipt" : "Registered rent agreement",
+    residenceOccupancy: facts["move.occupancy"] ?? "rented",
     issuedOn: "2026-08-20",
   };
   if (type === "business_premises_proof") return {
     businessName: facts["business.name"] ?? "Ananya Design Studio",
     address: facts["business.address"] ?? "4 Creative Lane, Jubilee Hills, Hyderabad 500033",
-    occupancy: facts["business.occupancy"] ?? "Rented premises",
+    businessOccupancy: facts["business.occupancy"] ?? "rented",
     documentType: "Rent agreement with electricity bill",
   };
   if (type === "retirement_account_statement") return {
     memberName: facts["person.name"] ?? "Ananya Sharma",
-    accountType: facts["retirement.accountType"] === "nps" ? "NPS" : "EPFO / EPS",
+    retirementAccountType: facts["retirement.accountType"] === "nps" ? "nps" : "epfo",
     accountReference: "Synthetic UAN ending 4821",
-    eligibleService: facts["retirement.serviceYears"] ?? "14 years",
+    retirementServiceYears: facts["retirement.serviceYears"] ?? "14",
     statementDate: "2026-08-25",
   };
   return {

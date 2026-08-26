@@ -4,9 +4,12 @@ import { createSampleEvidence, ingestUploadedEvidence } from "./evidence-ingesti
 
 describe("vehicle evidence ingestion", () => {
   it("never fabricates journey facts for a user upload and leaves it for review", async () => {
+    const fieldNames = [
+      "registrationNumber", "makeModel", "chassisLast5", "registeredOwner", "sellerName", "buyerName", "saleDate", "city", "state", "childName", "dateOfBirth", "vaccine", "administeredOn", "provider", "batchNumber", "policyNumber", "insuredName", "insurer", "sumInsured", "validFrom", "validUntil", "dischargeReference", "residentName", "address", "documentType", "issuedOn", "businessName", "residenceOccupancy", "businessOccupancy", "memberName", "retirementAccountType", "accountReference", "retirementServiceYears", "statementDate",
+    ];
     const model = new MockLanguageModelV3({
       doGenerate: {
-        content: [{ type: "text", text: JSON.stringify({ kind: "unknown", confidence: 0.18, fields: {} }) }],
+        content: [{ type: "text", text: JSON.stringify({ kind: "unknown", confidence: 0.18, fields: Object.fromEntries(fieldNames.map((name) => [name, null])) }) }],
         finishReason: { unified: "stop", raw: "stop" },
         usage: {
           inputTokens: { total: 30, noCache: 30, cacheRead: 0, cacheWrite: 0 },

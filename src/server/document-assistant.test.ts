@@ -200,14 +200,14 @@ describe("document assistant", () => {
     {
       sessionId: "session-partial-business",
       kind: "business_premises_proof" as const,
-      fields: { businessName: "Ananya Design Studio", address: "4 Creative Lane", occupancy: "Licensed use" },
+      fields: { businessName: "Ananya Design Studio", address: "4 Creative Lane" },
       absentFacts: ["business.occupancy"],
     },
     {
       sessionId: "session-partial-retirement",
       kind: "retirement_account_statement" as const,
-      fields: { memberName: "Ananya Sharma", accountType: "Unknown account" },
-      absentFacts: ["retirement.accountType"],
+      fields: { memberName: "Ananya Sharma", retirementAccountType: "epfo" },
+      absentFacts: ["retirement.serviceYears"],
     },
   ])("does not invent missing journey facts for $kind AI output", async ({ sessionId, kind, fields, absentFacts }) => {
     const journeys = new MemoryJourneyRepository();
@@ -237,33 +237,30 @@ describe("document assistant", () => {
       sessionId: "session-move-document",
       fileName: "residence-proof.pdf",
       kind: "residence_proof" as const,
-      fields: { residentName: "Ananya Sharma", address: "12 Lake View Road, Hyderabad 500081", city: "Hyderabad", state: "Telangana", documentType: "Registered rent agreement" },
+      fields: { residentName: "Ananya Sharma", address: "12 Lake View Road, Hyderabad 500081", city: "Hyderabad", state: "Telangana", documentType: "Registered rent agreement", residenceOccupancy: "rented" },
       subject: { type: "residence", displayName: "New home in Hyderabad" },
-      factKey: "move.newAddress",
-      factValue: "12 Lake View Road, Hyderabad 500081",
+      expectedFacts: { "move.newAddress": "12 Lake View Road, Hyderabad 500081", "move.occupancy": "rented" },
       evidenceType: "residence_proof",
     },
     {
       sessionId: "session-business-document",
       fileName: "business-premises.pdf",
       kind: "business_premises_proof" as const,
-      fields: { businessName: "Ananya Design Studio", address: "4 Creative Lane, Hyderabad 500033", city: "Hyderabad", state: "Telangana", occupancy: "Rented premises" },
+      fields: { businessName: "Ananya Design Studio", address: "4 Creative Lane, Hyderabad 500033", city: "Hyderabad", state: "Telangana", businessOccupancy: "rented" },
       subject: { type: "business", displayName: "Ananya Design Studio" },
-      factKey: "business.address",
-      factValue: "4 Creative Lane, Hyderabad 500033",
+      expectedFacts: { "business.address": "4 Creative Lane, Hyderabad 500033", "business.occupancy": "rented" },
       evidenceType: "business_premises_proof",
     },
     {
       sessionId: "session-retirement-document",
       fileName: "retirement-statement.pdf",
       kind: "retirement_account_statement" as const,
-      fields: { memberName: "Ananya Sharma", accountType: "EPFO / EPS", accountReference: "Synthetic UAN ending 4821", eligibleService: "14 years" },
+      fields: { memberName: "Ananya Sharma", retirementAccountType: "epfo", accountReference: "Synthetic UAN ending 4821", retirementServiceYears: "14" },
       subject: { type: "person", displayName: "Ananya Sharma" },
-      factKey: "retirement.accountType",
-      factValue: "epfo",
+      expectedFacts: { "retirement.accountType": "epfo", "retirement.serviceYears": "14" },
       evidenceType: "retirement_account_statement",
     },
-  ])("creates a pre-filled $kind journey from approved evidence", async ({ sessionId, fileName, kind, fields, subject, factKey, factValue, evidenceType }) => {
+  ])("creates a pre-filled $kind journey from approved evidence", async ({ sessionId, fileName, kind, fields, subject, expectedFacts, evidenceType }) => {
     const journeys = new MemoryJourneyRepository();
     const documents = new MemoryDocumentIntakeRepository();
     const service = new DocumentAssistantService(journeys, documents);
@@ -279,7 +276,7 @@ describe("document assistant", () => {
     const saved = result.journeyId ? await journeys.get(sessionId, result.journeyId) : null;
 
     expect(saved?.subject).toEqual(expect.objectContaining(subject));
-    expect(saved?.facts[factKey]).toBe(factValue);
+    expect(saved?.facts).toMatchObject(expectedFacts);
     expect(saved?.evidence).toContainEqual(expect.objectContaining({ type: evidenceType }));
   });
 });

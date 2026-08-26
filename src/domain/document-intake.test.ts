@@ -121,7 +121,7 @@ describe("document intake proposals", () => {
   it.each([
     ["residence_proof" as const, { residentName: "Ananya Sharma", address: "12 Lake View Road, Hyderabad 500081", city: "Hyderabad", state: "Telangana" }, "create_move_journey", "createMoveJourneyFromResidenceProof"],
     ["business_premises_proof" as const, { businessName: "Ananya Design Studio", address: "4 Creative Lane, Hyderabad 500033", city: "Hyderabad", state: "Telangana" }, "create_business_journey", "createBusinessJourneyFromPremisesProof"],
-    ["retirement_account_statement" as const, { memberName: "Ananya Sharma", accountType: "EPFO / EPS", eligibleService: "14 years" }, "create_retirement_journey", "createRetirementJourneyFromStatement"],
+    ["retirement_account_statement" as const, { memberName: "Ananya Sharma", retirementAccountType: "epfo", retirementServiceYears: "14" }, "create_retirement_journey", "createRetirementJourneyFromStatement"],
   ])("proposes another journey from recognised evidence", (kind, fields, action, toolName) => {
     const proposal = proposeDocumentAction({ kind, confidence: 0.97, fields }, []);
 

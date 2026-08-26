@@ -186,7 +186,7 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
       changes: [
         { label: "Business", value: businessName },
         { label: "Principal place", value: analysis.fields.address },
-        { label: "Possession", value: analysis.fields.occupancy },
+        { label: "Possession", value: analysis.fields.businessOccupancy },
       ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
     };
   }
@@ -197,15 +197,15 @@ export function proposeDocumentAction(analysis: DocumentAnalysis, journeys: Jour
     const match = matches.length === 1 ? matches[0] : null;
     return {
       action: match ? "update_retirement_journey" : "create_retirement_journey",
-      canApply: analysis.confidence >= 0.8 && Boolean(memberName && analysis.fields.accountType) && matches.length <= 1,
+      canApply: analysis.confidence >= 0.8 && Boolean(memberName && analysis.fields.retirementAccountType) && matches.length <= 1,
       targetJourneyId: match?.id ?? null,
       title: match ? `Add retirement records for ${match.subject.displayName}` : `Start a retirement journey for ${memberName || "this member"}`,
       description: match ? "Attach this statement and refresh the retirement-record details." : "Create a Retirement journey and pre-fill the supported account details for review.",
       toolName: match ? "updateRetirementFromStatement" : "createRetirementJourneyFromStatement",
       changes: [
         { label: "Member", value: memberName },
-        { label: "Account", value: analysis.fields.accountType },
-        { label: "Recorded service", value: analysis.fields.eligibleService },
+        { label: "Account", value: analysis.fields.retirementAccountType },
+        { label: "Recorded service", value: analysis.fields.retirementServiceYears },
       ].filter((item): item is { label: string; value: string } => Boolean(item.value)),
     };
   }
