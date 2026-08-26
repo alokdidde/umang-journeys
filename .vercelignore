@@ -1,0 +1,13 @@
+.next
+.next-e2e
+node_modules
+test-results
+playwright-report
+coverage
+.agents
+.tastemaker
+.env
+.env.local
+*.log
+*.tsbuildinfo
+*.docx
