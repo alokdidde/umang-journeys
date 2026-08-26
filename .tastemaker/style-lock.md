@@ -1,6 +1,6 @@
-# Style lock — UMANG Journeys
+# Style lock — UMANG Life
 
-Established: 2026-08-26. Updated after the user rejected the dense power-user workspace direction.
+Established: 2026-08-26. Updated: 2026-08-27 for the subject-centred AI interaction direction.
 
 ## Palette
 - Background: #f7f9fc
@@ -50,22 +50,22 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Profile promotion: none.
 
 ## Navigation chrome
-- Desktop uses a familiar 76px top bar with Home, Journeys, Documents, and Activity.
+- Desktop uses a familiar 76px top bar with Home, My life, Documents, and Activity.
 - Mobile uses a compact brand bar and four labeled bottom-navigation targets.
 - Demo controls stay visually secondary to citizen tasks.
 - Language, read-aloud, demo reset, and external help stay inside one “Options” menu; only demo status and sign-out remain visible beside navigation.
 
 ## Screen structure
 - The signed-out front door uses a short Long-Scroll Narrative: promise and branching journey preview; the agency-fragmentation problem; a sticky 3-step guided-intake story; document-to-journey matching; implemented-scope proof; and the pre-filled demo sign-in close. It stays low-density, avoids generic feature grids, and never applies this marketing rhythm inside the authenticated product.
-- Home shows one saved journey and its next action before anything else.
-- Home ignores completed journeys when choosing the next action; when all work is done, it shows one “all caught up” state linked to the archive.
-- Starting another journey is collapsed by default.
-- My Journeys visibly separates “In progress” from “Completed journeys”; completion changes placement, never availability.
+- Home shows one person or thing and its next action before anything else.
+- Home ignores caught-up work when choosing the next action; when all work is done, it shows one “all caught up” state linked to My life.
+- “Tell us what changed” is collapsed by default for returning citizens.
+- My life visibly separates “Needs attention” from “All caught up”; completion changes placement, never availability.
 - Journey pages remain next-action-first. The full dependency graph appears only in a wide slide-in Journey Map opened by the citizen.
 - Documents expose “Add a document” as a disclosure above a plain library.
 - Service provider and data-sharing metadata are available under “Provider and data details.”
 - Intake is one narrow column with a short progress label; extracted facts are optional detail.
-- Selecting a life event opens a journey-specific intake with its own prompt, evidence shortcut, and sample document. AI may extract typed facts and choose from the journey's valid clarification questions, but the selected journey graph remains authoritative and a mismatch must fail visibly.
+- A request may describe several related needs and several people or things. AI proposes the subjects, relationships, facts, and service needs it understood; the citizen reviews this proposal before anything is saved or performed. Confirmed service graphs remain authoritative after creation.
 - Activity stays chronological, readable, and filterable without summary tiles.
 - Health & Insurance keeps its required cover-readiness path distinct from optional public-scheme and digital-record branches; none of these outputs may look like approval or guaranteed cover.
 - Moving Home, Starting a Business, and Retirement distinguish a short required path from optional authority-specific branches. Synthetic readiness, registration, pension, and entitlement outputs must never look like official approval.
@@ -81,6 +81,14 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Synthetic external services are reviewed by input-driven Vercel AI agents. Citizens provide evidence, consent, clarifications, and appeals; the interface must never expose a predetermined outcome picker or silently fall back to rules.
 - Every synthetic decision states that no real authority was contacted, preserves an inspectable reference and findings, and shows an explicit failure when the AI gateway is unavailable.
 - Authentication keeps the pre-filled gateway visually stable: password visibility is user-controlled, errors stay beside the fields, pending actions show progress, and sign-out is an explicit desktop label rather than an ambiguous account avatar. Mobile keeps the same sign-out action as a 44px icon control with an accessible name.
+
+## AI-native interaction
+- Use official AI Elements source components selectively and restyle them to this lock; the product must not become a generic chat transcript.
+- Keep `PromptInput`, `Attachments`, and `Confirmation` as the core request-and-approval primitives. Add `Plan`, `Suggestion`, and compact `Message` primitives only where they clarify what UMANG understood, what it needs next, or what it proposes to do.
+- The request composer may stream a short interpretation and proposed update, then collapse into the persistent person-or-thing record after approval.
+- Render authoritative tasks from the journey engine with the existing citizen task UI. Do not present model reasoning, raw tool calls, JSON, model selectors, or generated task guesses as citizen-facing service guidance.
+- Every mutating AI action states what will be added or changed and requires explicit approval. External submission, data sharing, declarations, and payments require a separate explicit approval at the point of action.
+- AI states include analysing, asking for information, proposal ready, applying, applied, declined, recoverable failure, and unavailable. Each state must remain understandable without animation or colour alone.
 
 ## Mood descriptors
 Calm, trustworthy, guided, humane.
@@ -100,7 +108,7 @@ Calm, trustworthy, guided, humane.
 - Verified by `scripts/audit_motion.py` and desktop/mobile browser review on 2026-08-26.
 
 ## Do not
-- Do not turn the homepage into a dashboard, workbench, or chat transcript.
+- Do not turn the homepage into a dashboard, workbench, full-screen chatbot, or permanent chat transcript.
 - Do not expose internal positioning or team mantras as page titles; headings must tell citizens what they can do or what state their work is in.
 - Do not use a permanent desktop sidebar for four destinations.
 - Do not show account totals, provider internals, or all journey facts by default.
