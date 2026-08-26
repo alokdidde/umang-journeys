@@ -30,6 +30,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const updated = await journeyRepository.addEvidence(sessionId, id, evidence);
     return NextResponse.json({ ...updated, synthetic: evidence.source === "sample" });
   } catch (error) {
-    return NextResponse.json({ code: "INVALID_EVIDENCE", message: error instanceof Error ? error.message : "Evidence could not be processed." }, { status: 400 });
+    const unavailable = error instanceof Error && "code" in error && ["AI_GATEWAY_NOT_CONFIGURED", "AI_DOCUMENT_ANALYSIS_FAILED"].includes(String(error.code));
+    return NextResponse.json({ code: unavailable ? "DOCUMENT_ANALYSIS_FAILED" : "INVALID_EVIDENCE", message: error instanceof Error ? error.message : "Evidence could not be processed." }, { status: unavailable ? 503 : 400 });
   }
 }

@@ -180,6 +180,60 @@ describe("document assistant", () => {
 
   it.each([
     {
+      sessionId: "session-partial-rc",
+      kind: "vehicle_rc" as const,
+      fields: { registrationNumber: "TS09EV4321", makeModel: "Tata Nexon EV" },
+      absentFacts: ["vehicle.purchaseType", "vehicle.city", "vehicle.state"],
+    },
+    {
+      sessionId: "session-partial-health",
+      kind: "health_insurance_policy" as const,
+      fields: { insuredName: "Ananya Sharma", policyNumber: "HLT-42", validUntil: "2027-03-31" },
+      absentFacts: ["person.state"],
+    },
+    {
+      sessionId: "session-partial-move",
+      kind: "residence_proof" as const,
+      fields: { residentName: "Ananya Sharma", address: "12 Lake View Road", documentType: "Utility bill" },
+      absentFacts: ["move.occupancy"],
+    },
+    {
+      sessionId: "session-partial-business",
+      kind: "business_premises_proof" as const,
+      fields: { businessName: "Ananya Design Studio", address: "4 Creative Lane", occupancy: "Licensed use" },
+      absentFacts: ["business.occupancy"],
+    },
+    {
+      sessionId: "session-partial-retirement",
+      kind: "retirement_account_statement" as const,
+      fields: { memberName: "Ananya Sharma", accountType: "Unknown account" },
+      absentFacts: ["retirement.accountType"],
+    },
+  ])("does not invent missing journey facts for $kind AI output", async ({ sessionId, kind, fields, absentFacts }) => {
+    const journeys = new MemoryJourneyRepository();
+    const documents = new MemoryDocumentIntakeRepository();
+    const service = new DocumentAssistantService(journeys, documents);
+    const intake = await service.propose(sessionId, {
+      fileName: "partial-document.pdf",
+      mimeType: "application/pdf",
+      bytes: new Uint8Array(Buffer.from("%PDF partial document")),
+      source: "user_upload",
+      analysis: {
+        kind,
+        confidence: 0.95,
+        fields: Object.fromEntries(Object.entries(fields).filter((entry): entry is [string, string] => Boolean(entry[1]))),
+      },
+    });
+
+    const result = await service.apply(sessionId, intake.id, true);
+    const saved = result.journeyId ? await journeys.get(sessionId, result.journeyId) : null;
+
+    expect(saved).not.toBeNull();
+    for (const fact of absentFacts) expect(saved?.facts).not.toHaveProperty(fact);
+  });
+
+  it.each([
+    {
       sessionId: "session-move-document",
       fileName: "residence-proof.pdf",
       kind: "residence_proof" as const,

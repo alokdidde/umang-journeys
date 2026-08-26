@@ -4,7 +4,28 @@ import AxeBuilder from "@axe-core/playwright";
 const email = "demo@umang.com";
 const password = "demo1234";
 
-async function login(page: Page) {
+function intakeFixture(statement: string) {
+  const normalized = statement.toLowerCase();
+  const base = { supported: true as const, resolver: "ai_gateway" as const };
+  if (["need to get insurance for parents", "i need to get insurance for my parents", "i need health insurance for my parents"].includes(normalized)) return { ...base, lifeEvent: { value: "managing_health_cover", confidence: 0.97 }, facts: [{ key: "health.coverageFor", value: "dependent", confidence: 0.96, source: "user_statement" }, { key: "health.dependentRelationship", value: "parent", confidence: 0.96, source: "user_statement" }], clarification: { key: "health.subjects", question: "Who needs health cover?", choices: ["both", "mother", "father"] } };
+  if (normalized === "i want to understand my health insurance and prepare for cashless care in hyderabad.") return { ...base, lifeEvent: { value: "managing_health_cover", confidence: 0.97 }, facts: [{ key: "person.city", value: "Hyderabad", confidence: 0.9, source: "user_statement" }, { key: "person.state", value: "Telangana", confidence: 0.9, source: "derived_from_city" }], clarification: { key: "health.currentCover", question: "Do you have a health policy or government scheme card?", choices: ["yes", "not_sure", "no"] } };
+  if (normalized === "i bought a used tata nexon in hyderabad.") return { ...base, lifeEvent: { value: "buying_a_vehicle", confidence: 0.97 }, facts: [{ key: "vehicle.purchaseType", value: "used", confidence: 0.92, source: "user_statement" }, { key: "vehicle.city", value: "Hyderabad", confidence: 0.96, source: "user_statement" }, { key: "vehicle.state", value: "Telangana", confidence: 0.95, source: "derived_from_city" }, { key: "vehicle.makeModel", value: "Tata Nexon", confidence: 0.92, source: "user_statement" }], clarification: { key: "vehicle.ownershipTransferred", question: "Is the registration certificate already in your name?", choices: ["yes", "not_sure", "no"] } };
+  if (normalized === "we are moving to a rented home in hyderabad next month.") return { ...base, lifeEvent: { value: "moving_home", confidence: 0.97 }, facts: [{ key: "move.newCity", value: "Hyderabad", confidence: 0.94, source: "user_statement" }, { key: "move.newState", value: "Telangana", confidence: 0.95, source: "derived_from_city" }, { key: "move.occupancy", value: "rented", confidence: 0.9, source: "user_statement" }], clarification: { key: "move.hasAddressEvidence", question: "Do you have a document for the new address?", choices: ["yes", "not_sure", "no"] } };
+  if (normalized === "i am starting a design business from a rented office in hyderabad.") return { ...base, lifeEvent: { value: "starting_a_business", confidence: 0.97 }, facts: [{ key: "business.activity", value: "Design services", confidence: 0.9, source: "user_statement" }, { key: "business.city", value: "Hyderabad", confidence: 0.94, source: "user_statement" }, { key: "business.state", value: "Telangana", confidence: 0.95, source: "derived_from_city" }], clarification: { key: "business.hasPremisesProof", question: "Do you have a document for the principal place of business?", choices: ["yes", "not_sure", "no"] } };
+  if (normalized === "i retire from private employment next month and have an epfo account.") return { ...base, lifeEvent: { value: "retirement", confidence: 0.97 }, facts: [{ key: "retirement.employmentSector", value: "private", confidence: 0.9, source: "user_statement" }, { key: "retirement.accountType", value: "epfo", confidence: 0.9, source: "user_statement" }], clarification: { key: "retirement.hasAccountStatement", question: "Do you have a provident-fund, NPS, or pension statement?", choices: ["yes", "not_sure", "no"] } };
+  if (normalized === "we had a baby yesterday at apollo hospital in hyderabad.") return { ...base, lifeEvent: { value: "having_a_baby", confidence: 0.97 }, facts: [{ key: "birth.setting", value: "hospital", confidence: 0.94, source: "user_statement" }, { key: "birth.city", value: "Hyderabad", confidence: 0.98, source: "user_statement" }, { key: "birth.state", value: "Telangana", confidence: 0.95, source: "derived_from_city" }, { key: "child.dateOfBirth", value: "2026-08-24", confidence: 0.9, source: "relative_date_parse" }], clarification: { key: "birth.registeredByHospital", question: "Has the hospital already registered the birth?", choices: ["yes", "not_sure", "no"] } };
+  throw new Error(`Missing exact AI fixture for statement: ${statement}`);
+}
+
+async function mockIntakeAI(page: Page) {
+  await page.route("**/api/intake/resolve", async (route) => {
+    const { statement } = route.request().postDataJSON() as { statement: string };
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(intakeFixture(statement)) });
+  });
+}
+
+async function login(page: Page, options: { mockIntake?: boolean } = {}) {
+  if (options.mockIntake !== false) await mockIntakeAI(page);
   await page.goto("/login");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
@@ -191,7 +212,7 @@ test("Show my steps accepts either a description or a document with context", as
   await page.getByLabel("Tell us what happened").fill("need to get insurance for parents");
   await page.getByRole("button", { name: "Show my steps" }).click();
   await expect(page).toHaveURL(/\/intake$/);
-  await expect(page.getByText("Health & insurance", { exact: true })).toBeVisible();
+  await expect(page.locator(".screen-heading .eyebrow").getByText("Health & insurance", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Who needs health cover?" })).toBeVisible();
 
   await page.goBack();
@@ -287,6 +308,40 @@ test("a request for both parents creates one health journey for each parent", as
     await expect(page.getByRole("heading", { name: "About the person" })).toBeVisible();
   }
 
+  await page.request.post("/api/demo/reset");
+});
+
+test("failed AI language analysis is visible and retryable without creating a guessed journey", async ({ page }) => {
+  await login(page, { mockIntake: false });
+  await page.request.post("/api/demo/reset");
+  let shouldFail = true;
+  await page.route("**/api/intake/resolve", async (route) => {
+    if (shouldFail) {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ code: "AI_INTAKE_FAILED", message: "AI could not analyse that request. Please try again." }),
+      });
+      return;
+    }
+    const { statement } = route.request().postDataJSON() as { statement: string };
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(intakeFixture(statement)) });
+  });
+
+  await page.goto("/");
+  await page.getByLabel("Tell us what happened").fill("I need health insurance for my parents");
+  await page.getByRole("button", { name: "Show my steps" }).click();
+
+  await expect(page.getByRole("heading", { name: "We couldn’t analyse this request" })).toBeVisible();
+  await expect(page.getByText("AI could not analyse that request. Please try again.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Who needs health cover?" })).toHaveCount(0);
+  expect((await page.request.get("/api/journeys")).ok()).toBeTruthy();
+  const beforeRetry = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
+  expect(beforeRetry.journeys).toHaveLength(0);
+
+  shouldFail = false;
+  await page.getByRole("button", { name: "Try AI analysis again" }).click();
+  await expect(page.getByRole("heading", { name: "Who needs health cover?" })).toBeVisible();
   await page.request.post("/api/demo/reset");
 });
 
@@ -539,10 +594,7 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   await page.request.post("/api/demo/reset");
 });
 
-test("moving home, business, and retirement each complete from evidence to archived outputs", async ({ page }) => {
-  test.setTimeout(150_000);
-  await login(page);
-  const scenarios = [
+const extendedJourneyScenarios = [
     {
       sample: "Address proof",
       proposal: "Start a moving-home journey for this address",
@@ -596,7 +648,10 @@ test("moving home, business, and retirement each complete from evidence to archi
     },
   ] as const;
 
-  for (const scenario of scenarios) {
+for (const scenario of extendedJourneyScenarios) {
+  test(`${scenario.journeyHeading} completes from evidence to archived outputs`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await login(page);
     await page.request.post("/api/demo/reset");
     await openDocumentAssistant(page);
     await page.getByRole("button", { name: scenario.sample }).click();
@@ -637,9 +692,9 @@ test("moving home, business, and retirement each complete from evidence to archi
     await page.goto("/activity");
     await page.getByRole("tab", { name: "History" }).click();
     await expect(page.getByText(scenario.activity, { exact: true })).toBeVisible();
-  }
-  await page.request.post("/api/demo/reset");
-});
+    await page.request.post("/api/demo/reset");
+  });
+}
 
 test("document tools create and enrich journeys while the library and activity ledger stay inspectable", async ({ page }) => {
   await login(page);
@@ -744,23 +799,29 @@ test("provider callbacks pause for clarification and resume after the citizen re
   await expect(page.getByRole("heading", { name: "Child health profile" })).toBeVisible();
 });
 
-test("a structurally valid upload cannot unlock a service without extracted and confirmed facts", async ({ page }) => {
+test("failed AI document analysis is visible and leaves every journey unchanged", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");
-  const created = await page.request.post("/api/journeys", { data: { templateId: "vehicle-purchase.india.v1", facts: { "vehicle.registrationNumber": "TS09EV4321", "vehicle.makeModel": "Tata Nexon EV" } } });
-  const { id } = await created.json() as { id: string };
-  await page.request.post(`/api/journeys/${id}/nodes/vehicle_details/submit`, { data: {
-    "vehicle.registrationNumber": "TS09EV4321", "vehicle.makeModel": "Tata Nexon EV", "vehicle.purchaseDate": "2026-08-25", "vehicle.sellerName": "Vikram Rao", "vehicle.chassisLast5": "7K2P9", "vehicle.transferScope": "same_state", "vehicle.acquisitionRoute": "sale", "vehicle.hypothecation": "no", "vehicle.pendingDues": "no", idempotencyKey: "upload-trust-boundary",
-  } });
-  const upload = await page.request.post(`/api/journeys/${id}/evidence`, { multipart: { type: "vehicle_rc", file: { name: "registration-certificate.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\nvalid container without readable fields") } } });
-  expect(upload.ok()).toBeTruthy();
-  const journey = await upload.json() as { evidence: Array<{ verificationStatus: string; extractedFields: Record<string, string> }> };
-  expect(journey.evidence.at(-1)).toMatchObject({ verificationStatus: "needs_review", extractedFields: {} });
-  const blocked = await page.request.post(`/api/journeys/${id}/nodes/ownership_transfer/submit`, { data: { idempotencyKey: "blocked-unreviewed-evidence" } });
-  expect(blocked.status()).toBe(409);
-  await page.goto(`/journeys/${id}/services/ownership_transfer`);
-  await expect(page.getByText("No supported values were found. Upload a clearer copy.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Confirm and use" })).toBeDisabled();
+  await seedJourney(page);
+  await openDocumentAssistant(page);
+  await page.route("**/api/assistant/documents", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ code: "DOCUMENT_ANALYSIS_FAILED", message: "AI could not analyse that document. Please try again or upload a clearer copy." }),
+    });
+  });
+  await page.locator('.document-desk input[type="file"]').setInputFiles({
+    name: "registration-certificate.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\nvalid container"),
+  });
+  await page.getByRole("button", { name: "Analyse document" }).click();
+  await expect(page.getByText("AI could not analyse that document. Please try again or upload a clearer copy.")).toBeVisible();
+  await expect(page.getByText("No journey data was changed.")).toBeVisible();
+  const body = await (await page.request.get("/api/journeys")).json() as { journeys: unknown[] };
+  expect(body.journeys).toHaveLength(1);
+  await page.request.post("/api/demo/reset");
 });
 
 test("authenticated workflow pages have no serious accessibility violations", async ({ page }) => {

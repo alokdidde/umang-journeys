@@ -14,6 +14,6 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error && "code" in error ? String(error.code) : "INTAKE_UNAVAILABLE";
-    return NextResponse.json({ code, message: error instanceof Error ? error.message : "Intake could not be resolved." }, { status: 422 });
+    return NextResponse.json({ code, message: error instanceof Error ? error.message : "Intake could not be resolved." }, { status: code.startsWith("AI_") ? 503 : 422 });
   }
 }

@@ -86,8 +86,9 @@ export async function POST(request: Request) {
     }
 
     const record = await documentAssistant.propose(sessionId, { fileName, mimeType, bytes, source, analysis });
-    return NextResponse.json({ document: publicRecord(record), resolver: source === "sample" ? "synthetic_fixture" : analysis.confidence >= 0.8 ? "ai_gateway" : "filename_fallback" }, { status: 201 });
+    return NextResponse.json({ document: publicRecord(record), resolver: source === "sample" ? "synthetic_fixture" : "ai_gateway" }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ code: "DOCUMENT_ANALYSIS_FAILED", message: error instanceof Error ? error.message : "The document could not be analysed." }, { status: 400 });
+    const unavailable = error instanceof Error && "code" in error && ["AI_GATEWAY_NOT_CONFIGURED", "AI_DOCUMENT_ANALYSIS_FAILED"].includes(String(error.code));
+    return NextResponse.json({ code: "DOCUMENT_ANALYSIS_FAILED", message: error instanceof Error ? error.message : "The document could not be analysed." }, { status: unavailable ? 503 : 400 });
   }
 }

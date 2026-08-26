@@ -1,155 +1,71 @@
-import OpenAI from "openai";
-import { zodTextFormat } from "openai/helpers/zod";
-import { z } from "zod";
-import { detectLifeEvent } from "@/domain/intake-intent";
+import { generateText, Output, type LanguageModel } from "ai";
+import { intakeSchema, type IntakeResult } from "@/domain/intake-analysis";
 
-export const intakeSchema = z.object({
-  lifeEvent: z.object({ value: z.enum(["having_a_baby", "buying_a_vehicle", "managing_health_cover", "moving_home", "starting_a_business", "retirement"]), confidence: z.number().min(0).max(1) }),
-  facts: z.array(z.object({
-    key: z.string(),
-    value: z.string(),
-    confidence: z.number().min(0).max(1),
-    source: z.enum(["user_statement", "derived_from_city", "relative_date_parse"]),
-  })),
-  clarification: z.object({
-    key: z.enum(["birth.registeredByHospital", "vehicle.ownershipTransferred", "health.currentCover", "health.subjects", "move.hasAddressEvidence", "business.hasPremisesProof", "retirement.hasAccountStatement"]),
-    question: z.string(),
-    choices: z.array(z.enum(["yes", "not_sure", "no", "both", "mother", "father"])),
-  }),
-});
+export { intakeSchema } from "@/domain/intake-analysis";
+export type { IntakeResult } from "@/domain/intake-analysis";
 
-export type IntakeResult = z.infer<typeof intakeSchema> & { resolver: "ai_gateway" | "openai" | "deterministic" };
-
-type IntakeEnvironment = Partial<Record<"AI_GATEWAY_API_KEY" | "VERCEL_OIDC_TOKEN" | "OPENAI_API_KEY" | "AI_INTAKE_MODEL", string>>;
-
-export function createIntakeClientConfig(environment: IntakeEnvironment) {
-  const gatewayKey = environment.AI_GATEWAY_API_KEY ?? environment.VERCEL_OIDC_TOKEN;
-  if (gatewayKey) return {
-    apiKey: gatewayKey,
-    baseURL: "https://ai-gateway.vercel.sh/v1",
-    model: environment.AI_INTAKE_MODEL ?? "openai/gpt-5.5",
-    resolver: "ai_gateway" as const,
-  };
-  if (environment.OPENAI_API_KEY) return {
-    apiKey: environment.OPENAI_API_KEY,
-    model: environment.AI_INTAKE_MODEL ?? "gpt-5.5",
-    resolver: "openai" as const,
-  };
-  return null;
+function indiaLocalDate(now: Date) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now).map(({ type, value }) => [type, value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
-export function deterministicResolve(statement: string): IntakeResult {
-  const normalized = statement.toLowerCase();
-  const lifeEvent = detectLifeEvent(statement);
-  if (!lifeEvent) throw Object.assign(new Error("This prototype supports baby, vehicle, health, moving home, business, and retirement journeys."), { code: "UNSUPPORTED_LIFE_EVENT" });
-  const city = /vizag|visakhapatnam/.test(normalized) ? "Visakhapatnam" : /hyderabad/.test(normalized) ? "Hyderabad" : undefined;
-  const state = city === "Hyderabad" ? "Telangana" : city === "Visakhapatnam" ? "Andhra Pradesh" : undefined;
-  if (lifeEvent === "moving_home") {
-    return {
-      resolver: "deterministic",
-      lifeEvent: { value: "moving_home", confidence: 0.96 },
-      facts: [
-        ...(city ? [{ key: "move.newCity", value: city, confidence: 0.94, source: "user_statement" as const }] : []),
-        ...(state ? [{ key: "move.newState", value: state, confidence: 0.95, source: "derived_from_city" as const }] : []),
-        { key: "move.occupancy", value: /rent|tenant|lease/.test(normalized) ? "rented" : "not_sure", confidence: 0.9, source: "user_statement" },
-        { key: "move.date", value: "2026-09-25", confidence: 0.72, source: "relative_date_parse" },
-      ],
-      clarification: { key: "move.hasAddressEvidence", question: "Do you have a rent agreement, utility bill, or another new-address document?", choices: ["yes", "not_sure", "no"] },
-    };
-  }
-  if (lifeEvent === "starting_a_business") {
-    return {
-      resolver: "deterministic",
-      lifeEvent: { value: "starting_a_business", confidence: 0.96 },
-      facts: [
-        { key: "business.activity", value: /design/.test(normalized) ? "Design services" : "Business activity to confirm", confidence: 0.84, source: "user_statement" },
-        { key: "business.structure", value: "not_sure", confidence: 0.55, source: "user_statement" },
-        ...(city ? [{ key: "business.city", value: city, confidence: 0.94, source: "user_statement" as const }] : []),
-        ...(state ? [{ key: "business.state", value: state, confidence: 0.95, source: "derived_from_city" as const }] : []),
-        { key: "business.startDate", value: "2026-09-01", confidence: 0.7, source: "relative_date_parse" },
-      ],
-      clarification: { key: "business.hasPremisesProof", question: "Do you have a document for the principal place of business?", choices: ["yes", "not_sure", "no"] },
-    };
-  }
-  if (lifeEvent === "retirement") {
-    return {
-      resolver: "deterministic",
-      lifeEvent: { value: "retirement", confidence: 0.96 },
-      facts: [
-        { key: "retirement.employmentSector", value: /private/.test(normalized) ? "private" : "not_sure", confidence: 0.9, source: "user_statement" },
-        { key: "retirement.accountType", value: /epfo|provident fund/.test(normalized) ? "epfo" : /nps/.test(normalized) ? "nps" : "not_sure", confidence: 0.9, source: "user_statement" },
-        { key: "retirement.date", value: "2026-09-30", confidence: 0.72, source: "relative_date_parse" },
-      ],
-      clarification: { key: "retirement.hasAccountStatement", question: "Do you have a provident-fund, NPS, or pension statement?", choices: ["yes", "not_sure", "no"] },
-    };
-  }
-  if (lifeEvent === "buying_a_vehicle") {
-    const makeModel = /nexon/.test(normalized) ? "Tata Nexon" : /creta/.test(normalized) ? "Hyundai Creta" : "Purchased vehicle";
-    return {
-      resolver: "deterministic",
-      lifeEvent: { value: "buying_a_vehicle", confidence: 0.96 },
-      facts: [
-        { key: "vehicle.purchaseType", value: /used|pre.?owned|second.?hand/.test(normalized) ? "used" : "new", confidence: 0.92, source: "user_statement" },
-        ...(city ? [{ key: "vehicle.city", value: city, confidence: 0.96, source: "user_statement" as const }] : []),
-        ...(state ? [{ key: "vehicle.state", value: state, confidence: 0.95, source: "derived_from_city" as const }] : []),
-        { key: "vehicle.makeModel", value: makeModel, confidence: 0.75, source: "user_statement" },
-        { key: "vehicle.purchaseDate", value: "2026-08-25", confidence: 0.72, source: "relative_date_parse" },
-      ],
-      clarification: { key: "vehicle.ownershipTransferred", question: "Is the registration certificate already in your name?", choices: ["yes", "not_sure", "no"] },
-    };
-  }
-  if (lifeEvent === "managing_health_cover") {
-    const mentionsParent = /\b(parent|parents|mother|father|mom|mum|dad)\b/.test(normalized);
-    return {
-      resolver: "deterministic",
-      lifeEvent: { value: "managing_health_cover", confidence: 0.96 },
-      facts: [
-        ...(city ? [{ key: "person.city", value: city, confidence: 0.9, source: "user_statement" as const }] : []),
-        ...(state ? [{ key: "person.state", value: state, confidence: 0.9, source: "derived_from_city" as const }] : []),
-        ...(mentionsParent ? [
-          { key: "health.coverageFor", value: "dependent", confidence: 0.96, source: "user_statement" as const },
-          { key: "health.dependentRelationship", value: "parent", confidence: 0.96, source: "user_statement" as const },
-        ] : []),
-      ],
-      clarification: mentionsParent
-        ? { key: "health.subjects", question: "Who needs health cover?", choices: ["both", "mother", "father"] }
-        : { key: "health.currentCover", question: "Do you have a health policy or government scheme card?", choices: ["yes", "not_sure", "no"] },
-    };
-  }
-  return {
-    resolver: "deterministic",
-    lifeEvent: { value: "having_a_baby", confidence: 0.96 },
-    facts: [
-      { key: "birth.setting", value: /home/.test(normalized) ? "home" : "hospital", confidence: 0.94, source: "user_statement" },
-      ...(city ? [{ key: "birth.city", value: city, confidence: 0.98, source: "user_statement" as const }] : []),
-      ...(state ? [{ key: "birth.state", value: state, confidence: 0.95, source: "derived_from_city" as const }] : []),
-      { key: "child.dateOfBirth", value: "2026-08-24", confidence: 0.9, source: "relative_date_parse" },
-    ],
-    clarification: { key: "birth.registeredByHospital", question: "Has the hospital already registered the birth?", choices: ["yes", "not_sure", "no"] },
-  };
+function intakeSystemPrompt(now: Date) {
+  return `Interpret one citizen statement for UMANG Journeys.
+
+Supported Life Events are Having a Baby, Buying a Vehicle, Managing Health Cover, Moving Home, Starting a Business, and Retirement.
+
+Rules:
+- Set supported to false when the statement does not clearly match one supported Life Event; never force the closest category.
+- Extract only facts explicitly stated or safely normalized.
+- Ask the matching clarification for the selected Life Event.
+- When a health request mentions parents, ask health.subjects with both, mother, and father choices before asking about existing cover.
+- Never treat a dependant as the account holder.
+- Never infer official status, eligibility, approval, diagnosis, tax liability, legal compliance, pension entitlement, or identity data.
+- Resolve relative dates against ${indiaLocalDate(now)} in India Standard Time.
+- Use only keys and choices allowed by the response schema.`;
 }
 
-export async function resolveIntake(statement: string): Promise<IntakeResult> {
-  const config = createIntakeClientConfig({
-    AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
-    VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    AI_INTAKE_MODEL: process.env.AI_INTAKE_MODEL,
-  });
-  if (!config) return deterministicResolve(statement);
-  const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL, timeout: 5_000, maxRetries: 1 });
+function intakeError(code: "AI_GATEWAY_NOT_CONFIGURED" | "AI_INTAKE_FAILED", message: string, cause?: unknown) {
+  return Object.assign(new Error(message), { code, cause });
+}
+
+export async function resolveIntake(statement: string, options: { model?: LanguageModel; now?: Date } = {}): Promise<IntakeResult> {
+  if (!options.model && !process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
+    throw intakeError(
+      "AI_GATEWAY_NOT_CONFIGURED",
+      "AI language analysis is unavailable because Vercel AI Gateway is not configured.",
+    );
+  }
+
+  let output;
   try {
-    const response = await client.responses.parse({
-      model: config.model,
-      input: [
-        { role: "developer", content: "Extract only facts explicitly stated or safely normalized. This prototype supports Having a Baby, Buying a Vehicle, Managing Health Cover, Moving Home, Starting a Business, and Retirement. Ask the matching evidence question for the selected event. When a health request mentions parents, ask health.subjects with both, mother, and father choices before asking about existing cover; never treat a dependant as the account holder. Never infer official status, eligibility, approval, diagnosis, tax liability, legal compliance, pension entitlement, or identity data. Resolve relative dates against 2026-08-25." },
-        { role: "user", content: statement },
-      ],
-      text: { format: zodTextFormat(intakeSchema, "umang_intake") },
-    });
-    if (!response.output_parsed) return deterministicResolve(statement);
-    return { ...response.output_parsed, resolver: config.resolver };
-  } catch {
-    return deterministicResolve(statement);
+    ({ output } = await generateText({
+      model: options.model ?? process.env.AI_INTAKE_MODEL ?? "openai/gpt-5.5",
+      output: Output.object({
+        name: "umang_intake",
+        description: "A schema-validated interpretation of one citizen Life Event statement.",
+        schema: intakeSchema,
+      }),
+      system: intakeSystemPrompt(options.now ?? new Date()),
+      prompt: statement,
+      maxRetries: 1,
+      timeout: { totalMs: 15_000 },
+    }));
+  } catch (cause) {
+    throw intakeError("AI_INTAKE_FAILED", "AI could not analyse that request. Please try again.", cause);
   }
+
+  if (!output.supported) {
+    throw Object.assign(
+      new Error("AI could not match that request to a supported Life Event."),
+      { code: "UNSUPPORTED_LIFE_EVENT", detail: output.reason },
+    );
+  }
+
+  return { ...output, resolver: "ai_gateway" };
 }

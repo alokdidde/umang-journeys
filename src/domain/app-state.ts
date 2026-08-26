@@ -79,7 +79,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case "hydrate":
       return { ...pristineState, ...action.state, hydrated: true };
     case "set_statement":
-      return { ...state, statement: action.value };
+      return {
+        ...state,
+        statement: action.value,
+        hospitalRegistered: null,
+        vehicleOwnershipTransferred: null,
+        healthCoverageKnown: null,
+        moveAddressEvidenceKnown: null,
+        businessPremisesProofKnown: null,
+        retirementStatementKnown: null,
+        error: null,
+      };
     case "set_hospital_registered":
       return { ...state, hospitalRegistered: action.value };
     case "set_vehicle_ownership_transferred":

@@ -50,6 +50,15 @@ describe("demo journey state", () => {
     expect(failed.form.childName).toBe("Aarav Sharma");
   });
 
+  it("clears an earlier clarification when the citizen starts a different statement", () => {
+    const answered = appReducer(pristineState, { type: "set_health_coverage_known", value: "yes" });
+    const changed = appReducer(answered, { type: "set_statement", value: "I bought a vehicle" });
+
+    expect(changed.healthCoverageKnown).toBeNull();
+    expect(changed.vehicleOwnershipTransferred).toBeNull();
+    expect(changed.hospitalRegistered).toBeNull();
+  });
+
   it("hydrates persisted external-service progress for refresh recovery", () => {
     const state = appReducer(pristineState, {
       type: "server_journey_loaded",

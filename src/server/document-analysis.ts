@@ -1,6 +1,6 @@
-import { generateText, Output } from "ai";
+import { generateText, Output, type LanguageModel } from "ai";
 import { z } from "zod";
-import type { DocumentAnalysis, DocumentKind } from "@/domain/document-intake";
+import type { DocumentAnalysis } from "@/domain/document-intake";
 
 const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 const acceptedMimeTypes = new Set(["application/pdf", "image/png", "image/jpeg"]);
@@ -56,43 +56,22 @@ export function validateDocumentFile(file: { mimeType: string; bytes: Uint8Array
   if (!validSignature) throw new Error("The file contents do not match the selected file type.");
 }
 
-function filenameFallback(fileName: string): DocumentAnalysis {
-  const normalized = fileName.toLowerCase();
-  const kind: DocumentKind = /discharge|hospital-summary|birth-summary/.test(normalized)
-    ? "hospital_discharge_summary"
-    : /sale[-_ ]?(agreement|deed)|delivery[-_ ]?note/.test(normalized)
-      ? "sale_agreement"
-    : /health[-_ ]?(insurance|policy)|mediclaim|health-cover/.test(normalized)
-      ? "health_insurance_policy"
-    : /insurance|policy|motor-cover/.test(normalized)
-      ? "insurance_policy"
-      : /vacc|immun|bcg|dose/.test(normalized)
-    ? "vaccination_receipt"
-    : /(^|[-_ ])rc($|[-_. ])|registration/.test(normalized)
-      ? "vehicle_rc"
-      : /residence|address[-_ ]?proof|rent[-_ ]?agreement|property[-_ ]?tax/.test(normalized)
-        ? "residence_proof"
-        : /business[-_ ]?premises|shop[-_ ]?lease|commercial[-_ ]?rent/.test(normalized)
-          ? "business_premises_proof"
-          : /retirement|epfo|eps|nps|pension[-_ ]?statement/.test(normalized)
-            ? "retirement_account_statement"
-            : "unknown";
-  return { kind, confidence: kind === "unknown" ? 0.2 : 0.55, fields: {} };
-}
-
 export async function analyzeUploadedDocument(file: {
   fileName: string;
   mimeType: string;
   bytes: Uint8Array;
   context?: string;
-}): Promise<DocumentAnalysis> {
+}, options: { model?: LanguageModel } = {}): Promise<DocumentAnalysis> {
   validateDocumentFile(file);
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) return filenameFallback(file.fileName);
+  if (!options.model && !process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) throw Object.assign(
+    new Error("AI document analysis is unavailable because Vercel AI Gateway is not configured."),
+    { code: "AI_GATEWAY_NOT_CONFIGURED" },
+  );
 
   try {
     const { output } = await generateText({
-      model: process.env.AI_DOCUMENT_MODEL ?? process.env.AI_INTAKE_MODEL ?? "openai/gpt-5.5",
-      output: Output.object({ schema: analysisSchema }),
+      model: options.model ?? process.env.AI_DOCUMENT_MODEL ?? process.env.AI_INTAKE_MODEL ?? "openai/gpt-5.5",
+      output: Output.object({ name: "umang_document_analysis", description: "Visible, schema-validated facts extracted from one citizen document.", schema: analysisSchema }),
       messages: [{
         role: "user",
         content: [
@@ -105,13 +84,15 @@ export async function analyzeUploadedDocument(file: {
       }],
       timeout: { totalMs: 15_000 },
     });
-    if (!output) return filenameFallback(file.fileName);
     return {
       kind: output.kind,
       confidence: output.confidence,
       fields: Object.fromEntries(Object.entries(output.fields).filter((entry): entry is [string, string] => Boolean(entry[1]))),
     };
-  } catch {
-    return filenameFallback(file.fileName);
+  } catch (cause) {
+    throw Object.assign(
+      new Error("AI could not analyse that document. Please try again or upload a clearer copy."),
+      { code: "AI_DOCUMENT_ANALYSIS_FAILED", cause },
+    );
   }
 }

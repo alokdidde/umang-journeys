@@ -1,5 +1,6 @@
 import { degrees, PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { createHash } from "node:crypto";
+import type { LanguageModel } from "ai";
 import type { EvidenceRecord, EvidenceType } from "@/domain/evidence";
 import { analyzeUploadedDocument } from "@/server/document-analysis";
 
@@ -154,6 +155,7 @@ export async function ingestUploadedEvidence(
   type: EvidenceType,
   file: { name: string; type: string; bytes: Uint8Array },
   facts: Record<string, string>,
+  options: { model?: LanguageModel } = {},
 ): Promise<EvidenceInput> {
   if (!acceptedMimeTypes.has(file.type)) throw new Error("Upload a PDF, PNG, or JPEG file.");
   if (file.bytes.length === 0 || file.bytes.length > MAX_EVIDENCE_BYTES) throw new Error("Evidence must be between 1 byte and 2 MB.");
@@ -168,7 +170,7 @@ export async function ingestUploadedEvidence(
     mimeType: file.type,
     bytes: file.bytes,
     context: `The citizen selected ${type} as the expected evidence category.`,
-  });
+  }, options);
   const fields = analysis.fields;
   const kindMatches = analysis.kind === expectedKinds[type];
   const comparisons = (matchFields[type] ?? []).flatMap(([documentKey, factKey]) => {

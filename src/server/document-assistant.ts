@@ -18,15 +18,28 @@ export type AppliedDocumentResult = {
   message: string;
 };
 
+function occupancyFromText(value: string | undefined) {
+  const normalized = value?.toLocaleLowerCase("en-IN");
+  if (normalized?.includes("rent")) return "rented";
+  if (normalized?.includes("own") || normalized?.includes("property")) return "owned";
+  return undefined;
+}
+
+function retirementAccountFromText(value: string | undefined) {
+  const normalized = value?.toLocaleLowerCase("en-IN");
+  if (normalized?.includes("nps")) return "nps";
+  if (normalized?.match(/epfo|eps/)) return "epfo";
+  return undefined;
+}
+
 function documentFacts(analysis: DocumentAnalysis) {
   if (analysis.kind === "vehicle_rc") return {
     "vehicle.registrationNumber": analysis.fields.registrationNumber,
     "vehicle.makeModel": analysis.fields.makeModel,
     "vehicle.chassisLast5": analysis.fields.chassisLast5,
     "vehicle.registeredOwner": analysis.fields.registeredOwner,
-    "vehicle.purchaseType": "used",
-    "vehicle.city": analysis.fields.city || "Hyderabad",
-    "vehicle.state": analysis.fields.state || "Telangana",
+    "vehicle.city": analysis.fields.city,
+    "vehicle.state": analysis.fields.state,
     "intake.source": "registration_certificate",
   };
   if (analysis.kind === "vaccination_receipt") return {
@@ -46,7 +59,7 @@ function documentFacts(analysis: DocumentAnalysis) {
   if (analysis.kind === "health_insurance_policy") return {
     "person.name": analysis.fields.insuredName,
     "person.dateOfBirth": analysis.fields.dateOfBirth,
-    "person.state": analysis.fields.state || "Telangana",
+    "person.state": analysis.fields.state,
     "health.currentCover": "yes",
     "health.policyNumber": analysis.fields.policyNumber,
     "health.insurer": analysis.fields.insurer,
@@ -68,7 +81,7 @@ function documentFacts(analysis: DocumentAnalysis) {
     "move.newAddress": analysis.fields.address,
     "move.newCity": analysis.fields.city,
     "move.newState": analysis.fields.state,
-    "move.occupancy": analysis.fields.documentType?.toLocaleLowerCase("en-IN").includes("property") ? "owned" : "rented",
+    "move.occupancy": occupancyFromText(analysis.fields.documentType),
     "intake.source": "residence_proof",
   };
   if (analysis.kind === "business_premises_proof") return {
@@ -76,12 +89,12 @@ function documentFacts(analysis: DocumentAnalysis) {
     "business.address": analysis.fields.address,
     "business.city": analysis.fields.city,
     "business.state": analysis.fields.state,
-    "business.occupancy": analysis.fields.occupancy?.toLocaleLowerCase("en-IN").includes("rent") ? "rented" : analysis.fields.occupancy?.toLocaleLowerCase("en-IN").includes("own") ? "owned" : "consent",
+    "business.occupancy": occupancyFromText(analysis.fields.occupancy),
     "intake.source": "business_premises_proof",
   };
   if (analysis.kind === "retirement_account_statement") return {
     "person.name": analysis.fields.memberName,
-    "retirement.accountType": analysis.fields.accountType?.toLocaleLowerCase("en-IN").includes("nps") ? "nps" : analysis.fields.accountType?.toLocaleLowerCase("en-IN").match(/epfo|eps/) ? "epfo" : "not_sure",
+    "retirement.accountType": retirementAccountFromText(analysis.fields.accountType),
     "retirement.accountReference": analysis.fields.accountReference,
     "retirement.serviceYears": analysis.fields.eligibleService?.match(/\d+/)?.[0],
     "intake.source": "retirement_account_statement",

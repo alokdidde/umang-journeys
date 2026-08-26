@@ -1,6 +1,6 @@
 # UMANG Journeys
 
-A citizen-first evaluation app that reorganises services around life events. It implements a complete, synthetic **Having a Baby** journey with persisted workflow state and simulated external-service adapters.
+A citizen-first evaluation app that reorganises services around life events. It implements six complete synthetic journeys with persisted workflow state and simulated external-service adapters.
 
 ## Run locally
 
@@ -9,7 +9,7 @@ pnpm install
 pnpm dev
 ```
 
-Open <http://localhost:3000>. The typed path and deterministic resolver work without AI credentials. Add `AI_GATEWAY_API_KEY` to `.env.local` to enable structured AI intake; the app falls back automatically after five seconds or any invalid response.
+Open <http://localhost:3000>. Add `AI_GATEWAY_API_KEY` to `.env.local` before using language intake or analysing a real uploaded document. These features use schema-validated Vercel AI SDK output and show an explicit retryable error if AI Gateway is unavailable or returns invalid output.
 
 Sign in with the single local evaluation account:
 
@@ -31,7 +31,7 @@ Returning users see a compact document assistant above **Your journeys**. It acc
 - a vehicle registration certificate creates and pre-fills a vehicle journey;
 - a vaccination receipt matches the child, stores the evidence, and updates the vaccination timeline and artifact.
 
-The interface uses the official Vercel AI Elements prompt input, attachment, and confirmation primitives. Sample documents are generated as real PDFs; uploaded documents use structured model output when AI Gateway credentials are available and fall back to a safe, non-applicable review state when extraction is unavailable.
+The interface uses the official Vercel AI Elements prompt input, attachment, and confirmation primitives. Sample documents are generated as explicit synthetic fixtures; real uploaded documents require successful structured Vercel AI SDK analysis and are never classified from their filenames.
 
 The preferred configuration is Vercel AI Gateway:
 
@@ -41,9 +41,9 @@ AI_INTAKE_MODEL=openai/gpt-5.5
 AI_DOCUMENT_MODEL=openai/gpt-5.5
 ```
 
-`VERCEL_OIDC_TOKEN` is also recognized on Vercel. A direct `OPENAI_API_KEY` remains supported; omit `AI_INTAKE_MODEL` to use the provider-appropriate default. Never commit API keys. If a key has been pasted into a chat or log, rotate it before deployment.
+`VERCEL_OIDC_TOKEN` is also recognized on Vercel. Model identifiers use AI Gateway’s `provider/model` format. Never commit API keys. If a key has been pasted into a chat or log, rotate it before deployment.
 
-Without AI credentials, the constrained deterministic resolver and both sample-document workflows keep the evaluation usable. Uploaded documents are never applied from filename inference alone.
+Without AI Gateway authentication, language intake and real-document analysis fail visibly without creating or updating a Journey. Explicit synthetic sample-document workflows remain available for evaluation.
 
 ## Run the Docker handoff
 

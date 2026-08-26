@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
+import { MockLanguageModelV3 } from "ai/test";
 import { createSampleEvidence, ingestUploadedEvidence } from "./evidence-ingestion";
 
 describe("vehicle evidence ingestion", () => {
   it("never fabricates journey facts for a user upload and leaves it for review", async () => {
+    const model = new MockLanguageModelV3({
+      doGenerate: {
+        content: [{ type: "text", text: JSON.stringify({ kind: "unknown", confidence: 0.18, fields: {} }) }],
+        finishReason: { unified: "stop", raw: "stop" },
+        usage: {
+          inputTokens: { total: 30, noCache: 30, cacheRead: 0, cacheWrite: 0 },
+          outputTokens: { total: 10, text: 10, reasoning: 0 },
+        },
+        warnings: [],
+      },
+    });
     const evidence = await ingestUploadedEvidence("vehicle_rc", {
       name: "registration-certificate.pdf",
       type: "application/pdf",
@@ -10,7 +22,7 @@ describe("vehicle evidence ingestion", () => {
     }, {
       "vehicle.registrationNumber": "TS09EV4321",
       "vehicle.chassisLast5": "7K2P9",
-    });
+    }, { model });
 
     expect(evidence.verificationStatus).toBe("needs_review");
     expect(evidence.extractedFields).toEqual({});
