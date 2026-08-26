@@ -22,7 +22,15 @@ function canonicalKey(subject: ReturnType<typeof subjectForJourney>, facts: Reco
   if (subject.type === "VEHICLE") return `vehicle:${slug(facts["vehicle.registrationNumber"] || subject.displayName)}`;
   if (subject.type === "RESIDENCE") return `address:${slug(facts["move.postalCode"] || facts["move.newCity"] || subject.displayName)}`;
   if (subject.type === "BUSINESS") return `business:${slug(facts["business.gstin"] || facts["business.pan"] || subject.displayName)}`;
-  return "person:ananya-sharma";
+  return facts["health.dependentRelationship"]
+    ? `person:${slug(facts["health.dependentRelationship"])}`
+    : "person:ananya-sharma";
+}
+
+function isAccountHolder(subject: ReturnType<typeof subjectForJourney>, facts: Record<string, string>) {
+  return subject.type === "PERSON"
+    && facts["health.coverageFor"] !== "dependent"
+    && !facts["health.dependentRelationship"];
 }
 
 function canonicalType(subject: ReturnType<typeof subjectForJourney>) {
@@ -168,6 +176,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const template = getJourneyTemplate(templateId);
     if (!template) throw new Error(`Unknown journey template: ${templateId}`);
     const subject = subjectForJourney(template.lifeEvent, facts);
+    const subjectIsAccountHolder = isAccountHolder(subject, facts);
     const prisma = getPrisma();
     const profile = await prisma.userProfile.upsert({
       where: { sessionId },
@@ -187,22 +196,22 @@ export class PrismaJourneyRepository implements JourneyRepository {
 
     const primaryPerson = await prisma.canonicalEntity.upsert({
       where: { profileId_type_externalKey: { profileId: profile.id, type: "PERSON", externalKey: "person:ananya-sharma" } },
-      update: { displayName: facts["person.name"]?.trim() || "Ananya Sharma", dataJson: { role: "account_holder" } },
-      create: { profileId: profile.id, type: "PERSON", externalKey: "person:ananya-sharma", displayName: facts["person.name"]?.trim() || "Ananya Sharma", dataJson: { role: "account_holder" } },
+      update: { displayName: subjectIsAccountHolder ? facts["person.name"]?.trim() || "Ananya Sharma" : "Ananya Sharma", dataJson: { role: "account_holder" } },
+      create: { profileId: profile.id, type: "PERSON", externalKey: "person:ananya-sharma", displayName: subjectIsAccountHolder ? facts["person.name"]?.trim() || "Ananya Sharma" : "Ananya Sharma", dataJson: { role: "account_holder" } },
     });
     const household = await prisma.canonicalEntity.upsert({
       where: { profileId_type_externalKey: { profileId: profile.id, type: "HOUSEHOLD", externalKey: "household:ananya" } },
       update: {},
       create: { profileId: profile.id, type: "HOUSEHOLD", externalKey: "household:ananya", displayName: "Ananya's household", dataJson: { synthetic: true } },
     });
-    const subjectEntity = subject.type === "PERSON" ? primaryPerson : await prisma.canonicalEntity.upsert({
+    const subjectEntity = subjectIsAccountHolder ? primaryPerson : await prisma.canonicalEntity.upsert({
       where: { profileId_type_externalKey: { profileId: profile.id, type: canonicalType(subject), externalKey: canonicalKey(subject, facts) } },
       update: { displayName: subject.displayName, dataJson: facts },
       create: { profileId: profile.id, type: canonicalType(subject), externalKey: canonicalKey(subject, facts), displayName: subject.displayName, dataJson: facts },
     });
     const relationships = [
       { fromId: household.id, toId: primaryPerson.id, kind: "MEMBER" },
-      ...(subjectEntity.id === primaryPerson.id ? [] : [{ fromId: subject.type === "CHILD" ? household.id : primaryPerson.id, toId: subjectEntity.id, kind: subject.type === "CHILD" ? "DEPENDENT" : subject.type === "RESIDENCE" ? "OCCUPIES" : subject.type === "BUSINESS" ? "OPERATES" : "OWNS" }]),
+      ...(subjectEntity.id === primaryPerson.id ? [] : [{ fromId: subject.type === "CHILD" ? household.id : primaryPerson.id, toId: subjectEntity.id, kind: subject.type === "CHILD" || subject.type === "PERSON" ? "DEPENDENT" : subject.type === "RESIDENCE" ? "OCCUPIES" : subject.type === "BUSINESS" ? "OPERATES" : "OWNS" }]),
     ];
     for (const relationship of relationships) {
       const existing = await prisma.entityRelationship.findFirst({ where: relationship });

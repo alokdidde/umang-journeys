@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Armchair, ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, Car, CheckCircle2, CircleHelp, FileCheck2, HeartPulse, House, MapPin, Mic, ShieldCheck, Sparkles, Store, UserRound } from "lucide-react";
 import { useJourney } from "@/components/journey-provider";
-import { detectLifeEvent } from "@/domain/intake-intent";
+import { detectLifeEvent, isParentHealthRequest } from "@/domain/intake-intent";
 
 const choices = [
   { value: "yes" as const, label: "Yes", icon: CheckCircle2 },
@@ -12,12 +13,20 @@ const choices = [
   { value: "no" as const, label: "No", icon: CircleHelp },
 ];
 
+const parentChoices = [
+  { value: "both" as const, label: "Both parents" },
+  { value: "mother" as const, label: "My mother" },
+  { value: "father" as const, label: "My father" },
+];
+
 export default function IntakePage() {
   const { state, dispatch, createJourney } = useJourney();
   const router = useRouter();
+  const [parentSelection, setParentSelection] = useState<"both" | "mother" | "father" | null>(null);
   const detectedLifeEvent = detectLifeEvent(state.statement);
   const intent = detectedLifeEvent === "managing_health_cover" ? "health" : detectedLifeEvent === "buying_a_vehicle" ? "vehicle" : detectedLifeEvent === "moving_home" ? "move" : detectedLifeEvent === "starting_a_business" ? "business" : detectedLifeEvent === "retirement" ? "retirement" : "baby";
-  const clarificationAnswer = intent === "health" ? state.healthCoverageKnown : intent === "vehicle" ? state.vehicleOwnershipTransferred : intent === "move" ? state.moveAddressEvidenceKnown : intent === "business" ? state.businessPremisesProofKnown : intent === "retirement" ? state.retirementStatementKnown : state.hospitalRegistered;
+  const asksForParent = isParentHealthRequest(state.statement);
+  const clarificationAnswer = asksForParent ? parentSelection : intent === "health" ? state.healthCoverageKnown : intent === "vehicle" ? state.vehicleOwnershipTransferred : intent === "move" ? state.moveAddressEvidenceKnown : intent === "business" ? state.businessPremisesProofKnown : intent === "retirement" ? state.retirementStatementKnown : state.hospitalRegistered;
   const heading = {
     health: [HeartPulse, "Health & insurance"], vehicle: [Car, "Vehicle journey"], move: [House, "Moving home"], business: [Store, "Starting a business"], retirement: [Armchair, "Retirement"], baby: [Baby, "New baby journey"],
   } as const;
@@ -43,6 +52,24 @@ export default function IntakePage() {
       const businessJourney = resolved.lifeEvent?.value === "starting_a_business";
       const retirementJourney = resolved.lifeEvent?.value === "retirement";
       const templateId = healthJourney ? "health-insurance.india.v1" : vehicleJourney ? "vehicle-purchase.india.v1" : movingJourney ? "moving-home.india.v1" : businessJourney ? "business-setup.india.v1" : retirementJourney ? "retirement.india.v1" : "new-baby.india.v1";
+      if (healthJourney && asksForParent && parentSelection) {
+        const parents = parentSelection === "both" ? ["mother", "father"] as const : [parentSelection];
+        const journeyIds: string[] = [];
+        for (const parent of parents) {
+          const journeyId = await createJourney({
+            ...facts,
+            "intake.statement": state.statement,
+            "intake.resolver": resolved.resolver ?? "deterministic",
+            "person.name": parent === "mother" ? "Mother" : "Father",
+            "health.coverageFor": "dependent",
+            "health.dependentRelationship": parent,
+          }, templateId);
+          if (!journeyId) return;
+          journeyIds.push(journeyId);
+        }
+        router.push(journeyIds.length > 1 ? "/journeys" : `/journeys/${journeyIds[0]}`);
+        return;
+      }
       const journeyId = await createJourney({
         ...facts,
         "intake.statement": state.statement,
@@ -66,7 +93,7 @@ export default function IntakePage() {
             <label htmlFor="statement">Your statement</label>
             <div className="statement-input"><textarea id="statement" value={state.statement} onChange={(event) => dispatch({ type: "set_statement", value: event.target.value })} /><Mic aria-label="Voice input unavailable" /></div>
             <details className="understood-details"><summary>What UMANG understood</summary><div className="fact-chips">{intent === "health" ? <>
-              <span className="green"><HeartPulse />Health cover</span><span className="blue"><UserRound />Ananya Sharma</span><span className="purple"><MapPin />Telangana</span><span className="amber"><ShieldCheck />Cover status to confirm</span>
+              <span className="green"><HeartPulse />Health cover</span><span className="blue"><UserRound />{asksForParent ? parentSelection === "both" ? "Both parents" : parentSelection === "mother" ? "Mother" : parentSelection === "father" ? "Father" : "Parents mentioned" : "Ananya Sharma"}</span>{asksForParent ? <span className="purple"><ShieldCheck />Separate health records</span> : <span className="purple"><MapPin />Telangana</span>}<span className="amber"><ShieldCheck />Details to confirm</span>
             </> : intent === "vehicle" ? <>
               <span className="blue"><Car />Used vehicle</span><span className="green"><MapPin />Hyderabad</span><span className="purple"><MapPin />Telangana</span><span className="amber"><CalendarDays />25 August 2026</span>
             </> : intent === "move" ? <>
@@ -80,9 +107,11 @@ export default function IntakePage() {
             </>}</div></details>
           </div>
           <div className="panel question-panel">
-            <div className="question-title"><span>{intent === "health" ? <ShieldCheck /> : ["vehicle", "move", "business", "retirement"].includes(intent) ? <FileCheck2 /> : <CircleHelp />}</span><div><h2>{question[intent][0]}</h2><p>{question[intent][1]}</p></div></div>
+            <div className="question-title"><span>{intent === "health" ? <ShieldCheck /> : ["vehicle", "move", "business", "retirement"].includes(intent) ? <FileCheck2 /> : <CircleHelp />}</span><div><h2>{asksForParent ? "Who needs health cover?" : question[intent][0]}</h2><p>{asksForParent ? "Each person needs a separate health record and eligibility check. Choose both to create one journey for each parent." : question[intent][1]}</p></div></div>
             <div className="choice-row">
-              {choices.map(({ value, label, icon: Icon }) => <button type="button" className={clarificationAnswer === value ? "selected" : ""} onClick={() => dispatch({ type: intent === "health" ? "set_health_coverage_known" : intent === "vehicle" ? "set_vehicle_ownership_transferred" : intent === "move" ? "set_move_address_evidence_known" : intent === "business" ? "set_business_premises_proof_known" : intent === "retirement" ? "set_retirement_statement_known" : "set_hospital_registered", value })} key={value}><Icon />{label}</button>)}
+              {asksForParent
+                ? parentChoices.map(({ value, label }) => <button type="button" className={parentSelection === value ? "selected" : ""} onClick={() => setParentSelection(value)} key={value}><UserRound />{label}</button>)
+                : choices.map(({ value, label, icon: Icon }) => <button type="button" className={clarificationAnswer === value ? "selected" : ""} onClick={() => dispatch({ type: intent === "health" ? "set_health_coverage_known" : intent === "vehicle" ? "set_vehicle_ownership_transferred" : intent === "move" ? "set_move_address_evidence_known" : intent === "business" ? "set_business_premises_proof_known" : intent === "retirement" ? "set_retirement_statement_known" : "set_hospital_registered", value })} key={value}><Icon />{label}</button>)}
             </div>
           </div>
           {!clarificationAnswer && <p className="inline-prompt">Choose one answer to continue.</p>}

@@ -12,9 +12,9 @@ export const intakeSchema = z.object({
     source: z.enum(["user_statement", "derived_from_city", "relative_date_parse"]),
   })),
   clarification: z.object({
-    key: z.enum(["birth.registeredByHospital", "vehicle.ownershipTransferred", "health.currentCover", "move.hasAddressEvidence", "business.hasPremisesProof", "retirement.hasAccountStatement"]),
+    key: z.enum(["birth.registeredByHospital", "vehicle.ownershipTransferred", "health.currentCover", "health.subjects", "move.hasAddressEvidence", "business.hasPremisesProof", "retirement.hasAccountStatement"]),
     question: z.string(),
-    choices: z.array(z.enum(["yes", "not_sure", "no"])),
+    choices: z.array(z.enum(["yes", "not_sure", "no", "both", "mother", "father"])),
   }),
 });
 
@@ -99,18 +99,21 @@ export function deterministicResolve(statement: string): IntakeResult {
     };
   }
   if (lifeEvent === "managing_health_cover") {
+    const mentionsParent = /\b(parent|parents|mother|father|mom|mum|dad)\b/.test(normalized);
     return {
       resolver: "deterministic",
       lifeEvent: { value: "managing_health_cover", confidence: 0.96 },
       facts: [
         ...(city ? [{ key: "person.city", value: city, confidence: 0.9, source: "user_statement" as const }] : []),
         ...(state ? [{ key: "person.state", value: state, confidence: 0.9, source: "derived_from_city" as const }] : []),
-        ...(/\b(parent|parents|mother|father)\b/.test(normalized) ? [
+        ...(mentionsParent ? [
           { key: "health.coverageFor", value: "dependent", confidence: 0.96, source: "user_statement" as const },
           { key: "health.dependentRelationship", value: "parent", confidence: 0.96, source: "user_statement" as const },
         ] : []),
       ],
-      clarification: { key: "health.currentCover", question: "Do you have a health policy or government scheme card?", choices: ["yes", "not_sure", "no"] },
+      clarification: mentionsParent
+        ? { key: "health.subjects", question: "Who needs health cover?", choices: ["both", "mother", "father"] }
+        : { key: "health.currentCover", question: "Do you have a health policy or government scheme card?", choices: ["yes", "not_sure", "no"] },
     };
   }
   return {
@@ -139,7 +142,7 @@ export async function resolveIntake(statement: string): Promise<IntakeResult> {
     const response = await client.responses.parse({
       model: config.model,
       input: [
-        { role: "developer", content: "Extract only facts explicitly stated or safely normalized. This prototype supports Having a Baby, Buying a Vehicle, Managing Health Cover, Moving Home, Starting a Business, and Retirement. Ask the matching evidence question for the selected event. Never infer official status, eligibility, approval, diagnosis, tax liability, legal compliance, pension entitlement, or identity data. Resolve relative dates against 2026-08-25." },
+        { role: "developer", content: "Extract only facts explicitly stated or safely normalized. This prototype supports Having a Baby, Buying a Vehicle, Managing Health Cover, Moving Home, Starting a Business, and Retirement. Ask the matching evidence question for the selected event. When a health request mentions parents, ask health.subjects with both, mother, and father choices before asking about existing cover; never treat a dependant as the account holder. Never infer official status, eligibility, approval, diagnosis, tax liability, legal compliance, pension entitlement, or identity data. Resolve relative dates against 2026-08-25." },
         { role: "user", content: statement },
       ],
       text: { format: zodTextFormat(intakeSchema, "umang_intake") },

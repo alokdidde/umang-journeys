@@ -25,3 +25,9 @@ export function detectLifeEvent(statement: string): SupportedLifeEvent | null {
   if (isBaby) return "having_a_baby";
   return null;
 }
+
+export function isParentHealthRequest(statement: string): boolean {
+  const normalized = statement.toLocaleLowerCase("en-IN");
+  return detectLifeEvent(statement) === "managing_health_cover"
+    && /\b(parent|parents|mother|father|mom|mum|dad)\b/.test(normalized);
+}

@@ -34,7 +34,11 @@ describe("deterministic intake fallback", () => {
     const result = deterministicResolve("need to get insurance for parents");
 
     expect(result.lifeEvent.value).toBe("managing_health_cover");
-    expect(result.clarification.key).toBe("health.currentCover");
+    expect(result.clarification).toMatchObject({
+      key: "health.subjects",
+      question: "Who needs health cover?",
+      choices: ["both", "mother", "father"],
+    });
     expect(result.facts).toEqual(expect.arrayContaining([
       expect.objectContaining({ key: "health.coverageFor", value: "dependent" }),
       expect.objectContaining({ key: "health.dependentRelationship", value: "parent" }),

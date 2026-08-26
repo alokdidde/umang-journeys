@@ -114,8 +114,8 @@ function HealthInsuranceJourney({ id }: { id: string }) {
   return <main className="page journey-page health-insurance-journey-page">
     <ScenicBackdrop />
     <Link href="/journeys" className="floating-back content-layer"><ArrowLeft />All journeys</Link>
-    <section className="journey-heading content-layer"><p className="eyebrow"><HeartPulse />Health &amp; insurance</p><h1>{state.facts["person.name"] ?? "Ananya Sharma"}</h1><p>Understand your cover now, before you need care.</p></section>
-    <div className="primary-cta-wrap content-layer">{nextAction ? <Link href={nextAction.href} className="primary-cta"><ShieldCheck />{nextAction.nodeKey === "health_profile" ? "Confirm your health profile" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : <p className="journey-complete-cta"><CheckCircle2 />Your coverage pack is ready</p>}<TrustNote>Every match, identifier, and provider response in this journey is synthetic.</TrustNote></div>
+    <section className="journey-heading content-layer"><p className="eyebrow"><HeartPulse />Health &amp; insurance</p><h1>{state.facts["person.name"] ?? "Ananya Sharma"}</h1><p>Understand this person’s cover now, before care is needed.</p></section>
+    <div className="primary-cta-wrap content-layer">{nextAction ? <Link href={nextAction.href} className="primary-cta"><ShieldCheck />{nextAction.nodeKey === "health_profile" ? "Confirm health profile" : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : <p className="journey-complete-cta"><CheckCircle2 />Coverage pack is ready</p>}<TrustNote>Every match, identifier, and provider response in this journey is synthetic.</TrustNote></div>
     <details className="journey-about content-layer">
       <summary>About this health plan</summary>
       <section className="context-strip">
@@ -125,7 +125,7 @@ function HealthInsuranceJourney({ id }: { id: string }) {
         <article><span className="mini-icon amber"><MapPin /></span><div><small>State</small><strong>{state.facts["person.state"] ?? "Telangana"}</strong><em>India</em></div></article>
       </section>
     </details>
-    <JourneySteps id={id} title="Your health & insurance steps" />
+    <JourneySteps id={id} title="Health & insurance steps" />
   </main>;
 }
 

@@ -70,10 +70,10 @@ export const healthInsuranceTemplate: JourneyTemplate = {
   lifeEvent: "managing_health_cover",
   title: "Health & Insurance",
   nodes: [
-    { key: "health_profile", title: "Your health profile", description: "Confirm who this cover and care plan is for.", icon: "person", timing: "Start with the basics" },
-    { key: "coverage_review", title: "Understand your cover", description: "Read the policy, limits, waiting periods and cashless terms.", icon: "coverage", timing: "Review before you need care", dependsOn: ["health_profile"] },
+    { key: "health_profile", title: "Health profile", description: "Confirm who this cover and care plan is for.", icon: "person", timing: "Start with the basics" },
+    { key: "coverage_review", title: "Understand health cover", description: "Read the policy, limits, waiting periods and cashless terms.", icon: "coverage", timing: "Review before care is needed", dependsOn: ["health_profile"] },
     { key: "public_scheme_check", title: "Check public schemes", description: "Screen for a possible government health-cover pathway.", icon: "scheme", timing: "Official verification is still required", dependsOn: ["coverage_review"] },
-    { key: "abha_records", title: "ABHA & health records", description: "Prepare a digital health identity and consent-aware record plan.", icon: "records", timing: "Link records only with your consent", dependsOn: ["public_scheme_check"] },
+    { key: "abha_records", title: "ABHA & health records", description: "Prepare a digital health identity and consent-aware record plan.", icon: "records", timing: "Link records only with the person’s consent", dependsOn: ["public_scheme_check"] },
     { key: "cashless_readiness", title: "Prepare for cashless care", description: "Keep the right documents and authorization steps ready.", icon: "care", timing: "Keep this pack easy to reach", dependsOn: ["abha_records"] },
   ],
 };

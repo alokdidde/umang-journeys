@@ -17,8 +17,12 @@ One person’s ongoing or completed pursuit of a Life Event, created from a Jour
 _Avoid_: Form, application, template
 
 **Journey Subject**:
-The person or thing the Journey is about. A newborn is the Journey Subject of a Having a Baby Journey and remains distinct from the account holder.
+The one person or thing the Journey is about. A newborn or dependent parent remains distinct from the account holder. A request concerning two people creates one Journey for each person so their identity, evidence, eligibility, and progress cannot be mixed.
 _Avoid_: User, account, applicant
+
+**Multi-person Request**:
+A single request concerning more than one Journey Subject, such as arranging health cover for both parents. It is split into separate Journeys while retaining the same account holder as the person helping them.
+_Avoid_: Shared patient, family health journey
 
 **Vehicle Journey**:
 A Journey whose subject is one identified vehicle and whose steps coordinate ownership, coverage, tolling, and compliance outcomes after purchase.

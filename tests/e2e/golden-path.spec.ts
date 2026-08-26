@@ -192,7 +192,7 @@ test("Show my steps accepts either a description or a document with context", as
   await page.getByRole("button", { name: "Show my steps" }).click();
   await expect(page).toHaveURL(/\/intake$/);
   await expect(page.getByText("Health & insurance", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Do you have a health policy or government scheme card?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Who needs health cover?" })).toBeVisible();
 
   await page.goBack();
   await expect(page.getByRole("heading", { name: "What do you need help with?" })).toBeVisible();
@@ -250,6 +250,43 @@ test("Show my steps accepts either a description or a document with context", as
   expect(analysisPayload).toContain("This is the registration certificate for the car I just bought.");
   await page.getByRole("button", { name: "Approve and show my steps" }).click();
   await expect(page).toHaveURL(new RegExp(`/journeys/${id}$`));
+  await page.request.post("/api/demo/reset");
+});
+
+test("a request for both parents creates one health journey for each parent", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  await page.goto("/");
+
+  await page.getByLabel("Tell us what happened").fill("I need to get insurance for my parents");
+  await page.getByRole("button", { name: "Show my steps" }).click();
+
+  await expect(page.getByRole("heading", { name: "Who needs health cover?" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Both parents" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "My mother" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "My father" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Both parents" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page).toHaveURL(/\/journeys$/);
+
+  const response = await page.request.get("/api/journeys");
+  expect(response.ok()).toBeTruthy();
+  const { journeys } = await response.json() as { journeys: Array<{ id: string; subject: { displayName: string }; templateId: string }> };
+  const parentJourneys = journeys.filter((journey) => journey.templateId === "health-insurance.india.v1");
+  expect(parentJourneys.map((journey) => journey.subject.displayName).sort()).toEqual(["Father", "Mother"]);
+
+  for (const journey of parentJourneys) {
+    const detailResponse = await page.request.get(`/api/journeys/${journey.id}`);
+    const detail = await detailResponse.json() as { subject: { displayName: string }; facts: Record<string, string> };
+    expect(detail.facts["health.coverageFor"]).toBe("dependent");
+    expect(detail.facts["health.dependentRelationship"]).toBe(detail.subject.displayName.toLowerCase());
+
+    await page.goto(`/journeys/${journey.id}/health-profile`);
+    await expect(page.getByLabel("Full name")).toHaveValue(detail.subject.displayName);
+    await expect(page.getByRole("heading", { name: "About the person" })).toBeVisible();
+  }
+
   await page.request.post("/api/demo/reset");
 });
 
@@ -460,7 +497,7 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   await expect(page.getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
   const healthId = page.url().split("/").at(-1)!;
 
-  await page.getByRole("link", { name: "Confirm your health profile" }).click();
+  await page.getByRole("link", { name: "Confirm health profile" }).click();
   await expect(page.getByRole("heading", { name: "Who is this health plan for?" })).toBeVisible();
   const profileA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(profileA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
@@ -493,7 +530,7 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
 
   await page.goto(`/journeys/${healthId}`);
   await expect(page.getByText("Done", { exact: true })).toHaveCount(5);
-  await expect(page.getByText("Your coverage pack is ready")).toBeVisible();
+  await expect(page.getByText("Coverage pack is ready")).toBeVisible();
   await page.goto("/journeys");
   await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
   await page.goto("/documents");
