@@ -20,6 +20,8 @@ describe("synthetic external agency", () => {
       title: "Register ownership",
       description: "Review a vehicle transfer case.",
       agency: "VAHAN evaluation agency",
+      requiredEvidence: [],
+      servicePlan: [],
       facts: {},
       evidence: [],
     })).rejects.toMatchObject({
@@ -56,6 +58,8 @@ describe("synthetic external agency", () => {
       title: "Register ownership",
       description: "Review a vehicle transfer case.",
       agency: "VAHAN evaluation agency",
+      requiredEvidence: [{ type: "vehicle_rc", title: "Registration certificate (RC)", description: "The registration number must be readable." }],
+      servicePlan: [{ stageKey: "review_rc", title: "Review registration", detail: "Check the supplied registration certificate.", expectedProgress: 50 }],
       facts: { "vehicle.registrationNumber": "TS09EV4321", "vehicle.hypothecation": "yes" },
       evidence: [{ type: "vehicle_rc", verificationStatus: "verified", extractedFields: { registrationNumber: "TS09EV4321" } }],
     }, { model });
@@ -90,6 +94,8 @@ describe("synthetic external agency", () => {
       title: "Birth certificate",
       description: "Review certificate issuance.",
       agency: "Civil Registration evaluation agency",
+      requiredEvidence: [],
+      servicePlan: [],
       facts: {},
       evidence: [],
     }, { model })).rejects.toMatchObject({ code: "AI_AGENCY_RESPONSE_INVALID" });
@@ -104,6 +110,8 @@ describe("synthetic external agency", () => {
       title: "Birth certificate",
       description: "Review certificate issuance.",
       agency: "Civil Registration evaluation agency",
+      requiredEvidence: [],
+      servicePlan: [],
       facts: {},
       evidence: [],
     }, { model })).rejects.toMatchObject({

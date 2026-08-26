@@ -484,8 +484,8 @@ export class PrismaJourneyRepository implements JourneyRepository {
         update: { status: caseStatus, scenario: run.scenario ?? "success", reasonCode: run.reasonCode, nextTransitionAt: run.nextTransitionAt ? new Date(run.nextTransitionAt) : null, payloadJson: run },
         create: { journeyId: id, nodeKey, provider: run.provider, status: caseStatus, scenario: run.scenario ?? "success", reasonCode: run.reasonCode, nextTransitionAt: run.nextTransitionAt ? new Date(run.nextTransitionAt) : null, payloadJson: run },
       });
-      if (!journey.serviceRuns[nodeKey] && journey.facts[`simulation.consent.${nodeKey}`]) {
-        await tx.consentGrant.create({ data: { profileId: owner.profileId, purpose: `sandbox_service:${nodeKey}`, scopeJson: { journeyId: id, nodeKey, provider: run.provider }, expiresAt: new Date(journey.facts[`simulation.consent.${nodeKey}`]) } });
+      if (!journey.serviceRuns[nodeKey] && journey.facts[`agency.consent.${nodeKey}`]) {
+        await tx.consentGrant.create({ data: { profileId: owner.profileId, purpose: `sandbox_service:${nodeKey}`, scopeJson: { journeyId: id, nodeKey, provider: run.provider }, expiresAt: new Date(journey.facts[`agency.consent.${nodeKey}`]) } });
       }
       if (nextProjection) {
         for (const projectedNode of nextProjection.nodes) {

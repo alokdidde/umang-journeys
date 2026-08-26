@@ -110,8 +110,7 @@ export default function SandboxServicePage() {
 
   async function startService() {
     if (!validKey) return false;
-    const saved = await updateJourneyFacts(id, { [`agency.consent.${validKey}`]: new Date(Date.now() + 30 * 60 * 1000).toISOString() });
-    return saved ? advanceService(id, validKey) : false;
+    return advanceService(id, validKey, { consent: true });
   }
 
   return (

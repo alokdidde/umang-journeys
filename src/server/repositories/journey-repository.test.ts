@@ -1,8 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { MemoryJourneyRepository } from "./journey-repository";
+import { buildAgencyCaseInput, MemoryJourneyRepository } from "./journey-repository";
 import { approvedTestAgencyAgent } from "@/test/agency-agent";
 
 describe("journey repository", () => {
+  it("gives the agency the exact evidence contract and review plan for a service", async () => {
+    const repository = new MemoryJourneyRepository();
+    const journey = await repository.create("session-contract", {}, "vehicle-purchase.india.v1");
+
+    const input = buildAgencyCaseInput(journey, "ownership_transfer") as unknown as {
+      requiredEvidence: Array<{ type: string; title: string }>;
+      servicePlan: Array<{ stageKey: string }>;
+    };
+
+    expect(input.requiredEvidence).toEqual([
+      expect.objectContaining({ type: "vehicle_rc", title: "Registration certificate (RC)" }),
+      expect.objectContaining({ type: "sale_agreement", title: "Sale agreement or delivery note" }),
+    ]);
+    expect(input.servicePlan.map((stage) => stage.stageKey)).toEqual([
+      "validate_rc",
+      "prepare_forms",
+      "check_dues",
+      "acknowledge_transfer",
+    ]);
+  });
+
   it("keeps separate baby journeys and lists the most recently changed first", async () => {
     const repository = new MemoryJourneyRepository();
     const first = await repository.create("session-family", { "child.name": "Aarav Sharma" });

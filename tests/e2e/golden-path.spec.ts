@@ -422,7 +422,7 @@ test("journey CTA advances past a completed birth certificate", async ({ page })
   });
   for (let stage = 1; stage <= 4; stage += 1) {
     await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, {
-      data: { idempotencyKey: `cta-certificate-${stage}` },
+      data: { idempotencyKey: `cta-certificate-${stage}`, consent: true },
     });
   }
 
@@ -936,9 +936,9 @@ test("the synthetic agency pauses for clarification and resumes after the citize
   await page.request.post("/api/demo/reset");
   const id = await seedJourney(page);
   await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "provider-registration" } });
-  await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: "agency-certificate-review" } });
+  await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: "agency-certificate-review", consent: true } });
   await page.request.patch(`/api/journeys/${id}/facts`, { data: { facts: { "test.agencyOutcome.child_health_record": "action_required" } } });
-  const started = await page.request.post(`/api/journeys/${id}/nodes/child_health_record/submit`, { data: { idempotencyKey: "provider-clarification-start" } });
+  const started = await page.request.post(`/api/journeys/${id}/nodes/child_health_record/submit`, { data: { idempotencyKey: "provider-clarification-start", consent: true } });
   expect(started.ok()).toBeTruthy();
 
   await expect.poll(async () => {
@@ -1011,7 +1011,7 @@ test("login, home, and a completed service reflow at mobile width", async ({ pag
   await page.request.post("/api/demo/reset");
   const id = await seedJourney(page);
   await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "mobile-registration" } });
-  await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: "mobile-certificate-review" } });
+  await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: "mobile-certificate-review", consent: true } });
   await page.goto(`/journeys/${id}/services/child_health_record`);
   await page.getByLabel("I authorise an AI review of this synthetic case").check();
   await page.getByRole("button", { name: "Create health record" }).click();

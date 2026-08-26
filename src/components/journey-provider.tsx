@@ -11,7 +11,7 @@ type JourneyContextValue = {
   createJourney: (facts: Record<string, string>, templateId?: string) => Promise<string | null>;
   loadJourney: (id: string) => Promise<boolean>;
   submitRegistration: (id: string) => Promise<boolean>;
-  advanceService: (id: string, nodeKey: string, input?: { intent?: "submit" | "clarify" | "appeal" | "check_status"; message?: string }) => Promise<boolean>;
+  advanceService: (id: string, nodeKey: string, input?: { intent?: "submit" | "clarify" | "appeal" | "check_status"; message?: string; consent?: true }) => Promise<boolean>;
   completeVehicleDetails: (id: string, facts: Record<string, string>) => Promise<boolean>;
   completeHealthProfile: (id: string, facts: Record<string, string>) => Promise<boolean>;
   completeProfileStep: (id: string, nodeKey: "move_profile" | "business_profile" | "retirement_profile", facts: Record<string, string>) => Promise<boolean>;
@@ -205,7 +205,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
-  const advanceService = useCallback(async (id: string, nodeKey: string, input: { intent?: "submit" | "clarify" | "appeal" | "check_status"; message?: string } = {}) => {
+  const advanceService = useCallback(async (id: string, nodeKey: string, input: { intent?: "submit" | "clarify" | "appeal" | "check_status"; message?: string; consent?: true } = {}) => {
     dispatch({ type: "operation_started" });
     try {
       const journey = await requestJson<ServerJourney>(`/api/journeys/${encodeURIComponent(id)}/nodes/${encodeURIComponent(nodeKey)}/submit`, {

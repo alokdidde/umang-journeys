@@ -4,7 +4,7 @@ import { agencyDecisionToServiceRun, evaluateSyntheticAgency, type AgencyCaseInp
 import { e2eAgencyAgent } from "@/server/integrations/e2e-agency-agent";
 import { serviceDefinitionFor, type SandboxServiceRun } from "@/domain/service-workflows";
 import type { JourneyLifecycleStatus, JourneySubject } from "@/domain/journey-summary";
-import type { EvidenceRecord, JourneyEvidence } from "@/domain/evidence";
+import { evidenceLabels, serviceEvidenceRequirements, type EvidenceRecord, type JourneyEvidence } from "@/domain/evidence";
 
 export type StoredJourney = {
   id: string;
@@ -70,6 +70,13 @@ export function buildAgencyCaseInput(journey: StoredJourney, nodeKey: string): A
     description: node.description,
     agency: definition.agency,
     officialSource: node.source,
+    requiredEvidence: (serviceEvidenceRequirements[nodeKey] ?? []).map((type) => ({ type, ...evidenceLabels[type] })),
+    servicePlan: definition.stages.map((stage) => ({
+      stageKey: stage.key,
+      title: stage.title,
+      detail: stage.detail,
+      expectedProgress: stage.progress,
+    })),
     facts: Object.fromEntries(Object.entries(journey.facts).filter(([key]) => !key.startsWith("service."))),
     evidence: journey.evidence.map((item) => ({ type: item.type, verificationStatus: item.verificationStatus, extractedFields: item.extractedFields })),
     previousDecision: current ? { outcome: current.caseStatus, summary: current.actionMessage, reasonCode: current.reasonCode, actionMessage: current.actionMessage } : undefined,

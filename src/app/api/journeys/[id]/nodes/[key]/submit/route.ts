@@ -9,6 +9,7 @@ const serviceSchema = z.object({
   idempotencyKey: z.string().min(8),
   intent: z.enum(["submit", "clarify", "appeal", "check_status"]).default("submit"),
   message: z.string().trim().min(4).max(1200).optional(),
+  consent: z.literal(true).optional(),
 }).superRefine((value, context) => {
   if ((value.intent === "clarify" || value.intent === "appeal") && !value.message) context.addIssue({ code: "custom", path: ["message"], message: "Explain what changed or provide the requested information." });
 });
@@ -127,7 +128,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
   const parsed = serviceSchema.safeParse(payload);
   if (!parsed.success) return NextResponse.json({ code: "INVALID_REQUEST", message: "A valid idempotency key is required." }, { status: 400 });
-  const current = await journeyRepository.get(sessionId, id);
+  let current = await journeyRepository.get(sessionId, id);
   if (!current) return NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
   const serviceNode = current.projection.nodes.find((node) => node.key === key);
   if (!serviceNode || serviceNode.action === "none") return NextResponse.json({ code: "NODE_NOT_FOUND", message: "This service does not exist." }, { status: 404 });
@@ -136,6 +137,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
   const missing = missingEvidence(key, current.evidence);
   if (missing.length > 0) return NextResponse.json({ code: "MISSING_EVIDENCE", message: "Add and verify the required evidence before starting this service.", missing }, { status: 409 });
+  if (parsed.data.consent) {
+    const consentExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    current = await journeyRepository.updateFacts(sessionId, id, { [`agency.consent.${key}`]: consentExpiresAt }) ?? current;
+  }
+  const consentExpiresAt = Date.parse(current.facts[`agency.consent.${key}`] ?? "");
+  if (!Number.isFinite(consentExpiresAt) || consentExpiresAt <= Date.now()) {
+    return NextResponse.json({ code: "AI_CONSENT_REQUIRED", message: "Authorise this synthetic AI review before sending the case." }, { status: 403 });
+  }
   if (key === "fastag_setup" && (!current.facts["fastag.mobileLast4"] || !current.facts["fastag.issuer"])) {
     return NextResponse.json({ code: "MISSING_REQUIREMENTS", message: "Choose an issuer and verify a mobile number before activating FASTag." }, { status: 409 });
   }
