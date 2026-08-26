@@ -76,6 +76,7 @@ function actionTimingLabel(nodeKey: string, fallback: string, facts: Record<stri
 }
 
 export function selectJourneyNextAction(journey: JourneyActionSource): JourneyNextAction | null {
+  if (isJourneyComplete(journey.projection)) return null;
   const candidates = journey.projection.nodes.filter(
     (node): node is typeof node & { status: JourneyNextAction["status"] } =>
       node.actionable && !["locked", "completed", "skipped"].includes(node.status),

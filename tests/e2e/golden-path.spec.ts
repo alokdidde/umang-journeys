@@ -182,19 +182,20 @@ test("newborn journey persists, completes every synthetic agency review, downloa
   await page.goto(`/journeys/${id}`);
   await expectJourneyNodesComplete(page, id, 6);
   await expect(page.getByText("All services in this journey are complete")).toBeVisible();
+  await expect(page.getByText("Every required step is complete. Records and optional routes remain available below.")).toBeVisible();
   await page.reload();
   await expectJourneyNodesComplete(page, id, 6);
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Continue where you left off" })).toBeVisible();
-  const nextForYou = page.getByRole("region", { name: "Next for you" });
-  await expect(nextForYou.getByRole("heading", { name: "Hospital birth report" })).toBeVisible();
-  await expect(nextForYou.getByRole("progressbar", { name: "Aarav Sharma journey progress" })).toHaveAttribute("aria-valuenow", "100");
+  await expect(page.getByRole("heading", { name: "Your journeys are up to date" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nothing needs your attention." })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Next for you" })).toHaveCount(0);
   await page.getByRole("link", { name: /My journeys/i }).click();
   await expect(page).toHaveURL(/\/journeys$/);
   await expect(page.getByRole("heading", { name: "Completed journeys" })).toBeVisible();
   await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
-  await expect(page.getByText("Hospital birth report", { exact: true })).toBeVisible();
+  await expect(page.locator("#completed-journeys").getByText("This journey is complete", { exact: true })).toBeVisible();
+  await expect(page.getByText("Hospital birth report", { exact: true })).toHaveCount(0);
 
   await page.request.post("/api/demo/reset");
   expect((await page.request.get(`/api/journeys/${id}`)).status()).toBe(404);
@@ -640,8 +641,10 @@ test("a vehicle journey completes with real sample evidence while a baby journey
 
   await page.goto("/activity");
   await expect(page.getByText("Match policy and RC owner", { exact: true })).toBeVisible();
+  await page.goto(`/journeys/${vehicleId}`);
+  await expect(page.getByText("Every required vehicle step is complete. Records and optional routes remain available below.")).toBeVisible();
   await page.goto("/");
-  await expect(page.getByText("Match policy and RC owner", { exact: true })).toBeVisible();
+  await expect(page.getByText("Match policy and RC owner", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
   await page.goto("/journeys");
@@ -754,6 +757,7 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   await page.goto(`/journeys/${healthId}`);
   await expectJourneyNodesComplete(page, healthId, 5);
   await expect(page.getByText("Coverage pack is ready")).toBeVisible();
+  await expect(page.getByText("Every required coverage step is complete. Records and optional routes remain available below.")).toBeVisible();
   await page.goto("/journeys");
   await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
   await page.goto("/documents");
@@ -778,6 +782,7 @@ const extendedJourneyScenarios = [
         ["move_completion_pack", "Build move checklist", "Move completion pack"],
       ],
       completed: "Your move pack is ready",
+      completedIntro: "Every required moving-home step is complete. Records and optional routes remain available below.",
       activity: "Moving Home journey started",
       optionalBranch: "identity_updates",
     },
@@ -796,6 +801,7 @@ const extendedJourneyScenarios = [
         ["business_launch_pack", "Build business launch pack", "Business launch pack"],
       ],
       completed: "Your business launch pack is ready",
+      completedIntro: "Every required business-setup step is complete. Records and optional routes remain available below.",
       activity: "Starting a Business journey started",
       optionalBranch: "formal_registrations",
     },
@@ -814,6 +820,7 @@ const extendedJourneyScenarios = [
         ["retirement_pack", "Build retirement pack", "Retirement transition pack"],
       ],
       completed: "Your retirement pack is ready",
+      completedIntro: "Every required retirement step is complete. Records and optional routes remain available below.",
       activity: "Retirement journey started",
       optionalBranch: "ongoing_pension",
     },
@@ -857,6 +864,7 @@ for (const scenario of extendedJourneyScenarios) {
     await page.goto(`/journeys/${id}`);
     await expectJourneyNodesComplete(page, id, 5);
     await expect(page.getByText(scenario.completed)).toBeVisible();
+    await expect(page.getByText(scenario.completedIntro)).toBeVisible();
     await page.goto("/journeys");
     await expect(page.locator("#completed-journeys").getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
     await page.goto("/documents");

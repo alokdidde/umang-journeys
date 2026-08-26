@@ -60,9 +60,8 @@ export default function HomePage() {
 
 function ReturningHome({ journeys, start, loadError }: { journeys: JourneySummary[]; start: (statement?: string, journey?: IntakeJourneyKey) => void; loadError: string | null }) {
   const attentionJourney = journeys.find((journey) => journey.status !== "completed" && journey.nextAction)
-    ?? journeys.find((journey) => journey.nextAction)
     ?? journeys.find((journey) => journey.status !== "completed");
-  const additionalAttention = journeys.filter((journey) => journey.id !== attentionJourney?.id && journey.nextAction).slice(0, 2);
+  const additionalAttention = journeys.filter((journey) => journey.status !== "completed" && journey.id !== attentionJourney?.id && journey.nextAction).slice(0, 2);
   const completedCount = journeys.filter((journey) => journey.status === "completed").length;
   return (
     <main className="page returning-home">

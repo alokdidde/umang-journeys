@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { businessSetupTemplate, compileJourney, completeNode, healthInsuranceTemplate, movingHomeTemplate, newBabyTemplate, retirementTemplate, vehiclePurchaseTemplate } from "./journey-engine";
+import { businessSetupTemplate, compileJourney, completeNode, healthInsuranceTemplate, journeyProgressNodes, movingHomeTemplate, newBabyTemplate, retirementTemplate, vehiclePurchaseTemplate } from "./journey-engine";
 import { buildJourneySummary } from "./journey-summary";
 
 describe("journey summary", () => {
@@ -62,16 +62,21 @@ describe("journey summary", () => {
     expect(summary.nextAction?.href).toBe("/journeys/journey-vehicle/vehicle-details");
   });
 
-  it("keeps a completed journey's remaining supporting task visible as its next action", () => {
-    let projection = compileJourney(vehiclePurchaseTemplate);
-    for (const nodeKey of ["vehicle_details", "ownership_transfer", "insurance_cover", "compliance_calendar"]) {
-      projection = completeNode(projection, nodeKey);
-    }
+  it.each([
+    ["Having a Baby", newBabyTemplate, "child" as const, "Aarav Sharma"],
+    ["Buying a Vehicle", vehiclePurchaseTemplate, "vehicle" as const, "Tata Nexon"],
+    ["Health & Insurance", healthInsuranceTemplate, "person" as const, "Ananya Sharma"],
+    ["Moving Home", movingHomeTemplate, "residence" as const, "New home in Hyderabad"],
+    ["Starting a Business", businessSetupTemplate, "business" as const, "Ananya Studio"],
+    ["Retirement", retirementTemplate, "person" as const, "Ananya Sharma"],
+  ])("does not present supporting work as a required next action after completing %s", (_title, template, type, displayName) => {
+    let projection = compileJourney(template);
+    for (const node of journeyProgressNodes(projection)) projection = completeNode(projection, node.key);
 
     const summary = buildJourneySummary({
-      id: "journey-vehicle",
+      id: `journey-${template.id}`,
       status: "active",
-      subject: { id: "vehicle-1", type: "vehicle", displayName: "Tata Nexon" },
+      subject: { id: `subject-${template.id}`, type, displayName },
       projection,
       facts: {},
       serviceRuns: {},
@@ -80,10 +85,8 @@ describe("journey summary", () => {
     });
 
     expect(summary.status).toBe("completed");
-    expect(summary.nextAction).toMatchObject({
-      nodeKey: "policy_owner_match",
-      title: "Match policy and RC owner",
-    });
+    expect(summary.progress.percent).toBe(100);
+    expect(summary.nextAction).toBeNull();
   });
 
   it("summarises a personal health journey with its profile route", () => {
