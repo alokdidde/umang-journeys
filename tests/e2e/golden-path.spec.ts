@@ -49,11 +49,11 @@ async function activateBranch(page: Page, journeyId: string, branchKey: string) 
 
 async function expectJourneyNodesComplete(page: Page, journeyId: string, expectedCount: number) {
   const saved = await (await page.request.get(`/api/journeys/${journeyId}`)).json() as {
-    projection: { nodes: Array<{ status: string }> };
+    projection: { nodes: Array<{ status: string; contributesToCompletion: boolean }> };
     status: string;
   };
-  expect(saved.projection.nodes).toHaveLength(expectedCount);
-  expect(saved.projection.nodes.every((node) => node.status === "completed")).toBe(true);
+  const completedWork = saved.projection.nodes.filter((node) => node.contributesToCompletion && node.status === "completed");
+  expect(completedWork).toHaveLength(expectedCount);
   expect(saved.status).toBe("completed");
 }
 
@@ -377,7 +377,7 @@ test("journey CTA advances past a completed birth certificate", async ({ page })
   }
 
   await page.goto(`/journeys/${id}`);
-  await expect(page.getByRole("link", { name: "Continue with child health record" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Continue with mother and child record" })).toHaveAttribute(
     "href",
     `/journeys/${id}/services/child_health_record`,
   );
@@ -391,11 +391,13 @@ test("every journey exposes its dependency map and persists an optional branch c
 
   await page.goto(`/journeys/${id}`);
   await page.getByRole("button", { name: "View journey map" }).click();
-  const map = page.getByRole("dialog", { name: "Your full journey" });
+  const map = page.getByRole("dialog", { name: "Your complete journey map" });
   await expect(map).toBeVisible();
   expect(await map.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(900);
-  await expect(map.getByText("Birth records branch", { exact: true }).first()).toBeVisible();
+  await expect(map.getByRole("heading", { name: "Birth records", exact: true })).toBeVisible();
   await expect(map.getByRole("heading", { name: "Child identity" }).first()).toBeVisible();
+  await expect(map.locator(".journey-map-canvas .journey-map-node-icon svg")).toHaveCount(17);
+  await expect(map).toHaveScreenshot("journey-map-desktop.png", { animations: "disabled" });
   await map.getByRole("button", { name: "Add Child identity" }).click();
   await expect(map.getByText("Added", { exact: true }).first()).toBeVisible();
 
@@ -418,13 +420,21 @@ test("every journey exposes its dependency map and persists an optional branch c
     expect(created.ok()).toBeTruthy();
     const journey = await created.json() as { id: string };
     await page.goto(`/journeys/${journey.id}?view=map`);
-    await expect(page.getByRole("dialog", { name: "Your full journey" })).toBeVisible();
-    await expect(page.locator(".journey-map-canvas").getByText(`${optionalBranch} branch`, { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Your complete journey map" })).toBeVisible();
+    await expect(page.locator(".journey-map-canvas").getByRole("heading", { name: optionalBranch, exact: true })).toBeVisible();
   }
+
+  const conditional = await page.request.post("/api/journeys", { data: { templateId: "vehicle-purchase.india.v1", facts: { "vehicle.acquisitionRoute": "sale", "vehicle.transferScope": "interstate" } } });
+  const conditionalJourney = await conditional.json() as { id: string };
+  await page.goto(`/journeys/${conditionalJourney.id}?view=map`);
+  await expect(page.locator('.journey-map-lane[aria-label="Used-vehicle transfer branch"]')).toHaveClass(/applicability-applicable/);
+  await expect(page.locator('.journey-map-lane[aria-label="New-vehicle registration branch"]')).toHaveClass(/applicability-not_applicable/);
+  await expect(page.locator('.journey-map-lane[aria-label="Interstate requirements branch"]')).toHaveClass(/applicability-applicable/);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/journeys/${id}?view=map`);
   await expect(page.locator(".journey-map-mobile-list")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Your complete journey map" })).toHaveScreenshot("journey-map-mobile.png", { animations: "disabled" });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.request.post("/api/demo/reset");
 });

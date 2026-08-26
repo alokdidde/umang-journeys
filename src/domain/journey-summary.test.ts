@@ -27,6 +27,25 @@ describe("journey summary", () => {
     });
   });
 
+  it("does not replace the next required action with a supporting information node", () => {
+    const afterRegistration = completeNode(compileJourney(newBabyTemplate), "birth_registration");
+    const summary = buildJourneySummary({
+      id: "journey-aarav",
+      status: "active",
+      subject: { id: "child-aarav", type: "child", displayName: "Aarav Sharma" },
+      projection: {
+        ...afterRegistration,
+        nodes: afterRegistration.nodes.map((node) => node.key === "birth_entry_review" ? { ...node, status: "in_progress" as const } : node),
+      },
+      facts: {},
+      serviceRuns: {},
+      createdAt: "2026-08-25T10:00:00.000Z",
+      updatedAt: "2026-08-25T10:05:00.000Z",
+    });
+
+    expect(summary.nextAction?.nodeKey).toBe("birth_certificate");
+  });
+
   it("summarises a vehicle journey with the vehicle title and details route", () => {
     const summary = buildJourneySummary({
       id: "journey-vehicle",

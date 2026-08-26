@@ -1,4 +1,4 @@
-import { activateBranch as activateJourneyBranch, completeNode, compileJourney, getJourneyTemplate, isJourneyComplete, newBabyTemplate, type JourneyProjection } from "@/domain/journey-engine";
+import { activateBranch as activateJourneyBranch, completeNode, compileJourney, getJourneyTemplate, isJourneyComplete, newBabyTemplate, reevaluateJourney, type JourneyProjection } from "@/domain/journey-engine";
 import { PrismaJourneyRepository } from "@/server/repositories/prisma-journey-repository";
 import { advanceSimulatedService, isSandboxServiceKey } from "@/server/integrations/sandbox-services";
 import type { SandboxServiceKey, SandboxServiceRun } from "@/domain/service-workflows";
@@ -37,6 +37,10 @@ export interface JourneyRepository {
 }
 
 function now() { return new Date().toISOString(); }
+
+function rehydrateProjection(journey: Pick<StoredJourney, "projection" | "facts">, facts = journey.facts) {
+  return reevaluateJourney(journey.projection, facts);
+}
 
 export function evidenceFacts(evidence: Pick<EvidenceRecord, "type" | "extractedFields" | "verificationStatus">) {
   if (evidence.verificationStatus !== "verified") return {};
@@ -79,7 +83,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
       sessionId,
       status: "active",
       subject: { id: subjectId, ...subject, canonicalEntityId: entity.id },
-      projection: compileJourney(template),
+      projection: compileJourney(template, facts),
       facts,
       factHistory: Object.entries(facts).map(([key, value]) => ({ id: `fact-${crypto.randomUUID()}`, key, value, source: "user_statement" as const, status: "active" as const, recordedAt: timestamp })),
       auditLog: [{ id: `audit-${crypto.randomUUID()}`, actor: "citizen", event: "journey_created", detail: { templateId: template.id }, occurredAt: timestamp }],
@@ -107,10 +111,12 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const residenceName = facts["move.label"]?.trim() || (facts["move.newCity"]?.trim() ? `New home in ${facts["move.newCity"].trim()}` : undefined);
     const businessName = facts["business.name"]?.trim();
     const displayName = childName || vehicleName || residenceName || businessName || personName;
+    const nextFacts = { ...journey.facts, ...facts };
     const updated = {
       ...journey,
       subject: displayName ? { ...journey.subject, displayName } : journey.subject,
-      facts: { ...journey.facts, ...facts },
+      facts: nextFacts,
+      projection: rehydrateProjection(journey, nextFacts),
       factHistory: [
         ...journey.factHistory.map((version) => Object.prototype.hasOwnProperty.call(facts, version.key) && version.status === "active" ? { ...version, status: "corrected" as const } : version),
         ...Object.entries(facts).map(([key, value]) => ({ id: `fact-${crypto.randomUUID()}`, key, value, source: provenance.source, sourceRef: provenance.sourceRef, status: "active" as const, recordedAt: now() })),
@@ -128,7 +134,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
     if (this.idempotency.has(scopedKey)) return journey;
     this.idempotency.set(scopedKey, idempotencyKey);
-    const projection = completeNode(journey.projection, nodeKey);
+    const projection = completeNode(journey.projection, nodeKey, journey.facts);
     const updated = { ...journey, projection, auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "citizen" as const, event: "journey_step_completed", detail: { nodeKey }, occurredAt: now() }], status: isJourneyComplete(projection) ? "completed" as const : "active" as const, updatedAt: now() };
     this.journeys.set(`${sessionId}:${id}`, updated);
     return updated;
@@ -138,13 +144,14 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const branch = journey?.projection.branches.find((candidate) => candidate.key === branchKey);
     if (!journey || !branch || branch.requirement !== "optional") return null;
     if (branch.active) return journey;
-    const projection = activateJourneyBranch(journey.projection, branchKey);
     const activationFact = `journey.branch.${branchKey}.active`;
+    const nextFacts = { ...journey.facts, [activationFact]: "true" };
+    const projection = activateJourneyBranch(journey.projection, branchKey, nextFacts);
     const updated: StoredJourney = {
       ...journey,
       status: "active",
       projection,
-      facts: { ...journey.facts, [activationFact]: "true" },
+      facts: nextFacts,
       factHistory: [...journey.factHistory, { id: `fact-${crypto.randomUUID()}`, key: activationFact, value: "true", source: "user_statement", status: "active", recordedAt: now() }],
       auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "citizen", event: "journey_branch_activated", detail: { branchKey }, occurredAt: now() }],
       updatedAt: now(),
@@ -161,7 +168,8 @@ export class MemoryJourneyRepository implements JourneyRepository {
       ...record,
     };
     const derivedFacts = evidenceFacts(record);
-    const updated = { ...journey, facts: { ...journey.facts, ...derivedFacts }, factHistory: [...journey.factHistory, ...Object.entries(derivedFacts).map(([key, value]) => ({ id: `fact-${crypto.randomUUID()}`, key, value, source: "document" as const, sourceRef: record.id, status: "active" as const, recordedAt: now() }))], auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "document_agent" as const, event: "evidence_version_added", detail: { evidenceId: record.id, type: record.type, version: String(record.version) }, occurredAt: now() }], evidence: [...journey.evidence, summary], updatedAt: now() };
+    const nextFacts = { ...journey.facts, ...derivedFacts };
+    const updated = { ...journey, facts: nextFacts, projection: rehydrateProjection(journey, nextFacts), factHistory: [...journey.factHistory, ...Object.entries(derivedFacts).map(([key, value]) => ({ id: `fact-${crypto.randomUUID()}`, key, value, source: "document" as const, sourceRef: record.id, status: "active" as const, recordedAt: now() }))], auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "document_agent" as const, event: "evidence_version_added", detail: { evidenceId: record.id, type: record.type, version: String(record.version) }, occurredAt: now() }], evidence: [...journey.evidence, summary], updatedAt: now() };
     this.journeys.set(`${sessionId}:${id}`, updated);
     return updated;
   }
@@ -174,9 +182,11 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const updatedRecord: EvidenceRecord = { ...record, extractedFields: fields ?? record.extractedFields, verificationStatus: nextStatus, reviewedAt: now() };
     const derivedFacts = evidenceFacts(updatedRecord);
     this.evidenceContents.set(`${sessionId}:${id}:${evidenceId}`, updatedRecord);
+    const nextFacts = { ...journey.facts, ...derivedFacts };
     const updated = {
       ...journey,
-      facts: { ...journey.facts, ...derivedFacts },
+      facts: nextFacts,
+      projection: rehydrateProjection(journey, nextFacts),
       factHistory: [...journey.factHistory, ...Object.entries(derivedFacts).map(([key, value]) => ({ id: `fact-${crypto.randomUUID()}`, key, value, source: "document" as const, sourceRef: evidenceId, status: "active" as const, recordedAt: now() }))],
       auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "citizen" as const, event: `evidence_${nextStatus}`, detail: { evidenceId }, occurredAt: now() }],
       evidence: journey.evidence.map((item) => item.id === evidenceId ? { ...updatedRecord } : item),
@@ -194,7 +204,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const scopedKey = `${sessionId}:${id}:${idempotencyKey}`;
     const registrationId = this.idempotency.get(scopedKey) ?? "BR-DEMO-2026-7429";
     this.idempotency.set(scopedKey, registrationId);
-    const projection = completeNode(journey.projection, "birth_registration");
+    const projection = completeNode(journey.projection, "birth_registration", journey.facts);
     const updated = { ...journey, registrationId, projection, auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "provider" as const, event: "birth_registration_approved", detail: { registrationId }, occurredAt: now() }], status: isJourneyComplete(projection) ? "completed" as const : "active" as const, updatedAt: now() };
     this.journeys.set(`${sessionId}:${id}`, updated);
     return updated;
@@ -208,7 +218,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
     this.idempotency.set(scopedKey, idempotencyKey);
     const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey], journey.facts);
     const projection = run.status === "completed"
-      ? completeNode(journey.projection, nodeKey)
+      ? completeNode(journey.projection, nodeKey, journey.facts)
       : { ...journey.projection, nodes: journey.projection.nodes.map((candidate) => candidate.key === nodeKey ? { ...candidate, status: run.status === "waiting_external" ? "waiting_external" as const : run.status === "failed" ? "blocked" as const : "in_progress" as const } : candidate) };
     const updated = {
       ...journey,

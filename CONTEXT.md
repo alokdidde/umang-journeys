@@ -96,6 +96,30 @@ _Avoid_: Main branch, default tab
 A dormant Journey Branch that does not affect progress or completion until the account holder explicitly adds it. Once added, its required steps follow the same completion rules as a Required Branch.
 _Avoid_: Skipped branch, recommended link
 
+**Conditional Branch**:
+A dormant Journey Branch that becomes part of a Journey only when confirmed Journey Facts satisfy its Journey Gate. Once active, its required steps count toward completion like any Required Branch.
+_Avoid_: Suggested branch, AI-selected branch
+
+**Journey Gate**:
+A dated, inspectable rule over confirmed Journey Facts that determines whether a Conditional Branch or Journey Step applies. An unresolved gate is distinct from a failed gate.
+_Avoid_: AI guess, hidden condition
+
+**Journey Step Kind**:
+The role a Journey Step plays: citizen task, routing decision, external decision, milestone, or recurring duty. Kind does not itself determine whether the step is required.
+_Avoid_: Screen type, card type
+
+**Supporting Step**:
+A real part of the Journey Map that explains a route, decision, or future milestone but does not block the Journey’s present completion.
+_Avoid_: Decorative node, fake step
+
+**Recurring Duty**:
+A Journey Step that produces dated obligation instances after an authority, policy, or schedule makes it due.
+_Avoid_: Reminder, one-time step
+
+**Service Source**:
+The official authority, jurisdiction, canonical resource, and verification date that support a Journey Step’s guidance.
+_Avoid_: Helpful link, reference URL
+
 **Step Dependency**:
 A prerequisite relationship between two Journey Steps. The later step stays locked until every prerequisite is complete, including when a step inside an added Optional Branch depends on another step in that branch.
 _Avoid_: Page order, visual connector

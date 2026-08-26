@@ -98,5 +98,15 @@
     "footer": "none",
     "knobs": "full-dag/required-optional/explicit-activation/low-density/responsive",
     "brief": "UMANG Journeys · expose the complete dependency tree for all six journeys without increasing default-screen density"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "all journey maps",
+    "macrostructure": "Progressive Branch Lanes",
+    "nav": "existing familiar top navigation; full graph remains in the wide journey drawer",
+    "hero": "unchanged next-action-first journey header",
+    "footer": "none",
+    "knobs": "sourced-service-nodes/conditional-gates/typed-edges/unique-svg/branch-lanes/mobile-groups",
+    "brief": "UMANG Journeys · model and render rich versioned government-service graphs for all six life events"
   }
 ]

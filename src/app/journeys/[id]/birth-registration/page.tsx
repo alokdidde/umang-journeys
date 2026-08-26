@@ -31,6 +31,7 @@ export default function RegistrationPage() {
   const [birthRoute, setBirthRoute] = useState(state.facts["birth.route"] ?? "hospital");
   const [informant, setInformant] = useState(state.facts["birth.informant"] ?? "mother");
   const [delayed, setDelayed] = useState(state.facts["birth.delayed"] ?? "no");
+  const [followupNeeded, setFollowupNeeded] = useState(state.facts["child.followupNeeded"] ?? "not_sure");
 
   useEffect(() => {
     if (id && state.journeyId !== id) void loadJourney(id);
@@ -41,7 +42,7 @@ export default function RegistrationPage() {
     const valid = state.form.childName.trim() && state.form.localWard.trim();
     dispatch({ type: "submit_registration" });
     if (!valid) return;
-    const saved = await updateJourneyFacts(id, { "birth.route": birthRoute, "birth.informant": informant, "birth.delayed": delayed });
+    const saved = await updateJourneyFacts(id, { "birth.route": birthRoute, "birth.informant": informant, "birth.delayed": delayed, "child.followupNeeded": followupNeeded });
     if (saved && await submitRegistration(id)) router.push(`/journeys/${id}/success`);
   }
 
@@ -68,7 +69,7 @@ export default function RegistrationPage() {
 
           <details className="registration-exceptions">
             <summary>Was this a home birth, delayed registration, or different informant?</summary>
-            <div><label>Where did the birth take place?<select value={birthRoute} onChange={(event) => setBirthRoute(event.target.value)}><option value="hospital">Hospital or registered facility</option><option value="home">Home or outside a facility</option></select></label><label>Who is providing the information?<select value={informant} onChange={(event) => setInformant(event.target.value)}><option value="mother">Mother</option><option value="father">Father</option><option value="guardian">Guardian or authorised informant</option><option value="facility">Facility representative</option></select></label><label>Is this being registered after the usual reporting period?<select value={delayed} onChange={(event) => setDelayed(event.target.value)}><option value="no">No</option><option value="yes">Yes or not sure</option></select></label><p>{birthRoute === "home" || delayed === "yes" ? "The sandbox will add an authority-review task and request supporting declarations before approval." : "The standard hospital-record route will be used."}</p></div>
+            <div><label>Where did the birth take place?<select value={birthRoute} onChange={(event) => setBirthRoute(event.target.value)}><option value="hospital">Hospital or registered facility</option><option value="home">Home or outside a facility</option></select></label><label>Who is providing the information?<select value={informant} onChange={(event) => setInformant(event.target.value)}><option value="mother">Mother</option><option value="father">Father</option><option value="guardian">Guardian or authorised informant</option><option value="facility">Facility representative</option></select></label><label>Is this being registered after the usual reporting period?<select value={delayed} onChange={(event) => setDelayed(event.target.value)}><option value="no">No</option><option value="yes">Yes or not sure</option></select></label><label>Has a clinician or health worker asked for newborn follow-up?<select value={followupNeeded} onChange={(event) => setFollowupNeeded(event.target.value)}><option value="not_sure">I’m not sure</option><option value="yes">Yes</option><option value="no">No</option></select></label><p>{birthRoute === "home" || delayed === "yes" ? "The sandbox will add an authority-review task and request supporting declarations before approval." : "The standard hospital-record route will be used."}</p></div>
           </details>
 
           <div className="conversation-body">

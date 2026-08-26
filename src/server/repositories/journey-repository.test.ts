@@ -78,6 +78,35 @@ describe("journey repository", () => {
     expect(journey?.projection.nodes.find((node) => node.key === "ownership_transfer")?.status).toBe("available");
   });
 
+  it("re-evaluates conditional branches whenever confirmed facts change", async () => {
+    const repository = new MemoryJourneyRepository();
+    const created = await repository.create("session-driver", {}, "vehicle-purchase.india.v1");
+
+    expect(created.projection.branches.find((branch) => branch.key === "used_vehicle")).toMatchObject({
+      applicability: "pending",
+      status: "awaiting_context",
+    });
+
+    const updated = await repository.updateFacts("session-driver", created.id, {
+      "vehicle.acquisitionRoute": "sale",
+      "vehicle.transferScope": "interstate",
+    });
+
+    expect(updated?.projection.branches.find((branch) => branch.key === "used_vehicle")).toMatchObject({
+      active: true,
+      applicability: "applicable",
+    });
+    expect(updated?.projection.branches.find((branch) => branch.key === "interstate")).toMatchObject({
+      active: true,
+      applicability: "applicable",
+    });
+    expect(updated?.projection.branches.find((branch) => branch.key === "new_vehicle")).toMatchObject({
+      active: false,
+      applicability: "not_applicable",
+      status: "not_applicable",
+    });
+  });
+
   it("persists verified evidence independently for each journey", async () => {
     const repository = new MemoryJourneyRepository();
     const created = await repository.create("session-driver", {}, "vehicle-purchase.india.v1");

@@ -86,6 +86,7 @@ function mapJourney(
     template,
     template.nodes.map((definition) => ({ key: definition.key, status: (nodeByKey.get(definition.key)?.status.toLowerCase() ?? "locked") as NodeStatus })),
     activeBranchKeys,
+    facts,
   );
   const registration = journey.documents
     .map((document) => document.metadataJson)
@@ -209,7 +210,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       if (!existing) await prisma.entityRelationship.create({ data: relationship });
     }
 
-    const initialProjection = compileJourney(template);
+    const initialProjection = compileJourney(template, facts);
     const initial = initialProjection.nodes.map((node) => ({ nodeKey: node.key, status: toDatabaseStatus(node.status), recommended: node.recommended }));
     const journey = await prisma.journeyInstance.create({
       data: {
@@ -300,8 +301,9 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const branch = journey?.projection.branches.find((candidate) => candidate.key === branchKey);
     if (!journey || !branch || branch.requirement !== "optional") return null;
     if (branch.active) return journey;
-    const projection = activateJourneyBranch(journey.projection, branchKey);
     const factKey = `journey.branch.${branchKey}.active`;
+    const nextFacts = { ...journey.facts, [factKey]: "true" };
+    const projection = activateJourneyBranch(journey.projection, branchKey, nextFacts);
     const prisma = getPrisma();
     await prisma.$transaction(async (tx) => {
       await tx.fact.upsert({
@@ -329,7 +331,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
     const existing = await prisma.auditEvent.findFirst({ where: { journeyId: id, eventType: scopedKey } });
     if (existing) return journey;
-    const projection = completeNode(journey.projection, nodeKey);
+    const projection = completeNode(journey.projection, nodeKey, journey.facts);
     await prisma.$transaction(async (tx) => {
       for (const projectedNode of projection.nodes) {
         await tx.journeyNode.update({
@@ -424,7 +426,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       existing && existing.responseJson && typeof existing.responseJson === "object" && "registrationId" in existing.responseJson
         ? String(existing.responseJson.registrationId)
         : "BR-DEMO-2026-7429";
-    const nextProjection = completeNode(journey.projection, "birth_registration");
+    const nextProjection = completeNode(journey.projection, "birth_registration", journey.facts);
 
     await prisma.$transaction(async (tx) => {
       if (!existing) {
@@ -480,7 +482,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey], journey.facts);
     const result = simulateExternalService(id, nodeKey);
     const nodeStatus = run.status === "completed" ? "COMPLETED" : run.status === "waiting_external" ? "WAITING_EXTERNAL" : run.status === "failed" ? "BLOCKED" : "IN_PROGRESS";
-    const nextProjection = run.status === "completed" ? completeNode(journey.projection, nodeKey) : null;
+    const nextProjection = run.status === "completed" ? completeNode(journey.projection, nodeKey, journey.facts) : null;
 
     await prisma.$transaction(async (tx) => {
       await tx.externalAction.create({

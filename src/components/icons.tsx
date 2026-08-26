@@ -1,4 +1,9 @@
 import { Baby, BadgeCheck, Vote, Banknote, BriefcaseBusiness, CalendarDays, CreditCard, FileText, FolderClock, Gift, HeartPulse, House, IdCard, MailCheck, MapPinned, Rocket, ScrollText, Store, Syringe, Car, Armchair, UserRound, ShieldPlus, Landmark, FileHeart, Hospital, type LucideIcon } from "lucide-react";
+import { DynamicIcon, type IconName } from "lucide-react/dynamic";
+
+export function JourneyNodeIcon({ name }: { name: string }) {
+  return <DynamicIcon name={name as IconName} aria-hidden="true" fallback={() => <FileText aria-hidden="true" />} />;
+}
 
 export const journeyIcons: Record<string, LucideIcon> = {
   baby: Baby,
