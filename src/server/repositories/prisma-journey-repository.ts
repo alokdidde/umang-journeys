@@ -287,12 +287,20 @@ export class PrismaJourneyRepository implements JourneyRepository {
     await prisma.$transaction(async (tx) => {
       for (const [key, valueJson] of Object.entries(facts)) {
         const current = await tx.fact.findUnique({ where: { journeyId_key: { journeyId: id, key } } });
-        if (current) await tx.factRevision.updateMany({ where: { factId: current.id, status: "ACTIVE" }, data: { status: "CORRECTED" } });
-        await tx.fact.upsert({
-          where: { journeyId_key: { journeyId: id, key } },
-          update: { valueJson, sourceType, sourceRef: provenance.sourceRef, confirmed: provenance.source === "user_statement", revisions: { create: { valueJson, sourceType, sourceRef: provenance.sourceRef, status: "ACTIVE" } } },
-          create: { journeyId: id, key, valueJson, sourceType, sourceRef: provenance.sourceRef, confirmed: provenance.source === "user_statement", revisions: { create: { valueJson, sourceType, sourceRef: provenance.sourceRef, status: "ACTIVE" } } },
-        });
+        if (current) {
+          await tx.factRevision.updateMany({ where: { factId: current.id, status: "ACTIVE" }, data: { status: "CORRECTED" } });
+          await tx.fact.update({
+            where: { id: current.id },
+            data: { valueJson, sourceType, sourceRef: provenance.sourceRef, confirmed: provenance.source === "user_statement" },
+          });
+          await tx.factRevision.create({
+            data: { factId: current.id, valueJson, sourceType, sourceRef: provenance.sourceRef, status: "ACTIVE" },
+          });
+        } else {
+          await tx.fact.create({
+            data: { journeyId: id, key, valueJson, sourceType, sourceRef: provenance.sourceRef, confirmed: provenance.source === "user_statement", revisions: { create: { valueJson, sourceType, sourceRef: provenance.sourceRef, status: "ACTIVE" } } },
+          });
+        }
       }
       const nextDisplayName = facts["child.name"]?.trim() || facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || facts["move.label"]?.trim() || (facts["move.newCity"]?.trim() ? `New home in ${facts["move.newCity"].trim()}` : undefined) || facts["business.name"]?.trim() || facts["person.name"]?.trim();
       if (nextDisplayName) await tx.journeySubject.update({ where: { id: journey.subject.id }, data: { displayName: nextDisplayName } });
@@ -316,11 +324,16 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const projection = activateJourneyBranch(journey.projection, branchKey, nextFacts);
     const prisma = getPrisma();
     await prisma.$transaction(async (tx) => {
-      await tx.fact.upsert({
-        where: { journeyId_key: { journeyId: id, key: factKey } },
-        update: { valueJson: "true", sourceType: "USER_CONFIRMED", confirmed: true, revisions: { create: { valueJson: "true", sourceType: "USER_CONFIRMED", status: "ACTIVE" } } },
-        create: { journeyId: id, key: factKey, valueJson: "true", sourceType: "USER_CONFIRMED", confirmed: true, revisions: { create: { valueJson: "true", sourceType: "USER_CONFIRMED", status: "ACTIVE" } } },
-      });
+      const current = await tx.fact.findUnique({ where: { journeyId_key: { journeyId: id, key: factKey } } });
+      if (current) {
+        await tx.factRevision.updateMany({ where: { factId: current.id, status: "ACTIVE" }, data: { status: "CORRECTED" } });
+        await tx.fact.update({ where: { id: current.id }, data: { valueJson: "true", sourceType: "USER_CONFIRMED", confirmed: true } });
+        await tx.factRevision.create({ data: { factId: current.id, valueJson: "true", sourceType: "USER_CONFIRMED", status: "ACTIVE" } });
+      } else {
+        await tx.fact.create({
+          data: { journeyId: id, key: factKey, valueJson: "true", sourceType: "USER_CONFIRMED", confirmed: true, revisions: { create: { valueJson: "true", sourceType: "USER_CONFIRMED", status: "ACTIVE" } } },
+        });
+      }
       for (const node of projection.nodes) {
         await tx.journeyNode.update({
           where: { journeyId_nodeKey: { journeyId: id, nodeKey: node.key } },
