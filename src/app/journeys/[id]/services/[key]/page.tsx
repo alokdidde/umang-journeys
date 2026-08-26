@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
-  Activity,
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
@@ -18,7 +17,7 @@ import {
   Eye,
   FileDown,
   FileUp,
-  FlaskConical,
+  Bot,
   LoaderCircle,
   LockKeyhole,
   RotateCw,
@@ -28,9 +27,9 @@ import {
 import { useJourney } from "@/components/journey-provider";
 import {
   isSandboxServiceKey,
+  serviceDefinitionFor,
   serviceWorkflowDefinitions,
   type ArtifactItemStatus,
-  type ProviderScenario,
   type SandboxServiceRun,
   type ServiceArtifact,
 } from "@/domain/service-workflows";
@@ -53,11 +52,11 @@ const guidanceLinks: Record<string, { label: string; href: string }> = {
   voter_address: { label: "Open the official Form 8 service", href: "https://voters.eci.gov.in/home/forms" },
   move_completion_pack: { label: "Read Parivahan address-change guidance", href: "https://mparivahan.parivahan.gov.in/mstatic/english/rc-info-address-change.html" },
   business_premises: { label: "Read the GST document checklist", href: "https://tutorial.gst.gov.in/cbt/registration/gstregistration/course/story_content/external_files/GST_Registration_Document_Checklist.pdf" },
-  udyam_readiness: { label: "Open the official free Udyam service", href: "https://udyamregistration.gov.in/" },
+  udyam_readiness: { label: "Open the official free Udyam service", href: "https://www.udyamregistration.gov.in/default.aspx" },
   gst_readiness: { label: "Read official GST registration FAQs", href: "https://cbic-gst.gov.in/faq.html" },
   business_launch_pack: { label: "Find official business services", href: "https://services.india.gov.in/" },
   retirement_record_review: { label: "Open official EPFO member services", href: "https://www.epfindia.gov.in/site_en/For_Employees.php" },
-  pension_pathway: { label: "Read the official EPFO claim guide", href: "https://www.epfindia.gov.in/site_en/WhichClaimForm.php" },
+  pension_pathway: { label: "Open the official EPFO portal", href: "https://www.epfo.gov.in/" },
   life_certificate_readiness: { label: "Read official Jeevan Pramaan guidance", href: "https://jeevanpramaan.gov.in/v2.0/misc/faq" },
   retirement_pack: { label: "Find official pension services", href: "https://services.india.gov.in/service/listing?cat_id=36&ln=en" },
 };
@@ -87,11 +86,10 @@ function statusLabel(status: ArtifactItemStatus) {
 export default function SandboxServicePage() {
   const { id, key } = useParams<{ id: string; key: string }>();
   const { state, loadJourney, advanceService, addEvidence, reviewEvidence, updateJourneyFacts } = useJourney();
-  const validKey = isSandboxServiceKey(key) ? key : null;
-  const definition = validKey ? serviceWorkflowDefinitions[validKey] : null;
   const node = state.projection.nodes.find((candidate) => candidate.key === key);
+  const validKey = isSandboxServiceKey(key) || (node && node.action !== "none") ? key : null;
+  const definition = node && node.action !== "none" ? serviceDefinitionFor(node) : isSandboxServiceKey(key) ? serviceWorkflowDefinitions[key] : null;
   const run = validKey ? state.serviceRuns[validKey] : undefined;
-  const [scenario, setScenario] = useState<ProviderScenario>("success");
   const artifactHeadingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -99,27 +97,20 @@ export default function SandboxServicePage() {
   }, [id, loadJourney, state.journeyId]);
 
   useEffect(() => {
-    if (!validKey || !run || run.status === "completed" || run.status === "failed" || state.pending || state.error) return;
-    const timer = window.setTimeout(() => void loadJourney(id), 850);
-    return () => window.clearTimeout(timer);
-  }, [id, loadJourney, run, state.error, state.pending, validKey]);
-
-  useEffect(() => {
     if (run?.status === "completed") artifactHeadingRef.current?.focus();
   }, [run?.status]);
 
-  if (!definition || !validKey) return <main className="page workflow-state"><h1>Service not found</h1><p>This journey does not include that service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
   if (state.journeyId !== id && !state.error) return <main className="page workflow-state"><LoaderCircle className="service-spinner" /><p>Loading service workspace…</p></main>;
   if (state.error && state.journeyId !== id) return <main className="page workflow-state"><h1>Unable to load this service.</h1><p>{state.error}</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
+  if (!definition || !validKey || !node || node.action === "none") return <main className="page workflow-state"><h1>Service not found</h1><p>This journey does not include that service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
   if (node?.status === "locked") return <main className="page workflow-state"><LockKeyhole /><h1>This service is still locked.</h1><p>Complete the previous journey step before using this service.</p><Link className="primary-cta" href={`/journeys/${id}`}>Return to journey</Link></main>;
 
   const completed = run?.status === "completed";
-  const nextStage = definition.stages[run?.currentStage ?? 0];
-  const guidance = guidanceLinks[validKey];
+  const guidance = guidanceLinks[validKey] ?? (node.source ? { label: `Open ${node.source.authority} guidance`, href: node.source.href } : undefined);
 
   async function startService() {
     if (!validKey) return false;
-    const saved = await updateJourneyFacts(id, { [`simulation.scenario.${validKey}`]: scenario, [`simulation.consent.${validKey}`]: new Date(Date.now() + 30 * 60 * 1000).toISOString() });
+    const saved = await updateJourneyFacts(id, { [`agency.consent.${validKey}`]: new Date(Date.now() + 30 * 60 * 1000).toISOString() });
     return saved ? advanceService(id, validKey) : false;
   }
 
@@ -128,7 +119,7 @@ export default function SandboxServicePage() {
       <div className="service-shell">
         <nav className="service-navigation" aria-label="Service navigation">
           <Link href={`/journeys/${id}`} className="floating-back"><ArrowLeft />Back to journey</Link>
-          <span><FlaskConical />Evaluation sandbox</span>
+          <span><Bot />AI-reviewed synthetic agency</span>
         </nav>
 
         <header className="service-workspace-header">
@@ -141,15 +132,15 @@ export default function SandboxServicePage() {
             <span>{completed ? <BadgeCheck /> : run ? <LoaderCircle className="service-spinner" /> : <ShieldCheck />}</span>
             <div>
               <small>Current state</small>
-              <strong>{completed ? "Approved" : run?.caseStatus === "action_required" ? "Your response is needed" : run?.caseStatus === "rejected" ? "Provider decision: rejected" : run?.status === "waiting_external" ? "Waiting for provider" : run ? (run.caseStatus ?? "processing").replaceAll("_", " ") : "Ready to connect"}</strong>
-              <p>{completed ? `Finished ${formatTimestamp(run.completedAt ?? run.updatedAt)}` : run ? `${run.progress}% complete · ${definition.turnaround}` : "No data has been sent yet"}</p>
+              <strong>{completed ? "Synthetic decision: approved" : run?.caseStatus === "action_required" ? "Your response is needed" : run?.caseStatus === "rejected" ? "Synthetic decision: rejected" : run?.status === "waiting_external" ? "Synthetic agency is still reviewing" : run ? (run.caseStatus ?? "processing").replaceAll("_", " ") : "Ready for AI review"}</strong>
+              <p>{completed ? `Finished ${formatTimestamp(run.completedAt ?? run.updatedAt)}` : run ? `${run.progress}% reviewed · ${definition.turnaround}` : "No case has been reviewed yet"}</p>
             </div>
           </div> : null}
         </header>
 
         <div className="service-workspace-grid">
           <div className="service-main-column">
-            {!run && ["ownership_transfer", "insurance_cover", "fastag_setup", "compliance_calendar", "coverage_review", "public_scheme_check", "abha_records", "cashless_readiness", "residence_evidence", "aadhaar_address", "voter_address", "move_completion_pack", "business_premises", "udyam_readiness", "gst_readiness", "business_launch_pack", "retirement_record_review", "pension_pathway", "life_certificate_readiness", "retirement_pack"].includes(validKey) ? (
+            {!run ? (
               <ServicePreparation
                 id={id}
                 nodeKey={validKey}
@@ -158,38 +149,21 @@ export default function SandboxServicePage() {
                 pending={state.pending}
                 error={state.error}
                 action={definition.action}
-                scenario={scenario}
-                setScenario={setScenario}
                 addEvidence={addEvidence}
                 reviewEvidence={reviewEvidence}
                 updateFacts={updateJourneyFacts}
                 start={startService}
               />
-            ) : !run ? (
-              <section className="service-start-card panel">
-                <span className="service-emblem"><Activity /></span>
-                <h2>Everything needed is ready.</h2>
-                <p>The simulation will show each validation and provider hand-off as it happens. You can refresh at any point without losing progress.</p>
-                <div className="service-preflight">
-                  <span><CheckCircle2 />Birth registration completed</span>
-                  <span><CheckCircle2 />Required facts available</span>
-                  <span><CheckCircle2 />Sandbox connection healthy</span>
-                </div>
-                <ProviderScenarioPicker value={scenario} onChange={setScenario} />
-                <button className="primary-cta service-action" type="button" disabled={state.pending} onClick={() => void startService()}>
-                  {definition.action}<ArrowRight />
-                </button>
-                <p className="service-consent-note"><ShieldCheck />This runs a simulation only. No production government service is contacted.</p>
-              </section>
             ) : (
               <>
-                <ServiceProgress run={run} stages={definition.stages} nextStageTitle={nextStage?.title} pending={state.pending} />
+                <ServiceProgress run={run} pending={state.pending} />
                 {state.error || run.status === "failed" ? (
                   <section className="service-recovery panel" role="alert">
-                    <div><RotateCw /><span><strong>{run.caseStatus === "action_required" ? "The provider needs more information" : run.caseStatus === "rejected" ? "This synthetic case was rejected" : "Progress is saved"}</strong><p>{state.error ?? run.actionMessage ?? "Retry from the last completed check."}</p>{run.reasonCode ? <small>Reason code: {run.reasonCode}</small> : null}</span></div>
-                    {run?.caseStatus === "action_required" ? <button type="button" className="secondary-button" onClick={() => void updateJourneyFacts(id, { [`simulation.response.${validKey}`]: new Date().toISOString() }).then((saved) => saved && advanceService(id, validKey))}>Send clarification</button> : run?.caseStatus === "rejected" ? <button type="button" className="secondary-button" onClick={() => void updateJourneyFacts(id, { [`simulation.appeal.${validKey}`]: new Date().toISOString() }).then((saved) => saved && advanceService(id, validKey))}>Correct and appeal</button> : <button type="button" className="secondary-button" onClick={() => void advanceService(id, validKey)}>Retry provider check</button>}
+                    <div><RotateCw /><span><strong>{run.caseStatus === "action_required" ? "The synthetic agency needs more information" : run.caseStatus === "rejected" ? "The synthetic agency rejected this case" : "The last review did not finish"}</strong><p>{state.error ?? run.actionMessage ?? "Retry the AI review from the saved case."}</p>{run.reasonCode ? <small>Reason code: {run.reasonCode}</small> : null}</span></div>
+                    <AgencyResponse run={run} pending={state.pending} onSubmit={(message, intent) => advanceService(id, validKey, { message, intent })} />
                   </section>
                 ) : null}
+                {run.status === "waiting_external" ? <section className="service-recovery panel"><div><Clock3 /><span><strong>The case remains under review</strong><p>{run.actionMessage}</p></span></div><button type="button" className="secondary-button" disabled={state.pending} onClick={() => void advanceService(id, validKey, { intent: "check_status" })}>{state.pending ? "Checking…" : "Check for a decision"}</button></section> : null}
                 {completed && run.artifact ? <ServiceArtifactView artifact={run.artifact} headingRef={artifactHeadingRef} /> : null}
               </>
             )}
@@ -199,10 +173,10 @@ export default function SandboxServicePage() {
             <summary>Provider and data details</summary>
             <aside className="service-sidebar" aria-label="Connection details">
             <section className="panel service-connection-card">
-              <div className="connection-heading"><span><Database /></span><div><small>Connected provider</small><strong>{definition.agency}</strong></div><i>Sandbox</i></div>
+              <div className="connection-heading"><span><Database /></span><div><small>Synthetic provider</small><strong>{definition.agency}</strong></div><i>AI</i></div>
               <dl>
-                <div><dt>Environment</dt><dd>Isolated evaluation</dd></div>
-                <div><dt>Expected flow</dt><dd>{definition.turnaround}</dd></div>
+                <div><dt>Environment</dt><dd>AI evaluation only</dd></div>
+                <div><dt>Decision method</dt><dd>Input-driven Vercel AI SDK review</dd></div>
                 {run ? <><div><dt>Run ID</dt><dd className="technical-value">{run.runId}</dd></div><div><dt>Last update</dt><dd>{formatTimestamp(run.updatedAt)}</dd></div></> : null}
               </dl>
             </section>
@@ -229,7 +203,7 @@ export default function SandboxServicePage() {
   );
 }
 
-function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, action, scenario, setScenario, addEvidence, reviewEvidence, updateFacts, start }: {
+function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, action, addEvidence, reviewEvidence, updateFacts, start }: {
   id: string;
   nodeKey: SandboxServiceRun["nodeKey"];
   evidence: JourneyEvidence[];
@@ -237,8 +211,6 @@ function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, acti
   pending: boolean;
   error: string | null;
   action: string;
-  scenario: ProviderScenario;
-  setScenario: (value: ProviderScenario) => void;
   addEvidence: (id: string, type: EvidenceType, file?: File) => Promise<boolean>;
   reviewEvidence: (id: string, evidenceId: string, approved: boolean, fields?: Record<string, string>) => Promise<boolean>;
   updateFacts: (id: string, facts: Record<string, string>) => Promise<boolean>;
@@ -271,7 +243,7 @@ function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, acti
   }
 
   return <section className="panel vehicle-service-preparation">
-    <header><h2>{missing.length ? `${missing.length} ${missing.length === 1 ? "item" : "items"} needed before submission` : "Review and authorise this simulation"}</h2><p>The provider run stays locked until each required input has been verified.</p></header>
+    <header><h2>{missing.length ? `${missing.length} ${missing.length === 1 ? "item" : "items"} needed before review` : "Review what the synthetic agency will use"}</h2><p>The AI review stays locked until every required input has been verified.</p></header>
     {required.length ? <div className="evidence-requirements">{required.map((type) => {
       const item = evidence.findLast((candidate) => candidate.type === type && candidate.verificationStatus !== "rejected")
         ?? evidence.findLast((candidate) => candidate.type === type);
@@ -288,28 +260,23 @@ function ServicePreparation({ id, nodeKey, evidence, facts, pending, error, acti
         </>}</div>
       </article>;
     })}</div> : null}
-    {nodeKey === "fastag_setup" ? <div className="fastag-inputs"><label htmlFor="mobile-last-four">Mobile number ending</label><span className="field-helper">Enter only the last four digits; the sandbox simulates OTP verification.</span><input id="mobile-last-four" inputMode="numeric" maxLength={4} pattern="[0-9]{4}" value={mobileLast4} onChange={(event) => setMobileLast4(event.target.value.replace(/\D/g, ""))} /><label htmlFor="fastag-issuer">Issuer</label><select id="fastag-issuer" value={issuer} onChange={(event) => setIssuer(event.target.value)}><option>NHAI FASTag</option><option>State Bank of India</option><option>ICICI Bank</option></select></div> : null}
+    {nodeKey === "fastag_setup" ? <div className="fastag-inputs"><label htmlFor="mobile-last-four">Mobile number ending</label><span className="field-helper">Enter only the last four digits. The synthetic agency will not send an OTP.</span><input id="mobile-last-four" inputMode="numeric" maxLength={4} pattern="[0-9]{4}" value={mobileLast4} onChange={(event) => setMobileLast4(event.target.value.replace(/\D/g, ""))} /><label htmlFor="fastag-issuer">Issuer</label><select id="fastag-issuer" value={issuer} onChange={(event) => setIssuer(event.target.value)}><option>NHAI FASTag</option><option>State Bank of India</option><option>ICICI Bank</option></select></div> : null}
     {nodeKey === "public_scheme_check" ? <div className="fastag-inputs"><label htmlFor="household-record">Do you have a ration card or another household record?</label><span className="field-helper">This only changes the verification checklist. It does not decide eligibility.</span><select id="household-record" value={householdRecord} onChange={(event) => setHouseholdRecord(event.target.value)}><option value="yes">Yes</option><option value="not_sure">I’m not sure</option><option value="no">No</option></select></div> : null}
     {nodeKey === "cashless_readiness" ? <div className="fastag-inputs"><label htmlFor="care-city">City where you are likely to seek care</label><span className="field-helper">The final pack will remind you to verify the hospital’s current network status.</span><input id="care-city" value={careCity} onChange={(event) => setCareCity(event.target.value)} /></div> : null}
-    <ProviderScenarioPicker value={scenario} onChange={setScenario} />
-    <label className="simulation-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span><strong>I authorise this evaluation-only submission</strong><small>No production provider, bank account, or government record will be changed.</small></span></label>
+    <label className="simulation-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span><strong>I authorise an AI review of this synthetic case</strong><small>The facts and verified evidence shown here will be sent to the Vercel AI Gateway. No production provider, bank account, or government record will be changed.</small></span></label>
     {error ? <p className="workflow-error" role="alert">{error}</p> : null}
     <button className="primary-cta service-action" type="button" disabled={pending || missing.length > 0 || !fastagReady || !healthReady || !consent} onClick={() => void begin()}>{pending ? "Saving requirements…" : action}<ArrowRight /></button>
   </section>;
 }
 
-function ProviderScenarioPicker({ value, onChange }: { value: ProviderScenario; onChange: (value: ProviderScenario) => void }) {
-  return <details className="provider-scenario-picker">
-    <summary>Test a different provider outcome</summary>
-    <label htmlFor="provider-scenario">Synthetic case outcome</label>
-    <select id="provider-scenario" value={value} onChange={(event) => onChange(event.target.value as ProviderScenario)}>
-      <option value="success">Approved after review</option>
-      <option value="delayed">Longer provider delay</option>
-      <option value="clarification">Provider asks a question</option>
-      <option value="rejected">Rejected, then appealed</option>
-    </select>
-    <p>This changes only the evaluation simulator so recovery paths can be tested.</p>
-  </details>;
+function AgencyResponse({ run, pending, onSubmit }: { run: SandboxServiceRun; pending: boolean; onSubmit: (message: string, intent: "clarify" | "appeal") => Promise<boolean> }) {
+  const [message, setMessage] = useState("");
+  const intent = run.caseStatus === "rejected" ? "appeal" as const : "clarify" as const;
+  return <div className="agency-response">
+    <label htmlFor={`agency-response-${run.nodeKey}`}>{intent === "appeal" ? "Explain what should be reconsidered" : "Provide the requested information"}</label>
+    <textarea id={`agency-response-${run.nodeKey}`} value={message} onChange={(event) => setMessage(event.target.value)} rows={3} placeholder="Explain what changed and point to the supporting evidence…" />
+    <button type="button" className="secondary-button" disabled={pending || message.trim().length < 4} onClick={() => void onSubmit(message.trim(), intent)}>{pending ? "Sending for review…" : intent === "appeal" ? "Send appeal for AI review" : "Send clarification for AI review"}</button>
+  </div>;
 }
 
 function EvidenceReview({ item, pending, onReview }: {
@@ -327,35 +294,25 @@ function EvidenceReview({ item, pending, onReview }: {
   </div>;
 }
 
-function ServiceProgress({ run, stages, nextStageTitle, pending }: {
+function ServiceProgress({ run, pending }: {
   run: SandboxServiceRun;
-  stages: typeof serviceWorkflowDefinitions.child_health_record.stages;
-  nextStageTitle?: string;
   pending: boolean;
 }) {
   const completed = run.status === "completed";
   return (
     <section className="panel service-progress-card">
       <header>
-        <div><span className="progress-icon">{run.status === "completed" ? <CheckCircle2 /> : <LoaderCircle className="service-spinner" />}</span><div><h2>{run.status === "completed" ? "All checks completed" : pending ? "Running provider check…" : nextStageTitle ?? "Finalising result"}</h2></div></div>
+        <div><span className="progress-icon">{run.status === "completed" ? <CheckCircle2 /> : <Bot />}</span><div><h2>{run.status === "completed" ? "AI review completed" : pending ? "Reviewing the case…" : run.caseStatus === "under_review" ? "Case remains under review" : "Review saved"}</h2></div></div>
         <strong className="progress-number">{run.progress}%</strong>
       </header>
       <div className="service-progress-track" aria-label={`${run.progress}% complete`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={run.progress}><span style={{ width: `${run.progress}%` }} /></div>
       <details className="service-checks" open={!completed ? true : undefined} key={run.status}>
-        <summary>{completed ? "View the 4 completed checks" : "Checks in progress"}</summary>
+        <summary>{completed ? `View ${run.events.length} review ${run.events.length === 1 ? "finding" : "findings"}` : "Review findings"}</summary>
       <ol className="service-timeline">
-        {stages.map((stage, index) => {
-          const event = run.events.find((candidate) => candidate.stageKey === stage.key);
-          const active = !event && index === run.currentStage && run.status !== "completed";
-          return <li key={stage.key} className={event ? "done" : active ? "active" : "upcoming"}>
-            <span className="timeline-marker">{event ? <Check /> : active ? <LoaderCircle className="service-spinner" /> : <Circle />}</span>
-            <div><strong>{stage.title}</strong><p>{event?.detail ?? (active ? "The sandbox adapter is working on this check." : "Waiting for the previous check.")}</p></div>
-            <time dateTime={event?.occurredAt}>{event ? formatTimestamp(event.occurredAt) : active ? "In progress" : "Pending"}</time>
-          </li>;
-        })}
+        {run.events.map((event) => <li key={`${event.stageKey}-${event.occurredAt}`} className="done"><span className="timeline-marker"><Check /></span><div><strong>{event.title}</strong><p>{event.detail}</p></div><time dateTime={event.occurredAt}>{formatTimestamp(event.occurredAt)}</time></li>)}
       </ol>
       </details>
-      <footer><Clock3 />Started {formatTimestamp(run.startedAt)}<span>Receipt {run.receipt}</span></footer>
+      <footer><Clock3 />Started {formatTimestamp(run.startedAt)}<span>Synthetic reference {run.receipt}</span></footer>
     </section>
   );
 }

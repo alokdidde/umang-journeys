@@ -7,6 +7,7 @@ import { Armchair, ArrowLeft, ArrowRight, Baby, BriefcaseBusiness, Building2, Ca
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
 import { useJourney } from "@/components/journey-provider";
 import { JourneyMapDrawer } from "@/components/journey-map-drawer";
+import { JourneyObligations } from "@/components/journey-obligations";
 import { selectJourneyNextAction } from "@/domain/journey-summary";
 
 export default function JourneyRevealPage() {
@@ -43,6 +44,7 @@ export default function JourneyRevealPage() {
           <article><span className="mini-icon amber"><MapPin /></span><div><small>State</small><strong>Telangana</strong><em>India</em></div></article>
         </section>
       </details>
+      <JourneyObligations projection={state.projection} facts={state.facts} />
       <JourneyMapDrawer id={id} title="Your baby’s steps" />
     </main>
   );
@@ -104,6 +106,7 @@ function AdditionalJourney({ id, kind }: { id: string; kind: "move" | "business"
     <section className="journey-heading content-layer"><p className="eyebrow"><Icon />{config.label}</p><h1>{config.title}</h1><p>{config.intro}</p></section>
     <div className="primary-cta-wrap content-layer">{nextAction ? <Link href={nextAction.href} className="primary-cta"><Icon />{nextAction.nodeKey.endsWith("_profile") ? config.cta : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : <p className="journey-complete-cta"><CheckCircle2 />{config.complete}</p>}<TrustNote>{config.trust}</TrustNote></div>
     <details className="journey-about content-layer"><summary>About this journey</summary><section className="context-strip">{config.facts.map(([FactIcon, label, value, note], index) => <article key={label}><span className={`mini-icon ${["green", "purple", "blue", "amber"][index]}`}><FactIcon /></span><div><small>{label}</small><strong>{value}</strong><em>{note}</em></div></article>)}</section></details>
+    <JourneyObligations projection={state.projection} facts={state.facts} />
     <JourneyMapDrawer id={id} title={config.steps} />
   </main>;
 }
@@ -125,6 +128,7 @@ function HealthInsuranceJourney({ id }: { id: string }) {
         <article><span className="mini-icon amber"><MapPin /></span><div><small>State</small><strong>{state.facts["person.state"] ?? "Telangana"}</strong><em>India</em></div></article>
       </section>
     </details>
+    <JourneyObligations projection={state.projection} facts={state.facts} />
     <JourneyMapDrawer id={id} title="Health & insurance steps" />
   </main>;
 }
@@ -147,6 +151,7 @@ function VehicleJourney({ id }: { id: string }) {
         <article><span className="mini-icon green"><MapPin /></span><div><small>Transfer</small><strong>{state.facts["vehicle.transferScope"] === "interstate" ? "Interstate" : "Within Telangana"}</strong><em>India</em></div></article>
       </section>
     </details>
+    <JourneyObligations projection={state.projection} facts={state.facts} />
     <JourneyMapDrawer id={id} title="Your vehicle steps" />
   </main>;
 }

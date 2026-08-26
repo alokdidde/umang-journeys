@@ -22,14 +22,14 @@ export default function SuccessPage() {
       <section className="success-hero content-layer">
         <div className="success-copy"><span className="success-pill"><Check />Step complete</span><h1>Birth registered <PartyPopper /></h1><p>The synthetic record is saved. Your next step is to generate the birth certificate.</p></div>
         <article className="certificate-card">
-          <div className="certificate-watermark">SANDBOX</div>
+          <div className="certificate-watermark">SYNTHETIC</div>
           <header><span className="certificate-icon"><Baby /></span><div><h2>Birth Certificate</h2><p><BadgeCheck />Synthetic verified record</p></div><span className="registered-tag"><Check />Registered</span></header>
           <div className="certificate-grid"><div><small>Child’s name</small><strong>{childName}</strong></div><div><small>Registration no.</small><strong>{registrationId}</strong></div><div><small>Date of birth</small><strong>{state.facts["child.dateOfBirth"] ?? "24 August 2026"}</strong></div><div><small>Place of birth</small><strong>{state.facts["birth.city"] ?? "Hyderabad"}, {state.facts["birth.state"] ?? "Telangana"}</strong></div></div>
           <Link href={`/journeys/${id}/services/birth_certificate`} className="primary-cta"><Download />Generate birth certificate<ArrowRight /></Link>
         </article>
       </section>
       <div className="success-actions content-layer"><Link href={`/journeys/${id}`} className="secondary-button">View the whole journey<ArrowRight /></Link></div>
-      <p className="simulation-banner content-layer">Prototype — this registration is simulated. No government system was contacted.</p>
+      <p className="simulation-banner content-layer">Synthetic evaluation record — no government system was contacted.</p>
     </main>
   );
 }

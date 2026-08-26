@@ -1,5 +1,4 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { isSandboxServiceKey } from "@/domain/service-workflows";
 import { journeyRepository } from "@/server/repositories/journey-repository";
 import { getDemoSession } from "@/server/session";
 
@@ -11,7 +10,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const sessionId = await getDemoSession();
   if (!sessionId) return Response.json({ code: "UNAUTHENTICATED" }, { status: 401 });
   const { id, key } = await params;
-  if (!isSandboxServiceKey(key)) return Response.json({ code: "SERVICE_NOT_FOUND" }, { status: 404 });
   const journey = await journeyRepository.get(sessionId, id);
   const run = journey?.serviceRuns[key];
   if (!journey || run?.status !== "completed" || !run.artifact) return Response.json({ code: "OUTPUT_NOT_READY", message: "Complete this service before downloading its record." }, { status: 409 });

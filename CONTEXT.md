@@ -120,6 +120,18 @@ _Avoid_: Reminder, one-time step
 The official authority, jurisdiction, canonical resource, and verification date that support a Journey Step’s guidance.
 _Avoid_: Helpful link, reference URL
 
+**Synthetic Agency**:
+An AI-backed evaluation adapter that behaves like one named external authority using the Journey’s submitted facts and evidence. It is never the real authority and every response it produces remains visibly synthetic.
+_Avoid_: Mock endpoint, deterministic simulator, government integration
+
+**Agency Decision**:
+A schema-validated response from a Synthetic Agency to one case submission, clarification, or appeal. It may approve, reject, request information, or remain under review, but it must explain its decision from the supplied case record.
+_Avoid_: Generated success, scripted outcome, provider stage
+
+**Obligation**:
+A dated or date-pending instance of a milestone or recurring duty derived from a Journey Step and confirmed Journey Facts.
+_Avoid_: Reminder, hard-coded deadline
+
 **Step Dependency**:
 A prerequisite relationship between two Journey Steps. The later step stays locked until every prerequisite is complete, including when a step inside an added Optional Branch depends on another step in that branch.
 _Avoid_: Page order, visual connector

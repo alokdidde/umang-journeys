@@ -1,7 +1,8 @@
 import { activateBranch as activateJourneyBranch, completeNode, compileJourney, getJourneyTemplate, isJourneyComplete, newBabyTemplate, reevaluateJourney, type JourneyProjection } from "@/domain/journey-engine";
 import { PrismaJourneyRepository } from "@/server/repositories/prisma-journey-repository";
-import { advanceSimulatedService, isSandboxServiceKey } from "@/server/integrations/sandbox-services";
-import type { SandboxServiceKey, SandboxServiceRun } from "@/domain/service-workflows";
+import { agencyDecisionToServiceRun, evaluateSyntheticAgency, type AgencyCaseInput, type ExternalAgencyAgent } from "@/server/integrations/external-agency-agent";
+import { e2eAgencyAgent } from "@/server/integrations/e2e-agency-agent";
+import { serviceDefinitionFor, type SandboxServiceRun } from "@/domain/service-workflows";
 import type { JourneyLifecycleStatus, JourneySubject } from "@/domain/journey-summary";
 import type { EvidenceRecord, JourneyEvidence } from "@/domain/evidence";
 
@@ -14,7 +15,7 @@ export type StoredJourney = {
   facts: Record<string, string>;
   factHistory: Array<{ id: string; key: string; value: string; source: "user_statement" | "document" | "provider" | "demo"; sourceRef?: string; status: "active" | "corrected" | "retracted"; recordedAt: string }>;
   auditLog: Array<{ id: string; actor: "citizen" | "document_agent" | "provider" | "system"; event: string; detail: Record<string, string>; occurredAt: string }>;
-  serviceRuns: Partial<Record<SandboxServiceKey, SandboxServiceRun>>;
+  serviceRuns: Record<string, SandboxServiceRun | undefined>;
   evidence: JourneyEvidence[];
   registrationId?: string;
   createdAt: string;
@@ -55,6 +56,28 @@ export function canAdvanceFromVerifiedEvidence(journey: Pick<StoredJourney, "fac
   return nodeKey === "vaccination_timeline" && Boolean(journey.facts["vaccination.last.vaccine"]);
 }
 
+export function buildAgencyCaseInput(journey: StoredJourney, nodeKey: string): AgencyCaseInput {
+  const node = journey.projection.nodes.find((candidate) => candidate.key === nodeKey);
+  if (!node) throw new Error(`Unknown journey node: ${nodeKey}`);
+  const definition = serviceDefinitionFor(node);
+  const current = journey.serviceRuns[nodeKey];
+  const intentValue = journey.facts[`agency.intent.${nodeKey}`];
+  const intent = intentValue === "clarify" || intentValue === "appeal" || intentValue === "check_status" ? intentValue : "submit";
+  return {
+    journeyId: journey.id,
+    nodeKey,
+    title: node?.title ?? nodeKey,
+    description: node.description,
+    agency: definition.agency,
+    officialSource: node.source,
+    facts: Object.fromEntries(Object.entries(journey.facts).filter(([key]) => !key.startsWith("service."))),
+    evidence: journey.evidence.map((item) => ({ type: item.type, verificationStatus: item.verificationStatus, extractedFields: item.extractedFields })),
+    previousDecision: current ? { outcome: current.caseStatus, summary: current.actionMessage, reasonCode: current.reasonCode, actionMessage: current.actionMessage } : undefined,
+    citizenMessage: journey.facts[`agency.message.${nodeKey}`],
+    intent,
+  };
+}
+
 function subjectForJourney(lifeEvent: string, facts: Record<string, string>): Omit<JourneySubject, "id"> {
   if (lifeEvent === "buying_a_vehicle") return { type: "vehicle", displayName: facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || "Your vehicle" };
   if (lifeEvent === "moving_home") return { type: "residence", displayName: facts["move.label"]?.trim() || `New home in ${facts["move.newCity"]?.trim() || "your new area"}` };
@@ -69,6 +92,8 @@ export class MemoryJourneyRepository implements JourneyRepository {
   private evidenceContents = new Map<string, EvidenceRecord>();
   private entities = new Map<string, { id: string; type: JourneySubject["type"]; displayName: string }>();
 
+  constructor(private readonly agencyAgent: ExternalAgencyAgent = evaluateSyntheticAgency) {}
+
   async create(sessionId: string, facts: Record<string, string> = {}, templateId = newBabyTemplate.id) {
     const template = getJourneyTemplate(templateId);
     if (!template) throw new Error(`Unknown journey template: ${templateId}`);
@@ -82,7 +107,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
       id: `journey-${crypto.randomUUID()}`,
       sessionId,
       status: "active",
-      subject: { id: subjectId, ...subject, canonicalEntityId: entity.id },
+      subject: { id: subjectId, ...subject, canonicalEntityId: entity.id, householdId: `household:${sessionId}`, role: subject.type === "person" && !facts["health.dependentRelationship"] ? "account_holder" : subject.type === "person" || subject.type === "child" ? "dependent" : "asset" },
       projection: compileJourney(template, facts),
       facts,
       factHistory: Object.entries(facts).map(([key, value]) => ({ id: `fact-${crypto.randomUUID()}`, key, value, source: "user_statement" as const, status: "active" as const, recordedAt: timestamp })),
@@ -199,24 +224,24 @@ export class MemoryJourneyRepository implements JourneyRepository {
     return this.evidenceContents.get(`${sessionId}:${id}:${evidenceId}`) ?? null;
   }
   async completeRegistration(sessionId: string, id: string, idempotencyKey: string) {
-    const journey = await this.get(sessionId, id);
-    if (!journey) return null;
-    const scopedKey = `${sessionId}:${id}:${idempotencyKey}`;
-    const registrationId = this.idempotency.get(scopedKey) ?? "BR-DEMO-2026-7429";
-    this.idempotency.set(scopedKey, registrationId);
-    const projection = completeNode(journey.projection, "birth_registration", journey.facts);
-    const updated = { ...journey, registrationId, projection, auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "provider" as const, event: "birth_registration_approved", detail: { registrationId }, occurredAt: now() }], status: isJourneyComplete(projection) ? "completed" as const : "active" as const, updatedAt: now() };
+    const reviewed = await this.advanceService(sessionId, id, "birth_registration", idempotencyKey);
+    if (!reviewed) return null;
+    const run = reviewed.serviceRuns.birth_registration;
+    if (run?.status !== "completed") return reviewed;
+    const updated = { ...reviewed, registrationId: run.receipt };
     this.journeys.set(`${sessionId}:${id}`, updated);
     return updated;
   }
   async advanceService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
     const journey = await this.get(sessionId, id);
     const node = journey?.projection.nodes.find((candidate) => candidate.key === nodeKey);
-    if (!journey || !node || (node.status === "locked" && !canAdvanceFromVerifiedEvidence(journey, nodeKey)) || !isSandboxServiceKey(nodeKey)) return null;
+    if (!journey || !node || node.action === "none" || (node.status === "locked" && !canAdvanceFromVerifiedEvidence(journey, nodeKey))) return null;
+    if (journey.serviceRuns[nodeKey]?.status === "completed") return journey;
     const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
     if (this.idempotency.has(scopedKey)) return journey;
+    const decision = await this.agencyAgent(buildAgencyCaseInput(journey, nodeKey));
+    const run = agencyDecisionToServiceRun(nodeKey, serviceDefinitionFor(node).agency, decision, journey.serviceRuns[nodeKey]);
     this.idempotency.set(scopedKey, idempotencyKey);
-    const run = advanceSimulatedService(id, nodeKey, journey.serviceRuns[nodeKey], journey.facts);
     const projection = run.status === "completed"
       ? completeNode(journey.projection, nodeKey, journey.facts)
       : { ...journey.projection, nodes: journey.projection.nodes.map((candidate) => candidate.key === nodeKey ? { ...candidate, status: run.status === "waiting_external" ? "waiting_external" as const : run.status === "failed" ? "blocked" as const : "in_progress" as const } : candidate) };
@@ -234,7 +259,9 @@ export class MemoryJourneyRepository implements JourneyRepository {
   async reset(sessionId: string) { for (const [key] of this.journeys) if (key.startsWith(`${sessionId}:`)) this.journeys.delete(key); }
 }
 
+const runtimeAgencyAgent = process.env.NODE_ENV !== "production" && process.env.UMANG_E2E_AGENCY === "approved" ? e2eAgencyAgent : evaluateSyntheticAgency;
+
 export const journeyRepository: JourneyRepository =
   process.env.PERSISTENCE_MODE === "postgres"
-    ? new PrismaJourneyRepository()
-    : new MemoryJourneyRepository();
+    ? new PrismaJourneyRepository(runtimeAgencyAgent)
+    : new MemoryJourneyRepository(runtimeAgencyAgent);

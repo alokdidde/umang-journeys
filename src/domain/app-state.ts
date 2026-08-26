@@ -1,5 +1,5 @@
 import { compileJourney, newBabyTemplate, type JourneyProjection } from "./journey-engine";
-import type { SandboxServiceKey, SandboxServiceRun } from "./service-workflows";
+import type { SandboxServiceRun } from "./service-workflows";
 import type { JourneyEvidence } from "./evidence";
 
 export type RegistrationForm = { childName: string; localWard: string };
@@ -20,7 +20,7 @@ export type AppState = {
   projection: JourneyProjection;
   form: RegistrationForm;
   facts: Record<string, string>;
-  serviceRuns: Partial<Record<SandboxServiceKey, SandboxServiceRun>>;
+  serviceRuns: Record<string, SandboxServiceRun | undefined>;
   evidence: JourneyEvidence[];
   formErrors: FormErrors;
   registrationId: string | null;
@@ -30,7 +30,7 @@ export type ServerJourney = {
   id: string;
   projection: JourneyProjection;
   facts: Record<string, string>;
-  serviceRuns?: Partial<Record<SandboxServiceKey, SandboxServiceRun>>;
+  serviceRuns?: Record<string, SandboxServiceRun | undefined>;
   evidence?: JourneyEvidence[];
   registrationId?: string;
 };

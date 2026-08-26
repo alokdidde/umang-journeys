@@ -68,11 +68,15 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Moving Home, Starting a Business, and Retirement distinguish a short required path from optional authority-specific branches. Synthetic readiness, registration, pension, and entitlement outputs must never look like official approval.
 - First-visit Home asks one plain-language question through a single wide text-or-document composer, then offers compact life-event choices; document suggestions require approval and explanatory process content stays out of the primary path.
 - Active and completed Journey Maps stay collapsed behind “View journey map.” Required branches are visually primary; dormant optional branches are quieter and become completion obligations only after the citizen adds them.
+- Journey Maps open on “Relevant now,” with search and an explicit “Entire journey” scope for dormant branches and later duties. Desktop and mobile render only their own graph representation.
+- Dated and recurring obligations stay in one collapsed “Dates to keep in mind” disclosure; overdue or near-term duties may also surface as a plain Home task.
 - Forms with more than one conceptual group use two short parts with Back/Continue controls and a visible “Part 1 of 2” label.
 - Evidence details, provider checks, generated-result groups, and less-used sample documents are progressively disclosed.
 - Evidence stays pending until the citizen reviews analysed values; confidence, checks, and conflicts appear inside the evidence card rather than as a separate technical workspace.
 - Provider failures, evidence review, deadlines, and journey exceptions surface as plain tasks in Activity; the audit ledger remains a separate History tab.
 - Completion screens offer exactly one recommended next action, with the full journey available as a secondary link.
+- Synthetic external services are reviewed by input-driven Vercel AI agents. Citizens provide evidence, consent, clarifications, and appeals; the interface must never expose a predetermined outcome picker or silently fall back to rules.
+- Every synthetic decision states that no real authority was contacted, preserves an inspectable reference and findings, and shows an explicit failure when the AI gateway is unavailable.
 - Authentication keeps the pre-filled gateway visually stable: password visibility is user-controlled, errors stay beside the fields, pending actions show progress, and sign-out is an explicit desktop label rather than an ambiguous account avatar. Mobile keeps the same sign-out action as a 44px icon control with an accessible name.
 
 ## Mood descriptors

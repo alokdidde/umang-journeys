@@ -11,7 +11,7 @@ type JourneyContextValue = {
   createJourney: (facts: Record<string, string>, templateId?: string) => Promise<string | null>;
   loadJourney: (id: string) => Promise<boolean>;
   submitRegistration: (id: string) => Promise<boolean>;
-  advanceService: (id: string, nodeKey: string) => Promise<boolean>;
+  advanceService: (id: string, nodeKey: string, input?: { intent?: "submit" | "clarify" | "appeal" | "check_status"; message?: string }) => Promise<boolean>;
   completeVehicleDetails: (id: string, facts: Record<string, string>) => Promise<boolean>;
   completeHealthProfile: (id: string, facts: Record<string, string>) => Promise<boolean>;
   completeProfileStep: (id: string, nodeKey: "move_profile" | "business_profile" | "retirement_profile", facts: Record<string, string>) => Promise<boolean>;
@@ -205,18 +205,18 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
-  const advanceService = useCallback(async (id: string, nodeKey: string) => {
+  const advanceService = useCallback(async (id: string, nodeKey: string, input: { intent?: "submit" | "clarify" | "appeal" | "check_status"; message?: string } = {}) => {
     dispatch({ type: "operation_started" });
     try {
       const journey = await requestJson<ServerJourney>(`/api/journeys/${encodeURIComponent(id)}/nodes/${encodeURIComponent(nodeKey)}/submit`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ idempotencyKey: crypto.randomUUID() }),
+        body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), ...input }),
       });
       dispatch({ type: "server_journey_loaded", journey });
       return true;
     } catch (error) {
-      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "The sandbox service could not complete this request." });
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "The synthetic agency could not review this request." });
       return false;
     }
   }, [dispatch]);

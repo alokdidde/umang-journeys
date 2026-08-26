@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MemoryJourneyRepository } from "./journey-repository";
+import { approvedTestAgencyAgent } from "@/test/agency-agent";
 
 describe("journey repository", () => {
   it("keeps separate baby journeys and lists the most recently changed first", async () => {
@@ -135,41 +136,48 @@ describe("journey repository", () => {
   });
 
   it("replays an idempotent registration without changing its identifier", async () => {
-    const repository = new MemoryJourneyRepository();
+    const repository = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const created = await repository.create("session-a");
     const first = await repository.completeRegistration("session-a", created.id, "idem-12345678");
     const replay = await repository.completeRegistration("session-a", created.id, "idem-12345678");
-    expect(first?.registrationId).toBe("BR-DEMO-2026-7429");
+    expect(first?.registrationId).toBe("SYN-TEST-BIRTH-REGISTRATION");
     expect(replay?.registrationId).toBe(first?.registrationId);
   });
 
-  it("starts a simulated service as persisted work in progress", async () => {
-    const repository = new MemoryJourneyRepository();
+  it("persists an under-review decision returned by the synthetic agency", async () => {
+    const repository = new MemoryJourneyRepository(async (input) => input.nodeKey === "birth_registration"
+      ? approvedTestAgencyAgent(input)
+      : ({
+          outcome: "under_review",
+          progress: 48,
+          summary: `The synthetic ${input.title} case remains under review.`,
+          reasonCode: null,
+          actionMessage: null,
+          reference: "SYN-TEST-UNDER-REVIEW",
+          events: [{ stageKey: "record_review", title: "Record review started", detail: "The supplied record is being reviewed by the synthetic agency." }],
+          artifact: null,
+        }));
     const created = await repository.create("session-progress");
     await repository.completeRegistration("session-progress", created.id, "registration-progress");
-    for (let stage = 1; stage <= 4; stage += 1) {
-      await repository.advanceService("session-progress", created.id, "birth_certificate", `certificate-${stage}`);
-    }
-
     const journey = await repository.advanceService(
       "session-progress",
       created.id,
-      "child_health_record",
-      "health-stage-1",
+      "birth_certificate",
+      "certificate-review",
     );
 
-    expect(journey?.projection.nodes.find((node) => node.key === "child_health_record")?.status).toBe("in_progress");
-    expect(journey?.serviceRuns.child_health_record).toMatchObject({
-      status: "running",
-      progress: 24,
+    expect(journey?.projection.nodes.find((node) => node.key === "birth_certificate")?.status).toBe("waiting_external");
+    expect(journey?.serviceRuns.birth_certificate).toMatchObject({
+      status: "waiting_external",
+      progress: 48,
       currentStage: 1,
     });
-    expect(journey?.serviceRuns.child_health_record?.events).toHaveLength(1);
-    expect(Date.parse(journey?.serviceRuns.child_health_record?.events[0]?.occurredAt ?? "")).not.toBeNaN();
+    expect(journey?.serviceRuns.birth_certificate?.events).toHaveLength(1);
+    expect(Date.parse(journey?.serviceRuns.birth_certificate?.events[0]?.occurredAt ?? "")).not.toBeNaN();
   });
 
-  it("persists each simulated external service result and completes its journey node", async () => {
-    const repository = new MemoryJourneyRepository();
+  it("persists each AI agency decision and completes only approved journey nodes", async () => {
+    const repository = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const created = await repository.create("session-services");
     await repository.completeRegistration("session-services", created.id, "registration-1234");
 
@@ -182,18 +190,10 @@ describe("journey repository", () => {
     ] as const)) {
       if (nodeKey === "child_identity") await repository.activateBranch("session-services", created.id, "child_identity");
       if (nodeKey === "eligible_benefits") await repository.activateBranch("session-services", created.id, "family_support");
-      let journey = null;
-      for (let stage = 1; stage <= 4; stage += 1) {
-        journey = await repository.advanceService(
-          "session-services",
-          created.id,
-          nodeKey,
-          `service-${nodeKey}-${stage}`,
-        );
-      }
+      const journey = await repository.advanceService("session-services", created.id, nodeKey, `service-${nodeKey}`);
       expect(journey?.projection.nodes.find((node) => node.key === nodeKey)?.status).toBe("completed");
       expect(journey?.serviceRuns[nodeKey]?.progress).toBe(100);
-      expect(journey?.serviceRuns[nodeKey]?.events).toHaveLength(4);
+      expect(journey?.serviceRuns[nodeKey]?.events).toHaveLength(1);
       expect(journey?.serviceRuns[nodeKey]?.artifact?.groups[0]?.items.length).toBeGreaterThan(0);
     }
     expect((await repository.get("session-services", created.id))?.status).toBe("completed");

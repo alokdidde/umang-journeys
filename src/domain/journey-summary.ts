@@ -1,12 +1,14 @@
 import type { JourneyProjection, NodeStatus } from "./journey-engine";
 import { getJourneyTemplate, isJourneyComplete, journeyProgressNodes } from "./journey-engine";
-import type { SandboxServiceKey, SandboxServiceRun } from "./service-workflows";
+import type { SandboxServiceRun } from "./service-workflows";
 
 export type JourneySubject = {
   id: string;
   type: "child" | "vehicle" | "person" | "residence" | "business";
   displayName: string;
   canonicalEntityId?: string;
+  householdId?: string;
+  role?: "account_holder" | "dependent" | "asset";
 };
 
 export type JourneyLifecycleStatus = "active" | "completed" | "abandoned";
@@ -17,7 +19,7 @@ export type SummarizableJourney = {
   subject: JourneySubject;
   projection: JourneyProjection;
   facts: Record<string, string>;
-  serviceRuns: Partial<Record<SandboxServiceKey, SandboxServiceRun>>;
+  serviceRuns: Record<string, SandboxServiceRun | undefined>;
   createdAt: string;
   updatedAt: string;
 };
@@ -83,7 +85,7 @@ export function selectJourneyNextAction(journey: JourneyActionSource): JourneyNe
     actionable.find((node) => node.recommended) ??
     actionable[0];
   const nextRun = nextNode && nextNode.key in journey.serviceRuns
-    ? journey.serviceRuns[nextNode.key as SandboxServiceKey]
+    ? journey.serviceRuns[nextNode.key]
     : undefined;
 
   return nextNode ? {

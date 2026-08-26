@@ -1,9 +1,12 @@
 import type { DocumentKind } from "./document-intake";
 import type { JourneyEvidence } from "./evidence";
+import type { JourneyProjection } from "./journey-engine";
+import { deriveJourneyObligations } from "./journey-obligations";
 
 type HubServiceRun = {
   status: string;
   updatedAt: string;
+  actionMessage?: string;
   artifact?: { title: string };
   events: Array<{ stageKey: string; title: string; detail: string; occurredAt: string }>;
 };
@@ -16,7 +19,7 @@ export type HubJourneyInput = {
   updatedAt: string;
   evidence: JourneyEvidence[];
   serviceRuns: Record<string, HubServiceRun | undefined>;
-  projection?: { nodes: Array<{ key: string; title: string; status: string }> };
+  projection?: JourneyProjection | { nodes: Array<{ key: string; title: string; status: string }> };
   facts?: Record<string, string>;
   auditLog?: Array<{ id: string; actor: string; event: string; detail: Record<string, string>; occurredAt: string }>;
 };
@@ -79,6 +82,10 @@ export type CitizenHubSnapshot = {
   tasks: CitizenTask[];
   summary: { uploaded: number; issued: number; needsReview: number; activity: number; tasks: number };
 };
+
+function isFullProjection(value: HubJourneyInput["projection"]): value is JourneyProjection {
+  return Boolean(value && "branches" in value && "edges" in value && "templateId" in value);
+}
 
 const documentTitles: Record<DocumentKind, string> = {
   vehicle_rc: "Registration certificate",
@@ -256,8 +263,8 @@ export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; do
       if (!run) continue;
       if (run.status === "failed") tasks.push({
         id: `provider-action:${journey.id}:${nodeKey}`,
-        title: "Respond to the provider",
-        detail: "This synthetic case needs a clarification, correction, or appeal.",
+        title: "Respond to the synthetic agency",
+        detail: run.actionMessage ?? "This AI-reviewed case needs a clarification, correction, or appeal.",
         priority: "now",
         dueAt: null,
         journeyName: journey.subject.displayName,
@@ -283,7 +290,7 @@ export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; do
           mimeType: "application/pdf",
           size: null,
           status: "available",
-          sourceLabel: "Sandbox service",
+          sourceLabel: "AI synthetic agency",
           journeyId: journey.id,
           journeyName: journey.subject.displayName,
           createdAt: run.updatedAt,
@@ -302,12 +309,25 @@ export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; do
         });
       }
     }
+    if (isFullProjection(journey.projection)) {
+      for (const obligation of deriveJourneyObligations({ projection: journey.projection, facts: journey.facts ?? {} }).filter((item) => item.status === "overdue" || item.status === "due").slice(0, 3)) {
+        tasks.push({
+          id: `${obligation.id}:${journey.id}`,
+          title: obligation.status === "overdue" ? `${obligation.title} is overdue` : `${obligation.title} is due soon`,
+          detail: obligation.basis,
+          priority: "now",
+          dueAt: obligation.dueOn ? `${obligation.dueOn}T00:00:00.000Z` : null,
+          journeyName: journey.subject.displayName,
+          href: `/journeys/${journey.id}?view=map&mapQuery=${encodeURIComponent(obligation.title)}`,
+        });
+      }
+    }
     if (!tasks.some((task) => task.href.startsWith(`/journeys/${journey.id}`))) {
       const next = journey.projection?.nodes.find((node) => node.status === "available" || node.status === "in_progress" || node.status === "waiting_external");
       if (next) tasks.push({
         id: `next-step:${journey.id}:${next.key}`,
         title: next.status === "waiting_external" ? `Waiting: ${next.title}` : next.title,
-        detail: next.status === "waiting_external" ? "The provider simulator will update this case automatically." : "This is the next useful step in the journey.",
+        detail: next.status === "waiting_external" ? "The synthetic agency is still reviewing this case. Check when you are ready." : "This is the next useful step in the journey.",
         priority: next.status === "waiting_external" ? "waiting" : "soon",
         dueAt: next.status === "waiting_external" ? null : new Date(Date.parse(journey.updatedAt) + 7 * 24 * 60 * 60 * 1000).toISOString(),
         journeyName: journey.subject.displayName,

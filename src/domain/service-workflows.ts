@@ -1,4 +1,5 @@
 export const sandboxServiceKeys = [
+  "birth_registration",
   "birth_certificate",
   "child_health_record",
   "vaccination_timeline",
@@ -55,7 +56,7 @@ export type ServiceArtifact = {
 
 export type SandboxServiceRun = {
   runId: string;
-  nodeKey: SandboxServiceKey;
+  nodeKey: string;
   provider: string;
   status: ServiceRunStatus;
   progress: number;
@@ -90,6 +91,17 @@ export type ServiceWorkflowDefinition = {
 };
 
 export const serviceWorkflowDefinitions: Record<SandboxServiceKey, ServiceWorkflowDefinition> = {
+  birth_registration: {
+    agency: "Civil Registration System synthetic agency",
+    agencyShort: "CRS synthetic agency",
+    action: "Send for AI registry review",
+    explanation: "Review the child, birth, informant, place and route details and return a synthetic registry decision based on the supplied record.",
+    turnaround: "One input-driven AI review",
+    dataShared: ["Child and parent details", "Birth place and date", "Informant and registration route"],
+    stages: [
+      { key: "review_case", title: "Case reviewed", detail: "The synthetic registry reviews the supplied facts and identifies any missing or conflicting information.", progress: 100, state: "completed" },
+    ],
+  },
   birth_certificate: {
     agency: "Civil Registration System sandbox",
     agencyShort: "CRS sandbox",
@@ -163,7 +175,7 @@ export const serviceWorkflowDefinitions: Record<SandboxServiceKey, ServiceWorkfl
   ownership_transfer: {
     agency: "VAHAN ownership sandbox",
     agencyShort: "VAHAN sandbox",
-    action: "Submit transfer simulation",
+    action: "Send transfer for AI review",
     explanation: "Validate the RC and sale documents, prepare Form 29/30 data, and simulate an ownership-transfer submission without contacting an RTO.",
     turnaround: "About 4 simulated checks",
     dataShared: ["Vehicle registration and chassis suffix", "Buyer and seller details", "RC and sale agreement evidence"],
@@ -191,7 +203,7 @@ export const serviceWorkflowDefinitions: Record<SandboxServiceKey, ServiceWorkfl
   fastag_setup: {
     agency: "IHMCL issuer sandbox",
     agencyShort: "FASTag sandbox",
-    action: "Activate sandbox FASTag",
+    action: "Review FASTag setup",
     explanation: "Use VAHAN-validated vehicle details and a verified mobile number to simulate a new FASTag activation.",
     turnaround: "About 4 simulated checks",
     dataShared: ["VAHAN registration match", "Vehicle class", "Masked mobile number and selected issuer"],
@@ -444,4 +456,26 @@ export const serviceWorkflowDefinitions: Record<SandboxServiceKey, ServiceWorkfl
 
 export function isSandboxServiceKey(value: string): value is SandboxServiceKey {
   return sandboxServiceKeys.includes(value as SandboxServiceKey);
+}
+
+export function serviceDefinitionFor(node: { key: string; title: string; description: string; source?: { authority: string } }): ServiceWorkflowDefinition {
+  if (isSandboxServiceKey(node.key)) {
+    const definition = serviceWorkflowDefinitions[node.key];
+    const synthetic = (value: string) => value.replaceAll(" sandbox", " synthetic agent").replaceAll("Sandbox", "Synthetic").replaceAll("sandbox", "synthetic environment");
+    return {
+      ...definition,
+      agency: synthetic(definition.agency),
+      agencyShort: synthetic(definition.agencyShort),
+      explanation: synthetic(definition.explanation),
+    };
+  }
+  return {
+    agency: `${node.source?.authority ?? "Public service"} synthetic agency`,
+    agencyShort: `${node.source?.authority ?? "Public service"} · synthetic`,
+    action: `Send ${node.title.toLocaleLowerCase("en-IN")} for AI review`,
+    explanation: `${node.description} The synthetic agency will decide from the facts and verified evidence currently in this journey.`,
+    turnaround: "One input-driven AI review",
+    dataShared: ["Journey facts relevant to this step", "Verified evidence already attached", "Your clarification or appeal, when provided"],
+    stages: [],
+  };
 }

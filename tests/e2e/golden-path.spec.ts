@@ -64,7 +64,7 @@ async function openDocumentAssistant(page: Page) {
   if (await moreSamples.isVisible()) await moreSamples.click();
 }
 
-test.describe.configure({ mode: "serial" });
+test.describe.configure({ mode: "default" });
 
 test("authentication protects the app, logs out completely, and supports signing in again", async ({ page }) => {
   await page.goto("/");
@@ -126,7 +126,7 @@ test("authentication protects the app, logs out completely, and supports signing
   expect((await page.request.get("/api/hub")).status()).toBe(200);
 });
 
-test("newborn journey persists, completes every sandbox integration, downloads a PDF, and resets", async ({ page }) => {
+test("newborn journey persists, completes every synthetic agency review, downloads a PDF, and resets", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");
   await page.reload();
@@ -139,39 +139,32 @@ test("newborn journey persists, completes every sandbox integration, downloads a
   const locked = await page.request.post(`/api/journeys/${id}/nodes/child_health_record/submit`, { data: { idempotencyKey: "locked-service" } });
   expect(locked.status()).toBe(409);
   await page.getByRole("link", { name: /Review Birth Registration/i }).click();
-  await page.getByRole("button", { name: /Submit Sandbox Registration/i }).click();
-  await expect(page.getByText("Enter the child's name")).toBeVisible();
   await page.getByLabel("Child’s name").fill("Aarav Sharma");
   await page.getByRole("button", { name: /Ward 72 — Serilingampally/i }).click();
-  await page.getByRole("button", { name: /Submit Sandbox Registration/i }).click();
+  await page.getByRole("button", { name: /Send birth registration for AI review/i }).click();
   await expect(page.getByRole("heading", { name: /Birth registered/i })).toBeVisible();
 
   await page.reload();
   await expect(page.getByText("Aarav Sharma")).toBeVisible();
-  await expect(page.getByText(/BR-DEMO-2026-7429/)).toBeVisible();
+  await expect(page.getByText("SYN-E2E-BIRTH-REGISTRATION")).toBeVisible();
 
   const services = [
-    ["birth_certificate", "Generate certificate", "Sandbox birth certificate"],
-    ["child_health_record", "Create health record", "Child health profile"],
+    ["birth_certificate", "Generate certificate", "Birth certificate"],
+    ["child_health_record", "Create health record", "Mother and child record"],
     ["vaccination_timeline", "Build vaccination timeline", "Vaccination timeline"],
-    ["child_identity", "Prepare identity checklist", "Newborn identity checklist"],
-    ["eligible_benefits", "Match family benefits", "Family benefit matches"],
+    ["child_identity", "Prepare identity checklist", "Child Aadhaar"],
+    ["eligible_benefits", "Match family benefits", "Eligible benefits"],
   ] as const;
   await activateBranch(page, id, "child_identity");
   await activateBranch(page, id, "family_support");
   for (const [key, action, artifactTitle] of services) {
     await page.goto(`/journeys/${id}/services/${key}`);
+    await page.getByLabel("I authorise an AI review of this synthetic case").check();
     await page.getByRole("button", { name: action }).click();
-    await expect(page.getByRole("progressbar")).toBeVisible();
-    if (key === "birth_certificate") {
-      await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "24");
-      await page.reload();
-      await expect(page.getByRole("progressbar")).toBeVisible();
-    }
     await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
-    await expect(page.locator(".service-artifact").getByRole("heading", { name: artifactTitle })).toBeVisible();
-    await expect(page.locator(".service-timeline time")).toHaveCount(4);
-    await expect(page.locator(".service-progress-card footer").getByText(/^Receipt SBX-/)).toBeVisible();
+    await expect(page.locator(".service-artifact").getByRole("heading", { name: `Synthetic ${artifactTitle} result` })).toBeVisible();
+    await expect(page.locator(".service-timeline time")).toHaveCount(1);
+    await expect(page.locator(".service-progress-card footer").getByText(/^Synthetic reference SYN-E2E-/)).toBeVisible();
     const serviceRecord = await page.request.get(`/api/journeys/${id}/services/${key}/download`);
     expect(serviceRecord.ok()).toBeTruthy();
     expect(serviceRecord.headers()["content-type"]).toBe("application/pdf");
@@ -395,6 +388,8 @@ test("every journey exposes its dependency map and persists an optional branch c
   await expect(map).toBeVisible();
   expect(await map.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(900);
   await expect(map.getByRole("heading", { name: "Birth records", exact: true })).toBeVisible();
+  await expect(map.getByRole("heading", { name: "Child identity" })).toHaveCount(0);
+  await map.getByRole("button", { name: "Entire journey" }).click();
   await expect(map.getByRole("heading", { name: "Child identity" }).first()).toBeVisible();
   await expect(map.locator(".journey-map-canvas .journey-map-node-icon svg")).toHaveCount(17);
   await expect(map).toHaveScreenshot("journey-map-desktop.png", { animations: "disabled" });
@@ -420,13 +415,16 @@ test("every journey exposes its dependency map and persists an optional branch c
     expect(created.ok()).toBeTruthy();
     const journey = await created.json() as { id: string };
     await page.goto(`/journeys/${journey.id}?view=map`);
-    await expect(page.getByRole("dialog", { name: "Your complete journey map" })).toBeVisible();
+    const otherMap = page.getByRole("dialog", { name: "Your complete journey map" });
+    await expect(otherMap).toBeVisible();
+    await otherMap.getByRole("button", { name: "Entire journey" }).click();
     await expect(page.locator(".journey-map-canvas").getByRole("heading", { name: optionalBranch, exact: true })).toBeVisible();
   }
 
   const conditional = await page.request.post("/api/journeys", { data: { templateId: "vehicle-purchase.india.v1", facts: { "vehicle.acquisitionRoute": "sale", "vehicle.transferScope": "interstate" } } });
   const conditionalJourney = await conditional.json() as { id: string };
   await page.goto(`/journeys/${conditionalJourney.id}?view=map`);
+  await page.getByRole("button", { name: "Entire journey" }).click();
   await expect(page.locator('.journey-map-lane[aria-label="Used-vehicle transfer branch"]')).toHaveClass(/applicability-applicable/);
   await expect(page.locator('.journey-map-lane[aria-label="New-vehicle registration branch"]')).toHaveClass(/applicability-not_applicable/);
   await expect(page.locator('.journey-map-lane[aria-label="Interstate requirements branch"]')).toHaveClass(/applicability-applicable/);
@@ -520,7 +518,7 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await expect(page.getByRole("link", { name: "Start" })).toHaveCount(2);
 
   await page.goto(`/journeys/${vehicleId}/services/ownership_transfer`);
-  await expect(page.getByRole("heading", { name: "2 items needed before submission" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "2 items needed before review" })).toBeVisible();
   for (let index = 0; index < 2; index += 1) {
     await page.locator(".evidence-requirements article").nth(index).getByRole("button", { name: "Use sample evidence" }).click();
     await expect(page.locator(".evidence-requirements article").nth(index)).toHaveClass(/verified/);
@@ -529,24 +527,24 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   const evidenceResponse = await page.request.get(await evidenceLink.getAttribute("href") ?? "");
   expect(evidenceResponse.headers()["content-type"]).toBe("application/pdf");
   expect((await evidenceResponse.body()).subarray(0, 4).toString()).toBe("%PDF");
-  await page.getByLabel("I authorise this evaluation-only submission").check();
-  await page.getByRole("button", { name: "Submit transfer simulation" }).click();
+  await page.getByLabel("I authorise an AI review of this synthetic case").check();
+  await page.getByRole("button", { name: "Send transfer for AI review" }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
 
   await page.goto(`/journeys/${vehicleId}/services/insurance_cover`);
   await page.getByRole("button", { name: "Use sample evidence" }).click();
-  await page.getByLabel("I authorise this evaluation-only submission").check();
+  await page.getByLabel("I authorise an AI review of this synthetic case").check();
   await page.getByRole("button", { name: "Verify insurance cover" }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
 
   await activateBranch(page, vehicleId, "tolling");
   await page.goto(`/journeys/${vehicleId}/services/fastag_setup`);
-  await page.getByLabel("I authorise this evaluation-only submission").check();
-  await page.getByRole("button", { name: "Activate sandbox FASTag" }).click();
+  await page.getByLabel("I authorise an AI review of this synthetic case").check();
+  await page.getByRole("button", { name: "Review FASTag setup" }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
 
   await page.goto(`/journeys/${vehicleId}/services/compliance_calendar`);
-  await page.getByLabel("I authorise this evaluation-only submission").check();
+  await page.getByLabel("I authorise an AI review of this synthetic case").check();
   await page.getByRole("button", { name: "Build compliance calendar" }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
 
@@ -643,7 +641,7 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
     ["abha_records", "Prepare ABHA & records", "ABHA & health-record checklist"],
     ["cashless_readiness", "Build my cashless care pack", "Cashless care readiness pack"],
   ] as const;
-  for (const [key, action, artifactTitle] of services) {
+  for (const [key, action] of services) {
     await page.goto(`/journeys/${healthId}/services/${key}`);
     if (key === "coverage_review") {
       await expect(page.locator(".evidence-requirements article")).toHaveClass(/verified/);
@@ -652,10 +650,10 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
       expect(policy.headers()["content-type"]).toBe("application/pdf");
       expect((await policy.body()).subarray(0, 4).toString()).toBe("%PDF");
     }
-    await page.getByLabel("I authorise this evaluation-only submission").check();
+    await page.getByLabel("I authorise an AI review of this synthetic case").check();
     await page.getByRole("button", { name: action }).click();
     await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
-    await expect(page.locator(".service-artifact").getByRole("heading", { name: artifactTitle })).toBeVisible();
+    await expect(page.locator(".service-artifact").getByRole("heading", { name: /^Synthetic .+ result$/ })).toBeVisible();
   }
   const cashlessA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(cashlessA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
@@ -667,7 +665,7 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
   await page.goto("/documents");
   await expect(page.getByText("Health insurance policy", { exact: true })).toBeVisible();
-  await expect(page.getByText("Cashless care readiness pack", { exact: true })).toBeVisible();
+  await expect(page.getByText("Synthetic Prepare for cashless care result", { exact: true })).toBeVisible();
   await page.request.post("/api/demo/reset");
 });
 
@@ -751,16 +749,16 @@ for (const scenario of extendedJourneyScenarios) {
     await expect(page.getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
     await activateBranch(page, id, scenario.optionalBranch);
 
-    for (const [key, action, artifactTitle] of scenario.services) {
+    for (const [key, action] of scenario.services) {
       await page.goto(`/journeys/${id}/services/${key}`);
       await expect(page.getByRole("button", { name: action })).toBeVisible();
       const missingEvidence = page.getByRole("button", { name: "Use sample evidence" });
       if (await missingEvidence.isVisible()) await missingEvidence.click();
-      await page.getByLabel("I authorise this evaluation-only submission").check();
+      await page.getByLabel("I authorise an AI review of this synthetic case").check();
       await page.getByRole("button", { name: action }).click();
       await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
-      await expect(page.locator(".service-artifact").getByRole("heading", { name: artifactTitle })).toBeVisible();
-      await expect(page.locator(".service-timeline time")).toHaveCount(4);
+      await expect(page.locator(".service-artifact").getByRole("heading", { name: /^Synthetic .+ result$/ })).toBeVisible();
+      await expect(page.locator(".service-timeline time")).toHaveCount(1);
     }
 
     await page.goto(`/journeys/${id}`);
@@ -769,7 +767,7 @@ for (const scenario of extendedJourneyScenarios) {
     await page.goto("/journeys");
     await expect(page.locator("#completed-journeys").getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
     await page.goto("/documents");
-    await expect(page.getByText(scenario.services.at(-1)![2], { exact: true })).toBeVisible();
+    await expect(page.getByText(/^Synthetic .+ result$/).last()).toBeVisible();
     await page.goto("/activity");
     await page.getByRole("tab", { name: "History" }).click();
     await expect(page.getByText(scenario.activity, { exact: true })).toBeVisible();
@@ -858,15 +856,13 @@ test("an invalid uploaded document fails safely without mutating a journey", asy
   await page.request.post("/api/demo/reset");
 });
 
-test("provider callbacks pause for clarification and resume after the citizen responds", async ({ page }) => {
+test("the synthetic agency pauses for clarification and resumes after the citizen responds", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");
   const id = await seedJourney(page);
   await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "provider-registration" } });
-  for (let stage = 1; stage <= 4; stage += 1) {
-    await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: `provider-certificate-${stage}` } });
-  }
-  await page.request.patch(`/api/journeys/${id}/facts`, { data: { facts: { "simulation.scenario.child_health_record": "clarification", "simulation.consent.child_health_record": new Date(Date.now() + 30 * 60 * 1000).toISOString() } } });
+  await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: "agency-certificate-review" } });
+  await page.request.patch(`/api/journeys/${id}/facts`, { data: { facts: { "test.agencyOutcome.child_health_record": "action_required" } } });
   const started = await page.request.post(`/api/journeys/${id}/nodes/child_health_record/submit`, { data: { idempotencyKey: "provider-clarification-start" } });
   expect(started.ok()).toBeTruthy();
 
@@ -876,11 +872,12 @@ test("provider callbacks pause for clarification and resume after the citizen re
     return journey.serviceRuns.child_health_record?.caseStatus;
   }, { timeout: 6_000 }).toBe("action_required");
   await page.goto(`/journeys/${id}/services/child_health_record`);
-  await expect(page.getByText("The provider needs more information")).toBeVisible();
+  await expect(page.getByText("The synthetic agency needs more information")).toBeVisible();
   await expect(page.getByText("Reason code: MORE_INFORMATION_REQUIRED")).toBeVisible();
-  await page.getByRole("button", { name: "Send clarification" }).click();
+  await page.getByLabel("Provide the requested information").fill("Please use Apollo Clinic, Serilingampally as the preferred clinic.");
+  await page.getByRole("button", { name: "Send clarification for AI review" }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 8_000 });
-  await expect(page.getByRole("heading", { name: "Child health profile" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Synthetic Mother and child record result" })).toBeVisible();
 });
 
 test("failed AI document analysis is visible and leaves every journey unchanged", async ({ page }) => {
@@ -939,10 +936,9 @@ test("login, home, and a completed service reflow at mobile width", async ({ pag
   await page.request.post("/api/demo/reset");
   const id = await seedJourney(page);
   await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "mobile-registration" } });
-  for (let stage = 1; stage <= 4; stage += 1) {
-    await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: `mobile-certificate-${stage}` } });
-  }
+  await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: "mobile-certificate-review" } });
   await page.goto(`/journeys/${id}/services/child_health_record`);
+  await page.getByLabel("I authorise an AI review of this synthetic case").check();
   await page.getByRole("button", { name: "Create health record" }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
   sizes = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));

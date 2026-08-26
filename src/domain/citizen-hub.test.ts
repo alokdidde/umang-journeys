@@ -70,7 +70,7 @@ describe("citizen hub snapshot", () => {
     expect(snapshot.tasks.map((task) => task.title)).toEqual(expect.arrayContaining([
       "Prepare the interstate transfer",
       "Review Vehicle Rc",
-      "Respond to the provider",
+      "Respond to the synthetic agency",
     ]));
     expect(snapshot.summary.tasks).toBe(3);
   });

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Baby, Car, CheckCircle2, LoaderCircle, Plus, Route, ShieldPlus } from "lucide-react";
+import { Baby, Car, CheckCircle2, LoaderCircle, Plus, Route, ShieldPlus, Users } from "lucide-react";
 import { JourneyCard } from "@/components/journey-card";
 import { useJourney } from "@/components/journey-provider";
 import type { JourneySummary } from "@/domain/journey-summary";
@@ -33,9 +33,11 @@ export default function JourneysPage() {
   function start(statement: string) { dispatch({ type: "set_statement", value: statement || state.statement }); router.push("/intake"); }
   const activeJourneys = journeys.filter((journey) => journey.status !== "completed");
   const completedJourneys = journeys.filter((journey) => journey.status === "completed");
+  const householdGroups = [...new Map(journeys.filter((journey) => journey.subject.householdId && (journey.subject.type === "person" || journey.subject.type === "child")).map((journey) => [journey.subject.householdId!, journeys.filter((candidate) => candidate.subject.householdId === journey.subject.householdId && (candidate.subject.type === "person" || candidate.subject.type === "child"))])).values()].filter((group) => group.length > 1);
   return <main className="page hub-page journeys-index-page">
     <header className="hub-page-header content-layer"><div><p className="eyebrow"><Route />Journeys</p><h1>Your journeys</h1><p>Pick up where you left off.</p></div><button className="secondary-button" type="button" onClick={() => start("")}><Plus />Start another</button></header>
     {error ? <p className="workflow-error content-layer" role="alert">{error}</p> : null}
+    {!loading && householdGroups.map((group) => <section className="household-journey-group content-layer" key={group[0]?.subject.householdId}><Users aria-hidden="true" /><div><strong>Family journeys stay separate</strong><p>{group.map((journey) => journey.subject.displayName).join(" · ")}</p></div><small>Each person keeps their own evidence, decisions and progress.</small></section>)}
     {loading ? <div className="collection-state content-layer" role="status"><LoaderCircle className="service-spinner" /><p>Loading your journeys…</p></div> : journeys.length ? <>
       <section className="journey-collection content-layer" aria-labelledby="active-journeys-title">
         <header><div><h2 id="active-journeys-title">In progress</h2><p>Journeys that still have something to do.</p></div><span>{activeJourneys.length}</span></header>

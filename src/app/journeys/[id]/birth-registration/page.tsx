@@ -69,7 +69,7 @@ export default function RegistrationPage() {
 
           <details className="registration-exceptions">
             <summary>Was this a home birth, delayed registration, or different informant?</summary>
-            <div><label>Where did the birth take place?<select value={birthRoute} onChange={(event) => setBirthRoute(event.target.value)}><option value="hospital">Hospital or registered facility</option><option value="home">Home or outside a facility</option></select></label><label>Who is providing the information?<select value={informant} onChange={(event) => setInformant(event.target.value)}><option value="mother">Mother</option><option value="father">Father</option><option value="guardian">Guardian or authorised informant</option><option value="facility">Facility representative</option></select></label><label>Is this being registered after the usual reporting period?<select value={delayed} onChange={(event) => setDelayed(event.target.value)}><option value="no">No</option><option value="yes">Yes or not sure</option></select></label><label>Has a clinician or health worker asked for newborn follow-up?<select value={followupNeeded} onChange={(event) => setFollowupNeeded(event.target.value)}><option value="not_sure">I’m not sure</option><option value="yes">Yes</option><option value="no">No</option></select></label><p>{birthRoute === "home" || delayed === "yes" ? "The sandbox will add an authority-review task and request supporting declarations before approval." : "The standard hospital-record route will be used."}</p></div>
+            <div><label>Where did the birth take place?<select value={birthRoute} onChange={(event) => setBirthRoute(event.target.value)}><option value="hospital">Hospital or registered facility</option><option value="home">Home or outside a facility</option></select></label><label>Who is providing the information?<select value={informant} onChange={(event) => setInformant(event.target.value)}><option value="mother">Mother</option><option value="father">Father</option><option value="guardian">Guardian or authorised informant</option><option value="facility">Facility representative</option></select></label><label>Is this being registered after the usual reporting period?<select value={delayed} onChange={(event) => setDelayed(event.target.value)}><option value="no">No</option><option value="yes">Yes or not sure</option></select></label><label>Has a clinician or health worker asked for newborn follow-up?<select value={followupNeeded} onChange={(event) => setFollowupNeeded(event.target.value)}><option value="not_sure">I’m not sure</option><option value="yes">Yes</option><option value="no">No</option></select></label><p>{birthRoute === "home" || delayed === "yes" ? "The AI synthetic registry will check whether supporting declarations are missing and explain any request." : "The AI synthetic registry will review the standard hospital-record route."}</p></div>
           </details>
 
           <div className="conversation-body">
@@ -136,12 +136,12 @@ export default function RegistrationPage() {
               <span><strong>{answered} of 2</strong> answers added</span>
               <span className="meter-track"><i data-ready={answered} /></span>
             </div>
-            <button type="submit" className="primary-cta" aria-label="Submit Sandbox Registration" disabled={state.pending}>
-              {state.pending ? "Contacting registry sandbox…" : "Review & create sandbox record"} <ArrowRight />
+            <button type="submit" className="primary-cta" aria-label="Send birth registration for AI review" disabled={state.pending}>
+              {state.pending ? "Reviewing with the synthetic registry…" : "Send for AI registry review"} <ArrowRight />
             </button>
           </div>
           {state.error && <p className="workflow-error in-panel" role="alert">{state.error}</p>}
-          <p className="nothing-sent"><ShieldCheck /> Nothing has been submitted. This prototype uses synthetic data only.</p>
+          <p className="nothing-sent"><ShieldCheck /> No government service is contacted. The Vercel AI SDK reviews this synthetic case from the facts shown here.</p>
         </form>
 
         <details className="application-preview panel">
@@ -173,7 +173,7 @@ export default function RegistrationPage() {
             <Fact Icon={MapPin} label="Local ward" value={state.form.localWard || "Waiting for your answer"} pending={!state.form.localWard} source="Your answer" />
           </div>
 
-          <div className="preview-note"><ShieldCheck /><span><strong>Reviewable, not mysterious</strong><small>Every prepared fact shows where it came from. You can change your two answers before creating the demo record.</small></span></div>
+          <div className="preview-note"><ShieldCheck /><span><strong>Reviewable, not mysterious</strong><small>Every prepared fact shows where it came from. You can change your answers before the AI synthetic registry reviews the record.</small></span></div>
           </div>
         </details>
       </div>

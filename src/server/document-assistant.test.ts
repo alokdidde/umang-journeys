@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { MemoryJourneyRepository } from "./repositories/journey-repository";
 import { MemoryDocumentIntakeRepository } from "./repositories/document-intake-repository";
 import { DocumentAssistantService } from "./document-assistant";
+import { approvedTestAgencyAgent } from "@/test/agency-agent";
 
 describe("document assistant", () => {
   it("applies an approved RC proposal exactly once", async () => {
-    const journeys = new MemoryJourneyRepository();
+    const journeys = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const documents = new MemoryDocumentIntakeRepository();
     const service = new DocumentAssistantService(journeys, documents);
     const intake = await service.propose("session-driver", {
@@ -35,7 +36,7 @@ describe("document assistant", () => {
   });
 
   it("records a vaccination receipt on the matching child and completes the timeline", async () => {
-    const journeys = new MemoryJourneyRepository();
+    const journeys = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const documents = new MemoryDocumentIntakeRepository();
     const service = new DocumentAssistantService(journeys, documents);
     const child = await journeys.create("session-family", {
@@ -72,7 +73,7 @@ describe("document assistant", () => {
   });
 
   it("never applies a proposal after it has been rejected", async () => {
-    const journeys = new MemoryJourneyRepository();
+    const journeys = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const documents = new MemoryDocumentIntakeRepository();
     const service = new DocumentAssistantService(journeys, documents);
     const intake = await service.propose("session-rejected", {
@@ -96,7 +97,7 @@ describe("document assistant", () => {
   });
 
   it("attaches an approved insurance policy to its matching vehicle", async () => {
-    const journeys = new MemoryJourneyRepository();
+    const journeys = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const documents = new MemoryDocumentIntakeRepository();
     const service = new DocumentAssistantService(journeys, documents);
     const vehicle = await journeys.create("session-policy", {
@@ -127,7 +128,7 @@ describe("document assistant", () => {
   });
 
   it("creates a health journey from an approved health policy", async () => {
-    const journeys = new MemoryJourneyRepository();
+    const journeys = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const documents = new MemoryDocumentIntakeRepository();
     const service = new DocumentAssistantService(journeys, documents);
     const intake = await service.propose("session-health-policy", {
@@ -153,7 +154,7 @@ describe("document assistant", () => {
   });
 
   it("creates a pre-filled child journey from an approved discharge summary", async () => {
-    const journeys = new MemoryJourneyRepository();
+    const journeys = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const documents = new MemoryDocumentIntakeRepository();
     const service = new DocumentAssistantService(journeys, documents);
     const intake = await service.propose("session-discharge", {
@@ -210,7 +211,7 @@ describe("document assistant", () => {
       absentFacts: ["retirement.serviceYears"],
     },
   ])("does not invent missing journey facts for $kind AI output", async ({ sessionId, kind, fields, absentFacts }) => {
-    const journeys = new MemoryJourneyRepository();
+    const journeys = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const documents = new MemoryDocumentIntakeRepository();
     const service = new DocumentAssistantService(journeys, documents);
     const intake = await service.propose(sessionId, {
@@ -261,7 +262,7 @@ describe("document assistant", () => {
       evidenceType: "retirement_account_statement",
     },
   ])("creates a pre-filled $kind journey from approved evidence", async ({ sessionId, fileName, kind, fields, subject, expectedFacts, evidenceType }) => {
-    const journeys = new MemoryJourneyRepository();
+    const journeys = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const documents = new MemoryDocumentIntakeRepository();
     const service = new DocumentAssistantService(journeys, documents);
     const intake = await service.propose(sessionId, {

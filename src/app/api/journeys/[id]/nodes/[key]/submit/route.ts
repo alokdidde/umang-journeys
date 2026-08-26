@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDemoSession } from "@/server/session";
 import { journeyRepository } from "@/server/repositories/journey-repository";
-import { isSandboxServiceKey } from "@/server/integrations/sandbox-services";
 import { missingEvidence } from "@/domain/evidence";
 
 const registrationSchema = z.object({ childName: z.string().trim().min(2), localWard: z.string().trim().min(2), idempotencyKey: z.string().min(8) });
-const serviceSchema = z.object({ idempotencyKey: z.string().min(8) });
+const serviceSchema = z.object({
+  idempotencyKey: z.string().min(8),
+  intent: z.enum(["submit", "clarify", "appeal", "check_status"]).default("submit"),
+  message: z.string().trim().min(4).max(1200).optional(),
+}).superRefine((value, context) => {
+  if ((value.intent === "clarify" || value.intent === "appeal") && !value.message) context.addIssue({ code: "custom", path: ["message"], message: "Explain what changed or provide the requested information." });
+});
 const vehicleDetailsSchema = z.object({
   "vehicle.registrationNumber": z.string().trim().regex(/^[A-Z]{2}\d{2}[A-Z0-9]{1,3}\d{4}$/, "Enter a valid Indian registration number"),
   "vehicle.makeModel": z.string().trim().min(2),
@@ -84,8 +89,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const parsed = registrationSchema.safeParse(payload);
     if (!parsed.success) return NextResponse.json({ code: "MISSING_REQUIREMENTS", message: "Child name and local ward are required." }, { status: 400 });
     await journeyRepository.updateFacts(sessionId, id, { "child.name": parsed.data.childName, "birth.place.ward": parsed.data.localWard });
-    const journey = await journeyRepository.completeRegistration(sessionId, id, parsed.data.idempotencyKey);
-    return journey ? NextResponse.json({ ...journey, synthetic: true }) : NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
+    try {
+      const journey = await journeyRepository.completeRegistration(sessionId, id, parsed.data.idempotencyKey);
+      if (!journey) return NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
+      const run = journey.serviceRuns.birth_registration;
+      if (run?.status !== "completed") return NextResponse.json({ code: run?.reasonCode ?? "AGENCY_REVIEW_INCOMPLETE", message: run?.actionMessage ?? "The synthetic registry could not approve this record yet." }, { status: run?.caseStatus === "action_required" ? 409 : 422 });
+      return NextResponse.json({ ...journey, synthetic: true });
+    } catch (cause) {
+      const error = cause as { code?: string; message?: string };
+      return NextResponse.json({ code: error.code ?? "AI_AGENCY_FAILED", message: error.message ?? "The synthetic registry could not review this birth registration." }, { status: error.code === "AI_GATEWAY_NOT_CONFIGURED" ? 503 : 502 });
+    }
   }
   if (key === "vehicle_details") {
     const parsed = vehicleDetailsSchema.safeParse(payload);
@@ -112,12 +125,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const journey = await journeyRepository.completeStep(sessionId, id, key, idempotencyKey);
     return journey ? NextResponse.json({ ...journey, synthetic: true }) : NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
   }
-  if (!isSandboxServiceKey(key)) return NextResponse.json({ code: "NODE_NOT_FOUND", message: "This service does not exist." }, { status: 404 });
   const parsed = serviceSchema.safeParse(payload);
   if (!parsed.success) return NextResponse.json({ code: "INVALID_REQUEST", message: "A valid idempotency key is required." }, { status: 400 });
   const current = await journeyRepository.get(sessionId, id);
   if (!current) return NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
-  if (current.projection.nodes.find((node) => node.key === key)?.status === "locked") {
+  const serviceNode = current.projection.nodes.find((node) => node.key === key);
+  if (!serviceNode || serviceNode.action === "none") return NextResponse.json({ code: "NODE_NOT_FOUND", message: "This service does not exist." }, { status: 404 });
+  if (serviceNode.status === "locked" || serviceNode.status === "skipped") {
     return NextResponse.json({ code: "NODE_LOCKED", message: "Complete the prerequisite journey steps before using this service." }, { status: 409 });
   }
   const missing = missingEvidence(key, current.evidence);
@@ -125,6 +139,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (key === "fastag_setup" && (!current.facts["fastag.mobileLast4"] || !current.facts["fastag.issuer"])) {
     return NextResponse.json({ code: "MISSING_REQUIREMENTS", message: "Choose an issuer and verify a mobile number before activating FASTag." }, { status: 409 });
   }
-  const journey = await journeyRepository.advanceService(sessionId, id, key, parsed.data.idempotencyKey);
-  return journey ? NextResponse.json({ ...journey, synthetic: true }) : NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
+  if (parsed.data.message || parsed.data.intent !== "submit") {
+    await journeyRepository.updateFacts(sessionId, id, {
+      [`agency.intent.${key}`]: parsed.data.intent,
+      ...(parsed.data.message ? { [`agency.message.${key}`]: parsed.data.message } : {}),
+    });
+  }
+  try {
+    const journey = await journeyRepository.advanceService(sessionId, id, key, parsed.data.idempotencyKey);
+    return journey ? NextResponse.json({ ...journey, synthetic: true }) : NextResponse.json({ code: "JOURNEY_NOT_FOUND" }, { status: 404 });
+  } catch (cause) {
+    const error = cause as { code?: string; message?: string };
+    const status = error.code === "AI_GATEWAY_NOT_CONFIGURED" ? 503 : 502;
+    return NextResponse.json({ code: error.code ?? "AI_AGENCY_FAILED", message: error.message ?? "The synthetic agency could not review this case." }, { status });
+  }
 }
