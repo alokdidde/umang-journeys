@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Armchair, ArrowLeft, ArrowRight, Baby, Building2, CalendarDays, Car, CheckCircle2, CircleHelp, FileCheck2, HeartPulse, House, MapPin, Mic, ShieldCheck, Sparkles, Store, UserRound } from "lucide-react";
 import { useJourney } from "@/components/journey-provider";
+import { detectLifeEvent } from "@/domain/intake-intent";
 
 const choices = [
   { value: "yes" as const, label: "Yes", icon: CheckCircle2 },
@@ -14,12 +15,8 @@ const choices = [
 export default function IntakePage() {
   const { state, dispatch, createJourney } = useJourney();
   const router = useRouter();
-  const isHealth = /health|medical|cashless|abha|ayushman|pm-?jay|health insurance/i.test(state.statement);
-  const isVehicle = /\b(vehicle|car|bike|scooter|motorcycle|nexon|creta)\b/i.test(state.statement);
-  const isMoving = /\b(move|moving|moved|shift|shifting|new home|new address|relocat)/i.test(state.statement);
-  const isBusiness = /\b(starting|start|launch|opening|open)\b.*\b(business|shop|enterprise|company|firm|studio)\b|\b(business|shop|enterprise|company|firm|studio)\b.*\b(starting|start|launch|opening|open)\b/i.test(state.statement);
-  const isRetirement = /\b(retire|retiring|retirement|pension|epfo|provident fund|nps)\b/i.test(state.statement);
-  const intent = isHealth ? "health" : isVehicle ? "vehicle" : isMoving ? "move" : isBusiness ? "business" : isRetirement ? "retirement" : "baby";
+  const detectedLifeEvent = detectLifeEvent(state.statement);
+  const intent = detectedLifeEvent === "managing_health_cover" ? "health" : detectedLifeEvent === "buying_a_vehicle" ? "vehicle" : detectedLifeEvent === "moving_home" ? "move" : detectedLifeEvent === "starting_a_business" ? "business" : detectedLifeEvent === "retirement" ? "retirement" : "baby";
   const clarificationAnswer = intent === "health" ? state.healthCoverageKnown : intent === "vehicle" ? state.vehicleOwnershipTransferred : intent === "move" ? state.moveAddressEvidenceKnown : intent === "business" ? state.businessPremisesProofKnown : intent === "retirement" ? state.retirementStatementKnown : state.hospitalRegistered;
   const heading = {
     health: [HeartPulse, "Health & insurance"], vehicle: [Car, "Vehicle journey"], move: [House, "Moving home"], business: [Store, "Starting a business"], retirement: [Armchair, "Retirement"], baby: [Baby, "New baby journey"],

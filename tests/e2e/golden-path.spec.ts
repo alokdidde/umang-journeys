@@ -188,9 +188,11 @@ test("Show my steps accepts either a description or a document with context", as
   await page.request.post("/api/demo/reset");
   await page.reload();
 
-  await page.getByLabel("Tell us what happened").fill("We moved to a rented home in Hyderabad.");
+  await page.getByLabel("Tell us what happened").fill("need to get insurance for parents");
   await page.getByRole("button", { name: "Show my steps" }).click();
   await expect(page).toHaveURL(/\/intake$/);
+  await expect(page.getByText("Health & insurance", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Do you have a health policy or government scheme card?" })).toBeVisible();
 
   await page.goBack();
   await expect(page.getByRole("heading", { name: "What do you need help with?" })).toBeVisible();

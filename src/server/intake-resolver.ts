@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import { detectLifeEvent } from "@/domain/intake-intent";
 
 export const intakeSchema = z.object({
   lifeEvent: z.object({ value: z.enum(["having_a_baby", "buying_a_vehicle", "managing_health_cover", "moving_home", "starting_a_business", "retirement"]), confidence: z.number().min(0).max(1) }),
@@ -39,43 +40,38 @@ export function createIntakeClientConfig(environment: IntakeEnvironment) {
 
 export function deterministicResolve(statement: string): IntakeResult {
   const normalized = statement.toLowerCase();
-  const isBaby = /baby|born|birth|daughter|son/.test(normalized);
-  const isVehicle = /\b(vehicle|car|bike|scooter|motorcycle|nexon|creta)\b/.test(normalized);
-  const isHealth = /health|medical|hospital cover|cashless|abha|ayushman|pm-?jay|health insurance/.test(normalized);
-  const isMoving = /\b(move|moving|moved|shift|shifting|new home|new address|relocat)/.test(normalized);
-  const isBusiness = /\b(starting|start|launch|opening|open)\b.*\b(business|shop|enterprise|company|firm|studio)\b|\b(business|shop|enterprise|company|firm|studio)\b.*\b(starting|start|launch|opening|open)\b/.test(normalized);
-  const isRetirement = /\b(retire|retiring|retirement|pension|epfo|provident fund|nps)\b/.test(normalized);
-  if (!isBaby && !isVehicle && !isHealth && !isMoving && !isBusiness && !isRetirement) throw Object.assign(new Error("This prototype supports baby, vehicle, health, moving home, business, and retirement journeys."), { code: "UNSUPPORTED_LIFE_EVENT" });
-  const city = /vizag|visakhapatnam/.test(normalized) ? "Visakhapatnam" : "Hyderabad";
-  const state = city === "Hyderabad" ? "Telangana" : "Andhra Pradesh";
-  if (isMoving) {
+  const lifeEvent = detectLifeEvent(statement);
+  if (!lifeEvent) throw Object.assign(new Error("This prototype supports baby, vehicle, health, moving home, business, and retirement journeys."), { code: "UNSUPPORTED_LIFE_EVENT" });
+  const city = /vizag|visakhapatnam/.test(normalized) ? "Visakhapatnam" : /hyderabad/.test(normalized) ? "Hyderabad" : undefined;
+  const state = city === "Hyderabad" ? "Telangana" : city === "Visakhapatnam" ? "Andhra Pradesh" : undefined;
+  if (lifeEvent === "moving_home") {
     return {
       resolver: "deterministic",
       lifeEvent: { value: "moving_home", confidence: 0.96 },
       facts: [
-        { key: "move.newCity", value: city, confidence: 0.94, source: "user_statement" },
-        { key: "move.newState", value: state, confidence: 0.95, source: "derived_from_city" },
+        ...(city ? [{ key: "move.newCity", value: city, confidence: 0.94, source: "user_statement" as const }] : []),
+        ...(state ? [{ key: "move.newState", value: state, confidence: 0.95, source: "derived_from_city" as const }] : []),
         { key: "move.occupancy", value: /rent|tenant|lease/.test(normalized) ? "rented" : "not_sure", confidence: 0.9, source: "user_statement" },
         { key: "move.date", value: "2026-09-25", confidence: 0.72, source: "relative_date_parse" },
       ],
       clarification: { key: "move.hasAddressEvidence", question: "Do you have a rent agreement, utility bill, or another new-address document?", choices: ["yes", "not_sure", "no"] },
     };
   }
-  if (isBusiness) {
+  if (lifeEvent === "starting_a_business") {
     return {
       resolver: "deterministic",
       lifeEvent: { value: "starting_a_business", confidence: 0.96 },
       facts: [
         { key: "business.activity", value: /design/.test(normalized) ? "Design services" : "Business activity to confirm", confidence: 0.84, source: "user_statement" },
         { key: "business.structure", value: "not_sure", confidence: 0.55, source: "user_statement" },
-        { key: "business.city", value: city, confidence: 0.94, source: "user_statement" },
-        { key: "business.state", value: state, confidence: 0.95, source: "derived_from_city" },
+        ...(city ? [{ key: "business.city", value: city, confidence: 0.94, source: "user_statement" as const }] : []),
+        ...(state ? [{ key: "business.state", value: state, confidence: 0.95, source: "derived_from_city" as const }] : []),
         { key: "business.startDate", value: "2026-09-01", confidence: 0.7, source: "relative_date_parse" },
       ],
       clarification: { key: "business.hasPremisesProof", question: "Do you have a document for the principal place of business?", choices: ["yes", "not_sure", "no"] },
     };
   }
-  if (isRetirement) {
+  if (lifeEvent === "retirement") {
     return {
       resolver: "deterministic",
       lifeEvent: { value: "retirement", confidence: 0.96 },
@@ -87,28 +83,32 @@ export function deterministicResolve(statement: string): IntakeResult {
       clarification: { key: "retirement.hasAccountStatement", question: "Do you have a provident-fund, NPS, or pension statement?", choices: ["yes", "not_sure", "no"] },
     };
   }
-  if (isVehicle) {
+  if (lifeEvent === "buying_a_vehicle") {
     const makeModel = /nexon/.test(normalized) ? "Tata Nexon" : /creta/.test(normalized) ? "Hyundai Creta" : "Purchased vehicle";
     return {
       resolver: "deterministic",
       lifeEvent: { value: "buying_a_vehicle", confidence: 0.96 },
       facts: [
         { key: "vehicle.purchaseType", value: /used|pre.?owned|second.?hand/.test(normalized) ? "used" : "new", confidence: 0.92, source: "user_statement" },
-        { key: "vehicle.city", value: city, confidence: 0.96, source: "user_statement" },
-        { key: "vehicle.state", value: state, confidence: 0.95, source: "derived_from_city" },
+        ...(city ? [{ key: "vehicle.city", value: city, confidence: 0.96, source: "user_statement" as const }] : []),
+        ...(state ? [{ key: "vehicle.state", value: state, confidence: 0.95, source: "derived_from_city" as const }] : []),
         { key: "vehicle.makeModel", value: makeModel, confidence: 0.75, source: "user_statement" },
         { key: "vehicle.purchaseDate", value: "2026-08-25", confidence: 0.72, source: "relative_date_parse" },
       ],
       clarification: { key: "vehicle.ownershipTransferred", question: "Is the registration certificate already in your name?", choices: ["yes", "not_sure", "no"] },
     };
   }
-  if (isHealth) {
+  if (lifeEvent === "managing_health_cover") {
     return {
       resolver: "deterministic",
       lifeEvent: { value: "managing_health_cover", confidence: 0.96 },
       facts: [
-        { key: "person.city", value: city, confidence: 0.9, source: "user_statement" },
-        { key: "person.state", value: state, confidence: 0.9, source: "derived_from_city" },
+        ...(city ? [{ key: "person.city", value: city, confidence: 0.9, source: "user_statement" as const }] : []),
+        ...(state ? [{ key: "person.state", value: state, confidence: 0.9, source: "derived_from_city" as const }] : []),
+        ...(/\b(parent|parents|mother|father)\b/.test(normalized) ? [
+          { key: "health.coverageFor", value: "dependent", confidence: 0.96, source: "user_statement" as const },
+          { key: "health.dependentRelationship", value: "parent", confidence: 0.96, source: "user_statement" as const },
+        ] : []),
       ],
       clarification: { key: "health.currentCover", question: "Do you have a health policy or government scheme card?", choices: ["yes", "not_sure", "no"] },
     };
@@ -118,8 +118,8 @@ export function deterministicResolve(statement: string): IntakeResult {
     lifeEvent: { value: "having_a_baby", confidence: 0.96 },
     facts: [
       { key: "birth.setting", value: /home/.test(normalized) ? "home" : "hospital", confidence: 0.94, source: "user_statement" },
-      { key: "birth.city", value: city, confidence: 0.98, source: "user_statement" },
-      { key: "birth.state", value: state, confidence: 0.95, source: "derived_from_city" },
+      ...(city ? [{ key: "birth.city", value: city, confidence: 0.98, source: "user_statement" as const }] : []),
+      ...(state ? [{ key: "birth.state", value: state, confidence: 0.95, source: "derived_from_city" as const }] : []),
       { key: "child.dateOfBirth", value: "2026-08-24", confidence: 0.9, source: "relative_date_parse" },
     ],
     clarification: { key: "birth.registeredByHospital", question: "Has the hospital already registered the birth?", choices: ["yes", "not_sure", "no"] },

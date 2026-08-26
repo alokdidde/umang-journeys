@@ -30,6 +30,25 @@ describe("deterministic intake fallback", () => {
     expect(result.clarification.key).toBe("health.currentCover");
   });
 
+  it("recognises health insurance requested for parents", () => {
+    const result = deterministicResolve("need to get insurance for parents");
+
+    expect(result.lifeEvent.value).toBe("managing_health_cover");
+    expect(result.clarification.key).toBe("health.currentCover");
+    expect(result.facts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: "health.coverageFor", value: "dependent" }),
+      expect.objectContaining({ key: "health.dependentRelationship", value: "parent" }),
+    ]));
+    expect(result.facts.some((fact) => fact.key === "person.city")).toBe(false);
+  });
+
+  it("keeps motor insurance with the vehicle journey", () => {
+    const result = deterministicResolve("I need insurance for my car");
+
+    expect(result.lifeEvent.value).toBe("buying_a_vehicle");
+    expect(result.clarification.key).toBe("vehicle.ownershipTransferred");
+  });
+
   it.each([
     ["We are moving to a rented home in Hyderabad next month.", "moving_home", "move.hasAddressEvidence"],
     ["I am starting a design business from my rented office in Hyderabad.", "starting_a_business", "business.hasPremisesProof"],
