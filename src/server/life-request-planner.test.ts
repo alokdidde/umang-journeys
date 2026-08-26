@@ -42,4 +42,28 @@ describe("AI life request planner", () => {
     vi.stubEnv("VERCEL_OIDC_TOKEN", "");
     await expect(planLifeRequest("I had a baby")).rejects.toMatchObject({ code: "AI_GATEWAY_NOT_CONFIGURED" });
   });
+
+  it("retries one transient generation failure before showing an error", async () => {
+    let calls = 0;
+    const model = new MockLanguageModelV3({ doGenerate: async () => {
+      calls += 1;
+      if (calls === 1) throw new Error("temporary structured generation failure");
+      return {
+        content: [{ type: "text", text: JSON.stringify({
+          supported: true,
+          summary: "Organise a vehicle and a business.",
+          subjects: [{ ref: "van", type: "vehicle", displayName: "Your van", facts: [] }, { ref: "business", type: "business", displayName: "Your business", facts: [] }],
+          needs: [
+            { id: "vehicle", subjectRef: "van", lifeEvent: "buying_a_vehicle", label: "Transfer the van", description: "Prepare its records.", confidence: 0.95, facts: [] },
+            { id: "business", subjectRef: "business", lifeEvent: "starting_a_business", label: "Set up the business", description: "Prepare its registrations.", confidence: 0.95, facts: [] },
+          ],
+          questions: [],
+        }) }],
+        finishReason: { unified: "stop", raw: "stop" }, usage, warnings: [],
+      };
+    }});
+
+    await expect(planLifeRequest("I bought a van and started a delivery business", { model })).resolves.toMatchObject({ needs: [{ lifeEvent: "buying_a_vehicle" }, { lifeEvent: "starting_a_business" }] });
+    expect(calls).toBe(2);
+  });
 });

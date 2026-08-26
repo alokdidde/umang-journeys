@@ -24,25 +24,29 @@ export async function planLifeRequest(statement: string, options: { model?: Lang
     throw plannerError("AI_GATEWAY_NOT_CONFIGURED", "AI request planning is unavailable because Vercel AI Gateway is not configured.");
   }
 
-  try {
-    const { output } = await generateText({
-      model: options.model ?? process.env.AI_INTAKE_MODEL ?? "openai/gpt-5.5",
-      output: Output.object({
-        name: "umang_life_request",
-        description: "A subject-centred plan of supported needs and missing details.",
-        schema: lifeRequestOutputSchema,
-      }),
-      system: systemPrompt,
-      prompt: statement,
-      maxRetries: 1,
-      timeout: { totalMs: 15_000 },
-    });
-    return prepareLifeRequest(output, options.requestId);
-  } catch (cause) {
-    if (cause instanceof Error && "code" in cause && cause.code === "UNSUPPORTED_LIFE_REQUEST") throw cause;
-    if (cause instanceof Error && cause.name === "GatewayAuthenticationError") {
-      throw plannerError("AI_GATEWAY_AUTH_FAILED", "The AI assistant could not sign in to Vercel AI Gateway.", cause);
+  let lastCause: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const { output } = await generateText({
+        model: options.model ?? process.env.AI_INTAKE_MODEL ?? "openai/gpt-5.5",
+        output: Output.object({
+          name: "umang_life_request",
+          description: "A subject-centred plan of supported needs and missing details.",
+          schema: lifeRequestOutputSchema,
+        }),
+        system: systemPrompt,
+        prompt: statement,
+        maxRetries: 0,
+        timeout: { totalMs: 30_000 },
+      });
+      return prepareLifeRequest(output, options.requestId);
+    } catch (cause) {
+      if (cause instanceof Error && "code" in cause && cause.code === "UNSUPPORTED_LIFE_REQUEST") throw cause;
+      if (cause instanceof Error && cause.name === "GatewayAuthenticationError") {
+        throw plannerError("AI_GATEWAY_AUTH_FAILED", "The AI assistant could not sign in to Vercel AI Gateway.", cause);
+      }
+      lastCause = cause;
     }
-    throw plannerError("AI_LIFE_REQUEST_FAILED", "We could not organise that request. Please try again.", cause);
   }
+  throw plannerError("AI_LIFE_REQUEST_FAILED", "We could not organise that request. Please try again.", lastCause);
 }
