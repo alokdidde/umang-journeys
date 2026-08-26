@@ -1,4 +1,4 @@
-import { completeNode, compileJourney, getJourneyTemplate, newBabyTemplate, type JourneyProjection } from "@/domain/journey-engine";
+import { activateBranch as activateJourneyBranch, completeNode, compileJourney, getJourneyTemplate, isJourneyComplete, newBabyTemplate, type JourneyProjection } from "@/domain/journey-engine";
 import { PrismaJourneyRepository } from "@/server/repositories/prisma-journey-repository";
 import { advanceSimulatedService, isSandboxServiceKey } from "@/server/integrations/sandbox-services";
 import type { SandboxServiceKey, SandboxServiceRun } from "@/domain/service-workflows";
@@ -26,6 +26,7 @@ export interface JourneyRepository {
   list(sessionId: string): Promise<StoredJourney[]>;
   get(sessionId: string, id: string): Promise<StoredJourney | null>;
   updateFacts(sessionId: string, id: string, facts: Record<string, string>, provenance?: { source: "user_statement" | "document" | "provider" | "demo"; sourceRef?: string }): Promise<StoredJourney | null>;
+  activateBranch(sessionId: string, id: string, branchKey: string): Promise<StoredJourney | null>;
   completeStep(sessionId: string, id: string, nodeKey: string, idempotencyKey: string): Promise<StoredJourney | null>;
   addEvidence(sessionId: string, id: string, evidence: Omit<EvidenceRecord, "id" | "createdAt">): Promise<StoredJourney | null>;
   reviewEvidence(sessionId: string, id: string, evidenceId: string, approved: boolean, fields?: Record<string, string>): Promise<StoredJourney | null>;
@@ -46,8 +47,8 @@ export function evidenceFacts(evidence: Pick<EvidenceRecord, "type" | "extracted
   return {};
 }
 
-function isComplete(projection: JourneyProjection) {
-  return projection.nodes.every((node) => node.status === "completed" || node.status === "skipped");
+export function canAdvanceFromVerifiedEvidence(journey: Pick<StoredJourney, "facts">, nodeKey: string) {
+  return nodeKey === "vaccination_timeline" && Boolean(journey.facts["vaccination.last.vaccine"]);
 }
 
 function subjectForJourney(lifeEvent: string, facts: Record<string, string>): Omit<JourneySubject, "id"> {
@@ -128,7 +129,26 @@ export class MemoryJourneyRepository implements JourneyRepository {
     if (this.idempotency.has(scopedKey)) return journey;
     this.idempotency.set(scopedKey, idempotencyKey);
     const projection = completeNode(journey.projection, nodeKey);
-    const updated = { ...journey, projection, auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "citizen" as const, event: "journey_step_completed", detail: { nodeKey }, occurredAt: now() }], status: isComplete(projection) ? "completed" as const : journey.status, updatedAt: now() };
+    const updated = { ...journey, projection, auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "citizen" as const, event: "journey_step_completed", detail: { nodeKey }, occurredAt: now() }], status: isJourneyComplete(projection) ? "completed" as const : "active" as const, updatedAt: now() };
+    this.journeys.set(`${sessionId}:${id}`, updated);
+    return updated;
+  }
+  async activateBranch(sessionId: string, id: string, branchKey: string) {
+    const journey = await this.get(sessionId, id);
+    const branch = journey?.projection.branches.find((candidate) => candidate.key === branchKey);
+    if (!journey || !branch || branch.requirement !== "optional") return null;
+    if (branch.active) return journey;
+    const projection = activateJourneyBranch(journey.projection, branchKey);
+    const activationFact = `journey.branch.${branchKey}.active`;
+    const updated: StoredJourney = {
+      ...journey,
+      status: "active",
+      projection,
+      facts: { ...journey.facts, [activationFact]: "true" },
+      factHistory: [...journey.factHistory, { id: `fact-${crypto.randomUUID()}`, key: activationFact, value: "true", source: "user_statement", status: "active", recordedAt: now() }],
+      auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "citizen", event: "journey_branch_activated", detail: { branchKey }, occurredAt: now() }],
+      updatedAt: now(),
+    };
     this.journeys.set(`${sessionId}:${id}`, updated);
     return updated;
   }
@@ -175,14 +195,14 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const registrationId = this.idempotency.get(scopedKey) ?? "BR-DEMO-2026-7429";
     this.idempotency.set(scopedKey, registrationId);
     const projection = completeNode(journey.projection, "birth_registration");
-    const updated = { ...journey, registrationId, projection, auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "provider" as const, event: "birth_registration_approved", detail: { registrationId }, occurredAt: now() }], status: isComplete(projection) ? "completed" as const : journey.status, updatedAt: now() };
+    const updated = { ...journey, registrationId, projection, auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "provider" as const, event: "birth_registration_approved", detail: { registrationId }, occurredAt: now() }], status: isJourneyComplete(projection) ? "completed" as const : "active" as const, updatedAt: now() };
     this.journeys.set(`${sessionId}:${id}`, updated);
     return updated;
   }
   async advanceService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
     const journey = await this.get(sessionId, id);
     const node = journey?.projection.nodes.find((candidate) => candidate.key === nodeKey);
-    if (!journey || !node || node.status === "locked" || !isSandboxServiceKey(nodeKey)) return null;
+    if (!journey || !node || (node.status === "locked" && !canAdvanceFromVerifiedEvidence(journey, nodeKey)) || !isSandboxServiceKey(nodeKey)) return null;
     const scopedKey = `${sessionId}:${id}:${nodeKey}:${idempotencyKey}`;
     if (this.idempotency.has(scopedKey)) return journey;
     this.idempotency.set(scopedKey, idempotencyKey);
@@ -193,7 +213,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const updated = {
       ...journey,
       projection,
-      status: isComplete(projection) ? "completed" as const : journey.status,
+      status: isJourneyComplete(projection) ? "completed" as const : "active" as const,
       serviceRuns: { ...journey.serviceRuns, [nodeKey]: run },
       auditLog: [...journey.auditLog, { id: `audit-${crypto.randomUUID()}`, actor: "provider" as const, event: `provider_case_${run.caseStatus ?? run.status}`, detail: { nodeKey, receipt: run.receipt }, occurredAt: now() }],
       updatedAt: now(),

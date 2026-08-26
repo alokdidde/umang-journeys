@@ -9,7 +9,7 @@ A meaningful change in a person’s life, such as having a baby or moving home, 
 _Avoid_: Service category, application type
 
 **Journey Template**:
-The reusable definition of the services, dependencies, and guidance associated with one kind of Life Event.
+The reusable dependency graph of Journey Branches, Journey Steps, and guidance associated with one kind of Life Event.
 _Avoid_: Journey, workflow instance
 
 **Journey**:
@@ -83,6 +83,26 @@ _Avoid_: Health card, insurance certificate
 **Journey Step**:
 One service or outcome within a Journey whose state and dependencies are tracked independently.
 _Avoid_: Screen, page, form
+
+**Journey Branch**:
+A named path of related Journey Steps inside a Journey. A branch can be required from the start or optional until the account holder adds it.
+_Avoid_: Category, tab, loose group
+
+**Required Branch**:
+A Journey Branch whose required steps must be complete before the Journey is complete.
+_Avoid_: Main branch, default tab
+
+**Optional Branch**:
+A dormant Journey Branch that does not affect progress or completion until the account holder explicitly adds it. Once added, its required steps follow the same completion rules as a Required Branch.
+_Avoid_: Skipped branch, recommended link
+
+**Step Dependency**:
+A prerequisite relationship between two Journey Steps. The later step stays locked until every prerequisite is complete, including when a step inside an added Optional Branch depends on another step in that branch.
+_Avoid_: Page order, visual connector
+
+**Journey Map**:
+The on-demand visualisation of the whole Journey dependency graph. It is progressive disclosure; the primary Journey screen continues to show only the Next Action.
+_Avoid_: Dashboard, workflow editor
 
 **Next Action**:
 The single Journey Step that should receive the account holder’s attention now, prioritising work already in progress or waiting on a provider.

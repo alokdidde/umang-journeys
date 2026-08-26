@@ -18,7 +18,7 @@ describe("journey summary", () => {
     expect(summary).toMatchObject({
       id: "journey-aarav",
       subject: { displayName: "Aarav Sharma" },
-      progress: { completed: 1, total: 6, percent: 17 },
+      progress: { completed: 1, total: 4, percent: 25 },
       nextAction: {
         nodeKey: "birth_certificate",
         status: "available",
@@ -116,6 +116,6 @@ describe("journey summary", () => {
       progress: 52,
       timingLabel: "6-week milestone · 5 Oct 2026",
     });
-    expect(summary.progress.percent).toBe(25);
+    expect(summary.progress.percent).toBe(38);
   });
 });

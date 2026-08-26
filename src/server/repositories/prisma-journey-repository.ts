@@ -1,6 +1,6 @@
-import { completeNode, getJourneyTemplate, newBabyTemplate, type JourneyProjection, type JourneyTemplate, type NodeStatus } from "@/domain/journey-engine";
+import { activateBranch as activateJourneyBranch, compileJourney, completeNode, getJourneyTemplate, hydrateJourney, isJourneyComplete, newBabyTemplate, type JourneyTemplate, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
-import { evidenceFacts, type JourneyRepository, type StoredJourney } from "@/server/repositories/journey-repository";
+import { canAdvanceFromVerifiedEvidence, evidenceFacts, type JourneyRepository, type StoredJourney } from "@/server/repositories/journey-repository";
 import { advanceSimulatedService, isSandboxServiceKey, simulateExternalService } from "@/server/integrations/sandbox-services";
 import type { SandboxServiceKey, SandboxServiceRun } from "@/domain/service-workflows";
 import type { EvidenceRecord, EvidenceSource, EvidenceType, JourneyEvidence } from "@/domain/evidence";
@@ -71,26 +71,21 @@ function mapJourney(
 ): StoredJourney {
   const nodeByKey = new Map(journey.nodes.map((node) => [node.nodeKey, node]));
   const snapshot = journey.templateSnapshot?.configJson;
-  const template = snapshot && typeof snapshot === "object" && "nodes" in snapshot && Array.isArray(snapshot.nodes)
+  const snapshotTemplate = snapshot && typeof snapshot === "object" && "nodes" in snapshot && Array.isArray(snapshot.nodes) && "branches" in snapshot && Array.isArray(snapshot.branches)
     ? snapshot as unknown as JourneyTemplate
-    : getJourneyTemplate(journey.templateId) ?? newBabyTemplate;
-  const projection: JourneyProjection = {
-    templateId: template.id,
-    nodes: template.nodes.map((definition) => {
-      const stored = nodeByKey.get(definition.key);
-      return {
-        ...definition,
-        status: (stored?.status.toLowerCase() ?? "locked") as NodeStatus,
-        recommended: stored?.recommended ?? false,
-      };
-    }),
-    edges: template.nodes.flatMap((node) =>
-      (node.dependsOn ?? []).map((from) => ({ from, to: node.key })),
-    ),
-  };
+    : null;
+  const template = snapshotTemplate ?? getJourneyTemplate(journey.templateId) ?? newBabyTemplate;
 
   const facts = Object.fromEntries(
     journey.facts.map((fact) => [fact.key, typeof fact.valueJson === "string" ? fact.valueJson : String(fact.valueJson)]),
+  );
+  const activeBranchKeys = template.branches
+    .filter((branch) => facts[`journey.branch.${branch.key}.active`] === "true")
+    .map((branch) => branch.key);
+  const projection = hydrateJourney(
+    template,
+    template.nodes.map((definition) => ({ key: definition.key, status: (nodeByKey.get(definition.key)?.status.toLowerCase() ?? "locked") as NodeStatus })),
+    activeBranchKeys,
   );
   const registration = journey.documents
     .map((document) => document.metadataJson)
@@ -167,10 +162,6 @@ function validDate(value: string | undefined) {
   return Number.isNaN(date.valueOf()) ? undefined : date;
 }
 
-function projectionIsComplete(projection: JourneyProjection) {
-  return projection.nodes.every((node) => node.status === "completed" || node.status === "skipped");
-}
-
 export class PrismaJourneyRepository implements JourneyRepository {
   async create(sessionId: string, facts: Record<string, string> = {}, templateId = newBabyTemplate.id) {
     const template = getJourneyTemplate(templateId);
@@ -190,7 +181,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
     });
     await prisma.journeyTemplateVersion.upsert({
       where: { templateKey_version: { templateKey: template.id, version: template.version } },
-      update: {},
+      update: { lifeEvent: template.lifeEvent, configJson: template },
       create: { templateKey: template.id, version: template.version, lifeEvent: template.lifeEvent, configJson: template },
     });
 
@@ -218,11 +209,8 @@ export class PrismaJourneyRepository implements JourneyRepository {
       if (!existing) await prisma.entityRelationship.create({ data: relationship });
     }
 
-    const initial = template.nodes.map((node, index) => ({
-      nodeKey: node.key,
-      status: toDatabaseStatus(index === 0 ? "in_progress" : "locked"),
-      recommended: index === 0,
-    }));
+    const initialProjection = compileJourney(template);
+    const initial = initialProjection.nodes.map((node) => ({ nodeKey: node.key, status: toDatabaseStatus(node.status), recommended: node.recommended }));
     const journey = await prisma.journeyInstance.create({
       data: {
         profile: { connect: { id: profile.id } },
@@ -307,6 +295,32 @@ export class PrismaJourneyRepository implements JourneyRepository {
     return this.get(sessionId, id);
   }
 
+  async activateBranch(sessionId: string, id: string, branchKey: string) {
+    const journey = await this.get(sessionId, id);
+    const branch = journey?.projection.branches.find((candidate) => candidate.key === branchKey);
+    if (!journey || !branch || branch.requirement !== "optional") return null;
+    if (branch.active) return journey;
+    const projection = activateJourneyBranch(journey.projection, branchKey);
+    const factKey = `journey.branch.${branchKey}.active`;
+    const prisma = getPrisma();
+    await prisma.$transaction(async (tx) => {
+      await tx.fact.upsert({
+        where: { journeyId_key: { journeyId: id, key: factKey } },
+        update: { valueJson: "true", sourceType: "USER_CONFIRMED", confirmed: true, revisions: { create: { valueJson: "true", sourceType: "USER_CONFIRMED", status: "ACTIVE" } } },
+        create: { journeyId: id, key: factKey, valueJson: "true", sourceType: "USER_CONFIRMED", confirmed: true, revisions: { create: { valueJson: "true", sourceType: "USER_CONFIRMED", status: "ACTIVE" } } },
+      });
+      for (const node of projection.nodes) {
+        await tx.journeyNode.update({
+          where: { journeyId_nodeKey: { journeyId: id, nodeKey: node.key } },
+          data: { status: toDatabaseStatus(node.status), recommended: node.recommended, completedAt: node.status === "completed" ? undefined : null },
+        });
+      }
+      await tx.auditEvent.create({ data: { journeyId: id, actorType: "demo_user", eventType: "journey_branch_activated", payloadJson: { branchKey } } });
+      await tx.journeyInstance.update({ where: { id }, data: { status: "ACTIVE", updatedAt: new Date() } });
+    });
+    return this.get(sessionId, id);
+  }
+
   async completeStep(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
     const journey = await this.get(sessionId, id);
     const node = journey?.projection.nodes.find((candidate) => candidate.key === nodeKey);
@@ -324,7 +338,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
         });
       }
       await tx.auditEvent.create({ data: { journeyId: id, actorType: "demo_user", eventType: scopedKey, payloadJson: { nodeKey } } });
-      await tx.journeyInstance.update({ where: { id }, data: { status: projectionIsComplete(projection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() } });
+      await tx.journeyInstance.update({ where: { id }, data: { status: isJourneyComplete(projection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() } });
     });
     return this.get(sessionId, id);
   }
@@ -447,7 +461,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       });
       await tx.journeyInstance.update({
         where: { id },
-        data: { status: projectionIsComplete(nextProjection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() },
+        data: { status: isJourneyComplete(nextProjection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() },
       });
     });
     return this.get(sessionId, id);
@@ -456,7 +470,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
   async advanceService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string) {
     const journey = await this.get(sessionId, id);
     const projectedNode = journey?.projection.nodes.find((candidate) => candidate.key === nodeKey);
-    if (!journey || !projectedNode || projectedNode.status === "locked" || !isSandboxServiceKey(nodeKey)) return null;
+    if (!journey || !projectedNode || (projectedNode.status === "locked" && !canAdvanceFromVerifiedEvidence(journey, nodeKey)) || !isSandboxServiceKey(nodeKey)) return null;
     const prisma = getPrisma();
     const node = await prisma.journeyNode.findUniqueOrThrow({ where: { journeyId_nodeKey: { journeyId: id, nodeKey } } });
     const owner = await prisma.journeyInstance.findUniqueOrThrow({ where: { id }, select: { profileId: true } });
@@ -531,7 +545,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       });
       await tx.journeyInstance.update({
         where: { id },
-        data: { status: nextProjection && projectionIsComplete(nextProjection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() },
+        data: { status: nextProjection && isJourneyComplete(nextProjection) ? "COMPLETED" : "ACTIVE", updatedAt: new Date() },
       });
     });
     return this.get(sessionId, id);

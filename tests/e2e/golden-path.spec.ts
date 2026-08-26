@@ -42,6 +42,21 @@ async function seedJourney(page: Page) {
   return journey.id;
 }
 
+async function activateBranch(page: Page, journeyId: string, branchKey: string) {
+  const response = await page.request.post(`/api/journeys/${journeyId}/branches/${branchKey}`);
+  expect(response.ok()).toBeTruthy();
+}
+
+async function expectJourneyNodesComplete(page: Page, journeyId: string, expectedCount: number) {
+  const saved = await (await page.request.get(`/api/journeys/${journeyId}`)).json() as {
+    projection: { nodes: Array<{ status: string }> };
+    status: string;
+  };
+  expect(saved.projection.nodes).toHaveLength(expectedCount);
+  expect(saved.projection.nodes.every((node) => node.status === "completed")).toBe(true);
+  expect(saved.status).toBe("completed");
+}
+
 async function openDocumentAssistant(page: Page) {
   await page.goto("/documents");
   await page.getByText("Add a document", { exact: true }).click();
@@ -142,6 +157,8 @@ test("newborn journey persists, completes every sandbox integration, downloads a
     ["child_identity", "Prepare identity checklist", "Newborn identity checklist"],
     ["eligible_benefits", "Match family benefits", "Family benefit matches"],
   ] as const;
+  await activateBranch(page, id, "child_identity");
+  await activateBranch(page, id, "family_support");
   for (const [key, action, artifactTitle] of services) {
     await page.goto(`/journeys/${id}/services/${key}`);
     await page.getByRole("button", { name: action }).click();
@@ -166,9 +183,10 @@ test("newborn journey persists, completes every sandbox integration, downloads a
   expect((await pdf.body()).subarray(0, 4).toString()).toBe("%PDF");
 
   await page.goto(`/journeys/${id}`);
-  await expect(page.getByText("Done", { exact: true })).toHaveCount(6);
+  await expectJourneyNodesComplete(page, id, 6);
+  await expect(page.getByText("All services in this journey are complete")).toBeVisible();
   await page.reload();
-  await expect(page.getByText("Done", { exact: true })).toHaveCount(6);
+  await expectJourneyNodesComplete(page, id, 6);
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Your journeys are up to date" })).toBeVisible();
@@ -195,7 +213,7 @@ test("home prioritises the saved child journey and keeps starting another one av
   await expect(page.getByRole("heading", { name: "Continue where you left off" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Birth certificate" })).toBeVisible();
-  await expect(page.getByRole("progressbar", { name: "Aarav Sharma journey progress" })).toHaveAttribute("aria-valuenow", "17");
+  await expect(page.getByRole("progressbar", { name: "Aarav Sharma journey progress" })).toHaveAttribute("aria-valuenow", "25");
   await expect(page.getByRole("link", { name: "Start" })).toHaveAttribute("href", `/journeys/${id}/services/birth_certificate`);
 
   await page.getByText("Start another journey", { exact: true }).click();
@@ -366,6 +384,51 @@ test("journey CTA advances past a completed birth certificate", async ({ page })
   await page.request.post("/api/demo/reset");
 });
 
+test("every journey exposes its dependency map and persists an optional branch choice", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  const id = await seedJourney(page);
+
+  await page.goto(`/journeys/${id}`);
+  await page.getByRole("button", { name: "View journey map" }).click();
+  const map = page.getByRole("dialog", { name: "Your full journey" });
+  await expect(map).toBeVisible();
+  expect(await map.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(900);
+  await expect(map.getByText("Birth records branch", { exact: true }).first()).toBeVisible();
+  await expect(map.getByRole("heading", { name: "Child identity" }).first()).toBeVisible();
+  await map.getByRole("button", { name: "Add Child identity" }).click();
+  await expect(map.getByText("Added", { exact: true }).first()).toBeVisible();
+
+  const saved = await (await page.request.get(`/api/journeys/${id}`)).json() as { projection: { branches: Array<{ key: string; active: boolean }> } };
+  expect(saved.projection.branches.find((branch) => branch.key === "child_identity")?.active).toBe(true);
+  const mapA11y = await new AxeBuilder({ page }).include(".journey-map-drawer").withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(mapA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+  await map.getByRole("button", { name: "Close journey map" }).click();
+  await expect(map).toBeHidden();
+
+  const otherMaps = [
+    ["vehicle-purchase.india.v1", "Toll access"],
+    ["health-insurance.india.v1", "Public schemes"],
+    ["moving-home.india.v1", "Identity updates"],
+    ["business-setup.india.v1", "Formal registrations"],
+    ["retirement.india.v1", "Ongoing pension duties"],
+  ] as const;
+  for (const [templateId, optionalBranch] of otherMaps) {
+    const created = await page.request.post("/api/journeys", { data: { templateId, facts: {} } });
+    expect(created.ok()).toBeTruthy();
+    const journey = await created.json() as { id: string };
+    await page.goto(`/journeys/${journey.id}?view=map`);
+    await expect(page.getByRole("dialog", { name: "Your full journey" })).toBeVisible();
+    await expect(page.locator(".journey-map-canvas").getByText(`${optionalBranch} branch`, { exact: true }).first()).toBeVisible();
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/journeys/${id}?view=map`);
+  await expect(page.locator(".journey-map-mobile-list")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.request.post("/api/demo/reset");
+});
+
 test("every new life event starts the correct journey and opens its profile step", async ({ page }) => {
   await login(page);
   const scenarios = [
@@ -466,6 +529,7 @@ test("a vehicle journey completes with real sample evidence while a baby journey
   await page.getByRole("button", { name: "Verify insurance cover" }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });
 
+  await activateBranch(page, vehicleId, "tolling");
   await page.goto(`/journeys/${vehicleId}/services/fastag_setup`);
   await page.getByLabel("I authorise this evaluation-only submission").check();
   await page.getByRole("button", { name: "Activate sandbox FASTag" }).click();
@@ -560,6 +624,9 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   await page.getByRole("button", { name: "Confirm and continue" }).click();
   await expect(page.getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
 
+  await activateBranch(page, healthId, "public_cover");
+  await activateBranch(page, healthId, "digital_records");
+
   const services = [
     ["coverage_review", "Review my health cover", "Health coverage summary"],
     ["public_scheme_check", "Check possible scheme cover", "Public-scheme eligibility indication"],
@@ -584,7 +651,7 @@ test("a health policy starts and completes a safe Health & Insurance journey", a
   expect(cashlessA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
 
   await page.goto(`/journeys/${healthId}`);
-  await expect(page.getByText("Done", { exact: true })).toHaveCount(5);
+  await expectJourneyNodesComplete(page, healthId, 5);
   await expect(page.getByText("Coverage pack is ready")).toBeVisible();
   await page.goto("/journeys");
   await expect(page.locator("#completed-journeys").getByRole("heading", { name: "Ananya Sharma" })).toBeVisible();
@@ -611,6 +678,7 @@ const extendedJourneyScenarios = [
       ],
       completed: "Your move pack is ready",
       activity: "Moving Home journey started",
+      optionalBranch: "identity_updates",
     },
     {
       sample: "Business premises",
@@ -628,6 +696,7 @@ const extendedJourneyScenarios = [
       ],
       completed: "Your business launch pack is ready",
       activity: "Starting a Business journey started",
+      optionalBranch: "formal_registrations",
     },
     {
       sample: "Retirement statement",
@@ -645,6 +714,7 @@ const extendedJourneyScenarios = [
       ],
       completed: "Your retirement pack is ready",
       activity: "Retirement journey started",
+      optionalBranch: "ongoing_pension",
     },
   ] as const;
 
@@ -669,6 +739,7 @@ for (const scenario of extendedJourneyScenarios) {
     await page.getByRole("button", { name: "Continue to the next part" }).click();
     await page.getByRole("button", { name: scenario.profileSubmit }).click();
     await expect(page.getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
+    await activateBranch(page, id, scenario.optionalBranch);
 
     for (const [key, action, artifactTitle] of scenario.services) {
       await page.goto(`/journeys/${id}/services/${key}`);
@@ -683,7 +754,7 @@ for (const scenario of extendedJourneyScenarios) {
     }
 
     await page.goto(`/journeys/${id}`);
-    await expect(page.getByText("Done", { exact: true })).toHaveCount(5);
+    await expectJourneyNodesComplete(page, id, 5);
     await expect(page.getByText(scenario.completed)).toBeVisible();
     await page.goto("/journeys");
     await expect(page.locator("#completed-journeys").getByRole("heading", { name: scenario.journeyHeading })).toBeVisible();
@@ -782,6 +853,9 @@ test("provider callbacks pause for clarification and resume after the citizen re
   await page.request.post("/api/demo/reset");
   const id = await seedJourney(page);
   await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "provider-registration" } });
+  for (let stage = 1; stage <= 4; stage += 1) {
+    await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: `provider-certificate-${stage}` } });
+  }
   await page.request.patch(`/api/journeys/${id}/facts`, { data: { facts: { "simulation.scenario.child_health_record": "clarification", "simulation.consent.child_health_record": new Date(Date.now() + 30 * 60 * 1000).toISOString() } } });
   const started = await page.request.post(`/api/journeys/${id}/nodes/child_health_record/submit`, { data: { idempotencyKey: "provider-clarification-start" } });
   expect(started.ok()).toBeTruthy();
@@ -855,6 +929,9 @@ test("login, home, and a completed service reflow at mobile width", async ({ pag
   await page.request.post("/api/demo/reset");
   const id = await seedJourney(page);
   await page.request.post(`/api/journeys/${id}/nodes/birth_registration/submit`, { data: { childName: "Aarav Sharma", localWard: "Ward 72", idempotencyKey: "mobile-registration" } });
+  for (let stage = 1; stage <= 4; stage += 1) {
+    await page.request.post(`/api/journeys/${id}/nodes/birth_certificate/submit`, { data: { idempotencyKey: `mobile-certificate-${stage}` } });
+  }
   await page.goto(`/journeys/${id}/services/child_health_record`);
   await page.getByRole("button", { name: "Create health record" }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100", { timeout: 10_000 });

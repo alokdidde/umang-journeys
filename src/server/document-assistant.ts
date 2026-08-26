@@ -199,7 +199,7 @@ export class DocumentAssistantService {
     if (toolName === "recordVaccination") {
       const journey = await this.journeys.get(sessionId, journeyId);
       const vaccination = journey?.projection.nodes.find((node) => node.key === "vaccination_timeline");
-      if (vaccination && vaccination.status !== "locked" && vaccination.status !== "completed") {
+      if (vaccination && vaccination.status !== "completed") {
         for (let stage = 1; stage <= 4; stage += 1) {
           await this.journeys.advanceService(sessionId, journeyId, "vaccination_timeline", `document:${documentId}:vaccination:${stage}`);
         }

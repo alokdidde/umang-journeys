@@ -3,10 +3,10 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Armchair, ArrowLeft, ArrowRight, Baby, BriefcaseBusiness, Building2, CalendarDays, Car, CheckCircle2, FileCheck2, FolderClock, HeartPulse, House, LockKeyhole, MapPin, ShieldCheck, UserRound, Users, type LucideIcon } from "lucide-react";
+import { Armchair, ArrowLeft, ArrowRight, Baby, BriefcaseBusiness, Building2, CalendarDays, Car, CheckCircle2, FileCheck2, FolderClock, HeartPulse, House, MapPin, ShieldCheck, UserRound, Users, type LucideIcon } from "lucide-react";
 import { ScenicBackdrop, TrustNote } from "@/components/app-shell";
-import { journeyIcons } from "@/components/icons";
 import { useJourney } from "@/components/journey-provider";
+import { JourneyMapDrawer } from "@/components/journey-map-drawer";
 import { selectJourneyNextAction } from "@/domain/journey-summary";
 
 export default function JourneyRevealPage() {
@@ -43,7 +43,7 @@ export default function JourneyRevealPage() {
           <article><span className="mini-icon amber"><MapPin /></span><div><small>State</small><strong>Telangana</strong><em>India</em></div></article>
         </section>
       </details>
-      <JourneySteps id={id} title="Your baby’s steps" />
+      <JourneyMapDrawer id={id} title="Your baby’s steps" />
     </main>
   );
 }
@@ -104,7 +104,7 @@ function AdditionalJourney({ id, kind }: { id: string; kind: "move" | "business"
     <section className="journey-heading content-layer"><p className="eyebrow"><Icon />{config.label}</p><h1>{config.title}</h1><p>{config.intro}</p></section>
     <div className="primary-cta-wrap content-layer">{nextAction ? <Link href={nextAction.href} className="primary-cta"><Icon />{nextAction.nodeKey.endsWith("_profile") ? config.cta : `Continue with ${nextAction.title.toLowerCase()}`}<ArrowRight /></Link> : <p className="journey-complete-cta"><CheckCircle2 />{config.complete}</p>}<TrustNote>{config.trust}</TrustNote></div>
     <details className="journey-about content-layer"><summary>About this journey</summary><section className="context-strip">{config.facts.map(([FactIcon, label, value, note], index) => <article key={label}><span className={`mini-icon ${["green", "purple", "blue", "amber"][index]}`}><FactIcon /></span><div><small>{label}</small><strong>{value}</strong><em>{note}</em></div></article>)}</section></details>
-    <JourneySteps id={id} title={config.steps} />
+    <JourneyMapDrawer id={id} title={config.steps} />
   </main>;
 }
 
@@ -125,7 +125,7 @@ function HealthInsuranceJourney({ id }: { id: string }) {
         <article><span className="mini-icon amber"><MapPin /></span><div><small>State</small><strong>{state.facts["person.state"] ?? "Telangana"}</strong><em>India</em></div></article>
       </section>
     </details>
-    <JourneySteps id={id} title="Health & insurance steps" />
+    <JourneyMapDrawer id={id} title="Health & insurance steps" />
   </main>;
 }
 
@@ -147,23 +147,6 @@ function VehicleJourney({ id }: { id: string }) {
         <article><span className="mini-icon green"><MapPin /></span><div><small>Transfer</small><strong>{state.facts["vehicle.transferScope"] === "interstate" ? "Interstate" : "Within Telangana"}</strong><em>India</em></div></article>
       </section>
     </details>
-    <JourneySteps id={id} title="Your vehicle steps" />
+    <JourneyMapDrawer id={id} title="Your vehicle steps" />
   </main>;
-}
-
-function JourneySteps({ id, title }: { id: string; title: string }) {
-  const { state } = useJourney();
-  const completed = state.projection.nodes.filter((node) => node.status === "completed").length;
-  const total = state.projection.nodes.length;
-  return <details className="panel content-layer vehicle-journey-list simple-journey-steps" aria-label={title} open={completed === total ? true : undefined}>
-    <summary><span><strong>{completed === total ? title : "See the whole journey"}</strong><small>{completed === total ? "Every step is complete and remains available." : "Open this when you want to see what comes later."}</small></span><em>{completed} of {total} done</em></summary>
-    <ol>{state.projection.nodes.map((node, index) => {
-      const Icon = journeyIcons[node.icon];
-      const locked = node.status === "locked";
-      const href = node.key === "birth_registration" ? `/journeys/${id}/birth-registration` : node.key === "vehicle_details" ? `/journeys/${id}/vehicle-details` : node.key === "health_profile" ? `/journeys/${id}/health-profile` : node.key === "move_profile" ? `/journeys/${id}/move-profile` : node.key === "business_profile" ? `/journeys/${id}/business-profile` : node.key === "retirement_profile" ? `/journeys/${id}/retirement-profile` : `/journeys/${id}/services/${node.key}`;
-      const label = node.status === "completed" ? "Done" : node.status === "in_progress" || node.status === "waiting_external" ? "In progress" : locked ? "Later" : "Ready";
-      const content = <><span className="vehicle-step-number">{index + 1}</span><span className={`event-icon tone-${index}`}><Icon /></span><div><strong>{node.title}</strong><p>{node.description}</p></div><em className={`status ${node.status}`}>{locked ? <LockKeyhole /> : node.status === "completed" ? <CheckCircle2 /> : null}{label}</em></>;
-      return <li key={node.key}>{locked ? <article className={`journey-step ${node.status}`}>{content}</article> : <Link className={`journey-step ${node.status}`} href={href}>{content}</Link>}</li>;
-    })}</ol>
-  </details>;
 }

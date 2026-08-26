@@ -1,5 +1,5 @@
 import type { JourneyProjection, NodeStatus } from "./journey-engine";
-import { getJourneyTemplate } from "./journey-engine";
+import { getJourneyTemplate, isJourneyComplete, journeyProgressNodes } from "./journey-engine";
 import type { SandboxServiceKey, SandboxServiceRun } from "./service-workflows";
 
 export type JourneySubject = {
@@ -46,7 +46,7 @@ export type JourneySummary = {
 
 type JourneyActionSource = Pick<SummarizableJourney, "id" | "projection" | "facts" | "serviceRuns">;
 
-function nodeHref(journeyId: string, nodeKey: string) {
+export function journeyNodeHref(journeyId: string, nodeKey: string) {
   if (nodeKey === "birth_registration") return `/journeys/${journeyId}/birth-registration`;
   if (nodeKey === "vehicle_details") return `/journeys/${journeyId}/vehicle-details`;
   if (nodeKey === "health_profile") return `/journeys/${journeyId}/health-profile`;
@@ -93,15 +93,16 @@ export function selectJourneyNextAction(journey: JourneyActionSource): JourneyNe
     status: nextNode.status,
     stateLabel: actionStateLabel(nextNode.status, nextRun?.progress),
     timingLabel: actionTimingLabel(nextNode.key, nextNode.timing, journey.facts),
-    href: nodeHref(journey.id, nextNode.key),
+    href: journeyNodeHref(journey.id, nextNode.key),
     progress: nextRun?.progress,
   } : null;
 }
 
 export function buildJourneySummary(journey: SummarizableJourney): JourneySummary {
   const nextAction = selectJourneyNextAction(journey);
-  const completed = journey.projection.nodes.filter((node) => node.status === "completed" || node.status === "skipped").length;
-  const total = journey.projection.nodes.length;
+  const progressNodes = journeyProgressNodes(journey.projection);
+  const completed = progressNodes.filter((node) => node.status === "completed" || node.status === "skipped").length;
+  const total = progressNodes.length;
   const partialProgress = nextAction?.status === "in_progress" || nextAction?.status === "waiting_external"
     ? (nextAction.progress ?? 0) / 100
     : 0;
@@ -110,7 +111,7 @@ export function buildJourneySummary(journey: SummarizableJourney): JourneySummar
     id: journey.id,
     templateId: journey.projection.templateId,
     title: getJourneyTemplate(journey.projection.templateId)?.title ?? "UMANG Journey",
-    status: nextAction === null ? "completed" : journey.status,
+    status: isJourneyComplete(journey.projection) ? "completed" : journey.status,
     subject: journey.subject,
     progress: {
       completed,

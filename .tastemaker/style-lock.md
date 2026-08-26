@@ -38,7 +38,7 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Design read: guided public-service app for a broad, occasional-use audience, mode Operate.
 - Dials: variance 3/10, motion 2/10, density 3/10, art direction 6/10.
 - Foundation: existing React 19, Next.js 16, Tailwind 4 stack; existing primitives are sufficient.
-- Direction contract: a familiar top navigation, one next action on Home, vertical journey checklists, readable single-column forms, and details revealed only on request; preserve the existing UMANG identity.
+- Direction contract: a familiar top navigation, one next action on Home, readable single-column forms, and full journey dependency maps revealed only on request; preserve the existing UMANG identity.
 - Anti-references: power-user SaaS dashboard, permanent dark rail, KPI strip, two-column workbench, full-screen chatbot, giant upload card, or raw provider internals.
 
 ## Taste memory
@@ -59,15 +59,15 @@ Established: 2026-08-26. Updated after the user rejected the dense power-user wo
 - Home ignores completed journeys when choosing the next action; when all work is done, it shows one “all caught up” state linked to the archive.
 - Starting another journey is collapsed by default.
 - My Journeys visibly separates “In progress” from “Completed journeys”; completion changes placement, never availability.
-- Journeys use a vertical ordered checklist, not a dependency graph.
+- Journey pages remain next-action-first. The full dependency graph appears only in a wide slide-in Journey Map opened by the citizen.
 - Documents expose “Add a document” as a disclosure above a plain library.
 - Service provider and data-sharing metadata are available under “Provider and data details.”
 - Intake is one narrow column with a short progress label; extracted facts are optional detail.
 - Activity stays chronological, readable, and filterable without summary tiles.
-- Health & Insurance uses five sequential, plain-language tasks; policy findings, public-scheme indications, ABHA preparation, and cashless readiness must never look like approval or guaranteed cover.
-- Moving Home, Starting a Business, and Retirement each use five sequential steps: one short fact-confirmation form, one evidence review, two authority-specific preparations, and one completion pack. Synthetic readiness, registration, pension, and entitlement outputs must never look like official approval.
+- Health & Insurance keeps its required cover-readiness path distinct from optional public-scheme and digital-record branches; none of these outputs may look like approval or guaranteed cover.
+- Moving Home, Starting a Business, and Retirement distinguish a short required path from optional authority-specific branches. Synthetic readiness, registration, pension, and entitlement outputs must never look like official approval.
 - First-visit Home asks one plain-language question through a single wide text-or-document composer, then offers compact life-event choices; document suggestions require approval and explanatory process content stays out of the primary path.
-- Active journey roadmaps stay collapsed behind “See the whole journey”; completed roadmaps may open so finished work remains inspectable.
+- Active and completed Journey Maps stay collapsed behind “View journey map.” Required branches are visually primary; dormant optional branches are quieter and become completion obligations only after the citizen adds them.
 - Forms with more than one conceptual group use two short parts with Back/Continue controls and a visible “Part 1 of 2” label.
 - Evidence details, provider checks, generated-result groups, and less-used sample documents are progressively disclosed.
 - Evidence stays pending until the citizen reviews analysed values; confidence, checks, and conflicts appear inside the evidence card rather than as a separate technical workspace.

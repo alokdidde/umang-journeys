@@ -38,6 +38,20 @@ describe("journey repository", () => {
     expect(journey.projection.nodes[0]?.key).toBe("health_profile");
   });
 
+  it("persists an optional branch choice and makes its first eligible step actionable", async () => {
+    const repository = new MemoryJourneyRepository();
+    const created = await repository.create("session-branches", {}, "business-setup.india.v1");
+    await repository.completeStep("session-branches", created.id, "business_profile", "profile-1");
+    await repository.completeStep("session-branches", created.id, "business_premises", "premises-1");
+
+    const activated = await repository.activateBranch("session-branches", created.id, "formal_registrations");
+    const reloaded = await repository.get("session-branches", created.id);
+
+    expect(activated?.projection.branches.find((branch) => branch.key === "formal_registrations")).toMatchObject({ active: true, status: "available" });
+    expect(reloaded?.projection.nodes.find((node) => node.key === "udyam_readiness")?.status).toBe("available");
+    expect(reloaded?.status).toBe("active");
+  });
+
   it.each([
     ["moving-home.india.v1", { "move.newCity": "Hyderabad" }, "residence", "New home in Hyderabad"],
     ["business-setup.india.v1", { "business.name": "Ananya Design Studio" }, "business", "Ananya Design Studio"],
@@ -104,6 +118,9 @@ describe("journey repository", () => {
     const repository = new MemoryJourneyRepository();
     const created = await repository.create("session-progress");
     await repository.completeRegistration("session-progress", created.id, "registration-progress");
+    for (let stage = 1; stage <= 4; stage += 1) {
+      await repository.advanceService("session-progress", created.id, "birth_certificate", `certificate-${stage}`);
+    }
 
     const journey = await repository.advanceService(
       "session-progress",
@@ -134,6 +151,8 @@ describe("journey repository", () => {
       "child_identity",
       "eligible_benefits",
     ] as const)) {
+      if (nodeKey === "child_identity") await repository.activateBranch("session-services", created.id, "child_identity");
+      if (nodeKey === "eligible_benefits") await repository.activateBranch("session-services", created.id, "family_support");
       let journey = null;
       for (let stage = 1; stage <= 4; stage += 1) {
         journey = await repository.advanceService(

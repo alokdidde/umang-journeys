@@ -88,5 +88,15 @@
     "footer": "none",
     "knobs": "trust-boundary/task-inbox/server-callbacks/low-density/options-menu/responsive",
     "brief": "UMANG Journeys · close case, evidence, provenance, document, task, and exception gaps without rebuilding a power-user workspace"
+  },
+  {
+    "date": "2026-08-26",
+    "page": "all journey detail pages",
+    "macrostructure": "Progressive Journey Map",
+    "nav": "existing familiar top navigation; graph opens in a wide right-side drawer",
+    "hero": "unchanged next-action-first journey header",
+    "footer": "none",
+    "knobs": "full-dag/required-optional/explicit-activation/low-density/responsive",
+    "brief": "UMANG Journeys · expose the complete dependency tree for all six journeys without increasing default-screen density"
   }
 ]

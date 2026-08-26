@@ -16,6 +16,7 @@ type JourneyContextValue = {
   completeHealthProfile: (id: string, facts: Record<string, string>) => Promise<boolean>;
   completeProfileStep: (id: string, nodeKey: "move_profile" | "business_profile" | "retirement_profile", facts: Record<string, string>) => Promise<boolean>;
   updateJourneyFacts: (id: string, facts: Record<string, string>) => Promise<boolean>;
+  activateBranch: (id: string, branchKey: string) => Promise<boolean>;
   addEvidence: (id: string, type: EvidenceType, file?: File) => Promise<boolean>;
   reviewEvidence: (id: string, evidenceId: string, approved: boolean, fields?: Record<string, string>) => Promise<boolean>;
   resetJourney: () => Promise<void>;
@@ -75,6 +76,18 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (error) {
       dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "Journey details could not be saved." });
+      return false;
+    }
+  }, [dispatch]);
+
+  const activateBranch = useCallback(async (id: string, branchKey: string) => {
+    dispatch({ type: "operation_started" });
+    try {
+      const journey = await requestJson<ServerJourney>(`/api/journeys/${encodeURIComponent(id)}/branches/${encodeURIComponent(branchKey)}`, { method: "POST" });
+      dispatch({ type: "server_journey_loaded", journey });
+      return true;
+    } catch (error) {
+      dispatch({ type: "operation_failed", message: error instanceof Error ? error.message : "This branch could not be added to your journey." });
       return false;
     }
   }, [dispatch]);
@@ -208,7 +221,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatch]);
 
-  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, advanceService, completeVehicleDetails, completeHealthProfile, completeProfileStep, updateJourneyFacts, addEvidence, reviewEvidence, resetJourney }}>{children}</JourneyContext.Provider>;
+  return <JourneyContext.Provider value={{ state, dispatch, createJourney, loadJourney, submitRegistration, advanceService, completeVehicleDetails, completeHealthProfile, completeProfileStep, updateJourneyFacts, activateBranch, addEvidence, reviewEvidence, resetJourney }}>{children}</JourneyContext.Provider>;
 }
 
 export function useJourney() {
