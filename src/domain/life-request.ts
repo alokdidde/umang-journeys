@@ -60,6 +60,25 @@ const templateIdByLifeEvent: Record<LifeEventValue, string> = {
   retirement: "retirement.india.v1",
 };
 
+function canonicalQuestionFactKey(question: z.infer<typeof supportedLifeRequestSchema>["questions"][number], subject: z.infer<typeof supportedLifeRequestSchema>["subjects"][number] | undefined) {
+  if (!subject || question.factKey.includes(".")) return question.factKey;
+  const key = question.factKey.toLocaleLowerCase("en-IN").replace(/[^a-z0-9]+/g, "_");
+  const label = question.label.toLocaleLowerCase("en-IN");
+  const asksForName = /(^|_)(full_)?name($|_)/.test(key) || label.includes("name");
+  const asksForBirthDate = ["date_of_birth", "birth_date", "dob"].includes(key) || label.includes("date of birth") || label.includes("when was") && label.includes("born");
+  if (subject.type === "child" && asksForName) return "child.name";
+  if (subject.type === "child" && asksForBirthDate) return "child.dateOfBirth";
+  if (subject.type === "person" && asksForName) return "person.name";
+  if (subject.type === "person" && asksForBirthDate) return "person.dateOfBirth";
+  if (subject.type === "vehicle" && (key.includes("make_model") || label.includes("make and model"))) return "vehicle.makeModel";
+  if (subject.type === "vehicle" && (key.includes("registration") || label.includes("registration number"))) return "vehicle.registrationNumber";
+  if (subject.type === "residence" && (key.includes("address") || label.includes("address"))) return "move.newAddress";
+  if (subject.type === "residence" && (key.includes("city") || label.includes("city"))) return "move.newCity";
+  if (subject.type === "business" && asksForName) return "business.name";
+  if (question.factKey === "retirement_date" || question.factKey === "expected_retirement_date") return "retirement.expectedDate";
+  return question.factKey;
+}
+
 export function prepareLifeRequest(output: z.infer<typeof lifeRequestOutputSchema>, requestId = crypto.randomUUID()) {
   if (!output.supported) throw Object.assign(new Error("That request does not yet match a service UMANG Life can organise."), { code: "UNSUPPORTED_LIFE_REQUEST", detail: output.reason });
   return {
@@ -67,6 +86,10 @@ export function prepareLifeRequest(output: z.infer<typeof lifeRequestOutputSchem
     requestId,
     resolver: "ai_gateway" as const,
     needs: output.needs.map((need) => ({ ...need, templateId: templateIdByLifeEvent[need.lifeEvent] })),
+    questions: output.questions.map((question) => ({
+      ...question,
+      factKey: canonicalQuestionFactKey(question, output.subjects.find((subject) => subject.ref === question.subjectRef)),
+    })),
   };
 }
 

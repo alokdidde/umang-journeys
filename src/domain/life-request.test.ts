@@ -30,4 +30,19 @@ describe("life request plan", () => {
       questions: [],
     })).toThrow();
   });
+
+  it("normalises model-authored child identity keys before review and saving", () => {
+    const output = lifeRequestOutputSchema.parse({
+      supported: true,
+      summary: "Add your baby and organise health cover.",
+      subjects: [{ ref: "baby", type: "child", displayName: "Your baby", facts: [] }],
+      needs: [{ id: "cover", subjectRef: "baby", lifeEvent: "managing_health_cover", label: "Health cover", description: "Prepare health cover.", confidence: 0.96, facts: [] }],
+      questions: [
+        { id: "name", subjectRef: "baby", factKey: "full_name", label: "What is your baby's full name?", input: "text", required: false },
+        { id: "dob", subjectRef: "baby", factKey: "date_of_birth", label: "What is your baby's date of birth?", input: "date", required: false },
+      ],
+    });
+
+    expect(prepareLifeRequest(output, "request-keys").questions.map((question) => question.factKey)).toEqual(["child.name", "child.dateOfBirth"]);
+  });
 });
