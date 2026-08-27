@@ -1,6 +1,6 @@
 # Extensible My Life foundation
 
-Status: implementation plan  
+Status: implementation plan
 Date: 27 August 2026
 
 ## Outcome

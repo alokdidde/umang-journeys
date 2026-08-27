@@ -1,6 +1,6 @@
 # ADR 0002: Use an extensible life-entity catalog
 
-Status: accepted  
+Status: accepted
 Date: 27 August 2026
 
 ## Context
