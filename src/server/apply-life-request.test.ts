@@ -31,6 +31,21 @@ describe("applying a life request", () => {
     expect(await repository.list("session")).toHaveLength(2);
   });
 
+  it("keeps a child's confirmed name when the planner uses the person-name fact", async () => {
+    const repository = new MemoryJourneyRepository();
+    const plan = prepareLifeRequest({
+      ...output,
+      questions: [
+        { id: "name", subjectRef: "baby", factKey: "person.name", label: "What is your baby's full name?", input: "text" as const, required: true },
+      ],
+    }, "request-child-person-name");
+
+    const result = await applyLifeRequest("session", plan, { name: "Aarohi Sharma" }, repository);
+
+    expect(result.journeys.map((journey) => journey.subject.displayName)).toEqual(["Aarohi Sharma", "Aarohi Sharma"]);
+    expect(result.journeys[0]?.facts).toMatchObject({ "child.name": "Aarohi Sharma", "person.name": "Aarohi Sharma" });
+  });
+
   it("requires the missing details that were shown for approval", async () => {
     const repository = new MemoryJourneyRepository();
     await expect(applyLifeRequest("session", prepareLifeRequest(output, "request-2"), {}, repository)).rejects.toMatchObject({ code: "MISSING_REQUIRED_ANSWERS" });

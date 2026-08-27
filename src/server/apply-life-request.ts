@@ -6,7 +6,7 @@ function factsFrom(items: Array<{ key: string; value: string }>) {
 }
 
 function displayNameFor(subject: LifeRequestPlan["subjects"][number], facts: Record<string, string>) {
-  if (subject.type === "child") return facts["child.name"]?.trim() || subject.displayName;
+  if (subject.type === "child") return facts["child.name"]?.trim() || facts["person.name"]?.trim() || subject.displayName;
   if (subject.type === "person") return facts["person.name"]?.trim() || subject.displayName;
   if (subject.type === "vehicle") return facts["vehicle.makeModel"]?.trim() || facts["vehicle.registrationNumber"]?.trim() || subject.displayName;
   if (subject.type === "residence") return facts["move.label"]?.trim() || subject.displayName;
@@ -28,9 +28,13 @@ function factsForNeed(plan: LifeRequestPlan, subject: LifeRequestPlan["subjects"
   if ((subject.type === "person" || subject.type === "child") && subject.relationship) {
     facts["person.relationship"] = subject.relationship;
   }
+  if (subject.type === "child") {
+    if (!facts["child.name"] && facts["person.name"]) facts["child.name"] = facts["person.name"];
+    if (!facts["person.name"] && facts["child.name"]) facts["person.name"] = facts["child.name"];
+    if (!facts["child.dateOfBirth"] && facts["person.dateOfBirth"]) facts["child.dateOfBirth"] = facts["person.dateOfBirth"];
+    if (!facts["person.dateOfBirth"] && facts["child.dateOfBirth"]) facts["person.dateOfBirth"] = facts["child.dateOfBirth"];
+  }
   if (need.lifeEvent === "managing_health_cover" && subject.type === "child") {
-    if (facts["child.name"]) facts["person.name"] = facts["child.name"];
-    if (facts["child.dateOfBirth"]) facts["person.dateOfBirth"] = facts["child.dateOfBirth"];
     facts["health.coverageFor"] = "dependent";
     facts["health.dependentRelationship"] = subject.relationship || "child";
   }
