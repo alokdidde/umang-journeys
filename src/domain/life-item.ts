@@ -11,6 +11,7 @@ export type LifeItem = {
   needs: JourneySummary[];
   actions: Array<JourneyNextAction & { journeyId: string; needTitle: string }>;
   unavailableNeeds: Array<{ label: string; description: string; reason: string }>;
+  state: "attention" | "guidance_unavailable" | "caught_up";
   completed: boolean;
   updatedAt: string;
 };
@@ -57,6 +58,9 @@ export function groupLifeItems(journeys: JourneySummary[], entityRecords: LifeEn
   }
   const journeyItems = [...groups.entries()].map(([entityId, needs]) => {
     const subject = needs[0]!.subject;
+    const actions = needs.flatMap((need) => need.nextAction ? [{ ...need.nextAction, journeyId: need.id, needTitle: need.title }] : []);
+    const unavailableNeeds = entityRecordById.get(entityId)?.unavailableNeeds ?? [];
+    const completed = needs.every((need) => need.status === "completed");
     return {
       entityId,
       displayName: subject.displayName,
@@ -65,9 +69,10 @@ export function groupLifeItems(journeys: JourneySummary[], entityRecords: LifeEn
       role: subject.role,
       context: needs.map((need) => need.subject.context).find((context) => context && (context.relationshipToAccountHolder || context.connectedPeople?.length)) ?? subject.context,
       needs,
-      actions: needs.flatMap((need) => need.nextAction ? [{ ...need.nextAction, journeyId: need.id, needTitle: need.title }] : []),
-      unavailableNeeds: entityRecordById.get(entityId)?.unavailableNeeds ?? [],
-      completed: needs.every((need) => need.status === "completed"),
+      actions,
+      unavailableNeeds,
+      state: actions.length || !completed ? "attention" as const : unavailableNeeds.length ? "guidance_unavailable" as const : "caught_up" as const,
+      completed,
       updatedAt: needs.map((need) => need.updatedAt).sort().at(-1)!,
     };
   });
@@ -81,7 +86,8 @@ export function groupLifeItems(journeys: JourneySummary[], entityRecords: LifeEn
     needs: [],
     actions: [],
     unavailableNeeds: record.unavailableNeeds,
-    completed: true,
+    state: record.unavailableNeeds.length ? "guidance_unavailable" : "caught_up",
+    completed: record.unavailableNeeds.length === 0,
     updatedAt: record.updatedAt,
   }));
   return [...journeyItems, ...recordOnlyItems].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));

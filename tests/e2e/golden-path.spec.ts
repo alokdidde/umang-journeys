@@ -145,6 +145,7 @@ test("one request becomes one child with several saved services", async ({ page 
 });
 
 test("a broader record is saved without fabricated service steps", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   await page.request.post("/api/demo/reset");
   await page.reload();
@@ -153,15 +154,25 @@ test("a broader record is saved without fabricated service steps", async ({ page
   await page.getByRole("button", { name: "Show my steps" }).click();
   await expect(page.getByRole("heading", { name: "Add Inherited farm to My life" })).toBeVisible();
   await expect(page.getByText(/will not create service steps/i)).toBeVisible();
+  await expect(page.locator(".mobile-navigation")).toBeHidden();
+  await expect(page.getByText("Or choose a life event", { exact: true })).toBeHidden();
   await page.getByRole("button", { name: "Add to My life" }).click();
 
   await expect(page).toHaveURL(/\/life\/entity-/);
   await expect(page.getByRole("heading", { name: "Inherited farm", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Transfer the land record" })).toBeVisible();
   await expect(page.getByText("Guided steps not available yet", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "All caught up" })).toHaveCount(0);
+  await expect(page.getByText("Nothing needs your attention", { exact: true })).toHaveCount(0);
+  await expect.poll(() => page.getByText("Guided steps not available yet", { exact: true }).evaluate((element) => Math.round(element.getBoundingClientRect().height))).toBeLessThanOrEqual(24);
   await page.locator("main").getByRole("link", { name: "My life" }).click();
+  await expect(page.getByRole("heading", { name: "Saved without guided steps" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Homes & property" })).toBeVisible();
-  await expect(page.locator(".life-card").getByRole("heading", { name: "Inherited farm" })).toBeVisible();
+  const farmCard = page.locator(".life-card").filter({ has: page.getByRole("heading", { name: "Inherited farm" }) });
+  await expect(farmCard).toBeVisible();
+  await expect(farmCard.getByText("No guided steps yet", { exact: true })).toBeVisible();
+  await expect(farmCard.getByText("All caught up", { exact: true })).toHaveCount(0);
+  await expect(farmCard.getByText("Nothing required right now", { exact: true })).toHaveCount(0);
 });
 
 async function seedJourney(page: Page) {
@@ -329,8 +340,10 @@ test("newborn journey persists, completes every synthetic agency review, downloa
   await page.getByRole("link", { name: "My life", exact: true }).click();
   await expect(page).toHaveURL(/\/journeys$/);
   await expect(page.getByRole("heading", { name: "All caught up" })).toBeVisible();
-  await expect(page.locator("#all-caught-up").getByRole("heading", { name: "Aarav Sharma" })).toBeVisible();
-  await expect(page.locator("#all-caught-up").getByText("Nothing required right now", { exact: true })).toBeVisible();
+  const aaravCard = page.locator("#all-caught-up .life-card").filter({ has: page.getByRole("heading", { name: "Aarav Sharma" }) });
+  await expect(aaravCard).toBeVisible();
+  await expect(aaravCard.getByText("All caught up", { exact: true })).toBeVisible();
+  await expect(page.locator("#all-caught-up").getByText("Nothing required right now", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Hospital birth report", { exact: true })).toHaveCount(0);
 
   await page.request.post("/api/demo/reset");

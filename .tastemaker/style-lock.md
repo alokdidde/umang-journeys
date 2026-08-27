@@ -60,7 +60,7 @@ Established: 2026-08-26. Updated: 2026-08-27 for the subject-centred AI interact
 - Home shows one person or thing and its next action before anything else.
 - Home ignores caught-up work when choosing the next action; when all work is done, it shows one “all caught up” state linked to My life.
 - “Tell us what changed” is collapsed by default for returning citizens.
-- My life visibly separates “Needs attention” from “All caught up”; completion changes placement, never availability.
+- My life visibly separates “Needs attention,” “Saved without guided steps,” and “All caught up.” A request without verified guidance is never presented as completed or placed under a green success state.
 - Within each state, My life separates My family, Other people, Homes & property, Vehicles & assets, Work & organisations, and Other records. Family labels come only from a stated family relationship; business partners, tenants, drivers, advisers, and signatories retain the contextual role that connects them.
 - A citizen may save a broader record before a researched guided service exists. The record shows the requested need as “Guided steps not available yet”; it never fabricates a checklist or hides the limitation.
 - A person-or-thing page names its saved services directly and shows connected people with their roles, known ownership shares, and authority. It never summarises them as an abstract count of “areas.”
@@ -93,6 +93,7 @@ Established: 2026-08-26. Updated: 2026-08-27 for the subject-centred AI interact
 - Every mutating AI action states what will be added or changed and requires explicit approval. External submission, data sharing, declarations, and payments require a separate explicit approval at the point of action.
 - Compound-request approval shows every citizen-supplied answer under the person or thing it belongs to. After approval, one subject may open directly; several subjects first resolve into a complete saved-result receipt with every affected record and one recommended next action.
 - Standalone guided task surfaces—including request details, approval, and every profile form—stay centred within their shared reading lane. Their copy remains left-aligned for scanning, and the compact request composer remains aligned with its entry point.
+- On mobile, request details and approval are focused transactional states: the bottom navigation and alternative life-event grid recede until the request is applied, changed, or abandoned.
 - AI states include analysing, asking for information, proposal ready, applying, applied, declined, recoverable failure, and unavailable. Each state must remain understandable without animation or colour alone.
 
 ## Mood descriptors

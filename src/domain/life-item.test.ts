@@ -18,6 +18,23 @@ describe("My life grouping", () => {
     expect(items[0]).toMatchObject({ entityId: "entity-mira", displayName: "Mira", type: "child" });
     expect(items[0]?.needs.map((need) => need.title)).toEqual(["Having a baby", "Health cover"]);
     expect(items[0]?.actions.map((action) => action.title)).toEqual(["Register birth", "Add dependent"]);
+    expect(items[0]?.state).toBe("attention");
+  });
+
+  it("keeps requests without verified guidance out of the caught-up state", () => {
+    const [item] = groupLifeItems([], [{
+      id: "farm",
+      kind: "property",
+      displayName: "Inherited farm",
+      unavailableNeeds: [{ label: "Transfer the land record", description: "Guidance is not available for this location yet.", reason: "Location-specific research is required." }],
+      updatedAt: "2026-08-27T00:00:00.000Z",
+    }]);
+    expect(item).toMatchObject({ state: "guidance_unavailable", completed: false });
+  });
+
+  it("treats a plain saved record with no pending request as caught up", () => {
+    const [item] = groupLifeItems([], [{ id: "pet", kind: "animal", displayName: "Milo", unavailableNeeds: [], updatedAt: "2026-08-27T00:00:00.000Z" }]);
+    expect(item).toMatchObject({ state: "caught_up", completed: true });
   });
 
   it("uses a stated family relationship as the label", () => {

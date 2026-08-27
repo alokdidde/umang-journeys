@@ -37,6 +37,7 @@ export function LifeRequestAdded() {
   if (error) return <main className="page workflow-state"><p role="alert">{error}</p><Link href="/journeys">Open My life</Link></main>;
 
   const firstAction = items.flatMap((item) => item.actions)[0];
+  const hasUnavailableGuidance = items.some((item) => item.unavailableNeeds.length > 0);
   const savedLabel = `${items.length} ${items.length === 1 ? "record is" : "records are"}`;
   return <main className="page life-added-page">
     <header className="life-added-hero content-layer">
@@ -53,7 +54,7 @@ export function LifeRequestAdded() {
     </section>
     <section className="life-added-next content-layer" aria-labelledby="added-next-title">
       <ShieldCheck aria-hidden="true" />
-      <div><p>What to do now</p><h2 id="added-next-title">{firstAction ? firstAction.title : "Your records are ready"}</h2><small>{firstAction ? firstAction.description : "Open My life whenever you want to review them."}</small></div>
+      <div><p>What to do now</p><h2 id="added-next-title">{firstAction ? firstAction.title : hasUnavailableGuidance ? "Your requests are saved" : "Your records are ready"}</h2><small>{firstAction ? firstAction.description : hasUnavailableGuidance ? "Open My life to see which requests do not have verified guided steps yet." : "Open My life whenever you want to review them."}</small></div>
       <div>{firstAction ? <Link className="primary-cta" href={firstAction.href}>Start this step<ArrowRight /></Link> : null}<Link className={firstAction ? "secondary-button" : "primary-cta"} href="/journeys">Open My life</Link></div>
     </section>
   </main>;
