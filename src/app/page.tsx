@@ -71,8 +71,13 @@ function ReturningHome({ journeys, entities, start, loadError }: { journeys: Jou
   return (
     <main className="page returning-home">
       <ScenicBackdrop />
-      <section className="dashboard-intro content-layer">
-        <div><p className="eyebrow"><Sparkles size={15} />Welcome back</p><h1>{attentionJourney ? "Continue where you left off" : guidanceUnavailableCount ? "Your records are saved" : "Everything is up to date"}</h1><p>{attentionJourney ? "Your next useful step is ready below." : guidanceUnavailableCount ? "Some requests do not have verified guided steps yet. You can still keep their records and documents together." : "The people and things in your life are all caught up for now."}</p></div>
+      <section className="dashboard-request content-layer" aria-labelledby="dashboard-request-title">
+        <header>
+          <p className="eyebrow"><Sparkles size={15} />Ask UMANG</p>
+          <h1 id="dashboard-request-title">What do you need help with?</h1>
+          <p>Describe what changed or what you want to do. UMANG will check what can help.</p>
+        </header>
+        <JourneyStarterComposer query={query} setQuery={setQuery} start={start} />
       </section>
       {loadError && <p className="workflow-error content-layer" role="alert">{loadError}</p>}
 
@@ -88,15 +93,15 @@ function ReturningHome({ journeys, entities, start, loadError }: { journeys: Jou
               <ArrowRight />
             </Link>)}
           </div> : null}
-        </> : guidanceUnavailableCount ? <div className="home-guidance-unavailable panel">
+        </> : guidanceUnavailableCount ? <><h2 className="dashboard-status-heading">Your records are saved</h2><div className="home-guidance-unavailable panel">
           <span><CircleAlert /></span>
           <div><p>Saved without guided steps</p><h2 id="active-journeys-heading">Guidance is not available for {guidanceUnavailableCount === 1 ? "one request" : `${guidanceUnavailableCount} requests`} yet.</h2><small>Nothing has been marked complete. You can add documents or tell us when something changes.</small></div>
           <Link href="/journeys#guidance-unavailable">Open My life<ArrowRight /></Link>
-        </div> : <div className="all-caught-up panel">
+        </div></> : <><h2 className="dashboard-status-heading">Everything is up to date</h2><div className="all-caught-up panel">
           <span><CheckCircle2 /></span>
           <div><p>You’re all caught up</p><h2 id="active-journeys-heading">Nothing needs your attention.</h2><small>Your people, things, documents and records are still saved.</small></div>
           <Link href="/journeys#all-caught-up">Open My life<ArrowRight /></Link>
-        </div>}
+        </div></>}
       </section>
 
       <section className="home-shortcuts content-layer" aria-label="More things you can do">
@@ -105,9 +110,8 @@ function ReturningHome({ journeys, entities, start, loadError }: { journeys: Jou
         <Link href="/activity"><Activity /><span><strong>Recent activity</strong><small>See what changed</small></span><ArrowRight /></Link>
       </section>
 
-      <details className="journey-starter content-layer">
-        <summary><span><Plus />Tell us what changed</span><small>Everything already here will stay saved.</small></summary>
-        <JourneyStarterComposer query={query} setQuery={setQuery} start={start} />
+      <details className="journey-starter home-life-events content-layer">
+        <summary><span><Plus />Start with a life event</span><small>Use this if you would rather choose from a familiar starting point.</small></summary>
         <LifeEventGrid start={start} returning />
       </details>
       <TrustNote>The people, things and records shown here use synthetic data.</TrustNote>

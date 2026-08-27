@@ -57,9 +57,9 @@ Established: 2026-08-26. Updated: 2026-08-27 for lifecycle-aware records and rel
 
 ## Screen structure
 - The signed-out front door uses a short Long-Scroll Narrative: promise and branching journey preview; the agency-fragmentation problem; a sticky 3-step guided-intake story; document-to-journey matching; implemented-scope proof; and the pre-filled demo sign-in close. It stays low-density, avoids generic feature grids, and never applies this marketing rhythm inside the authenticated product.
-- Home shows one person or thing and its next action before anything else.
+- Home begins with one persistent request workspace. Current work, saved records, shortcuts, and life-event starts remain below it as dashboard context.
 - Home ignores caught-up work when choosing the next action; when all work is done, it shows one “all caught up” state linked to My life.
-- “Tell us what changed” is collapsed by default for returning citizens.
+- The returning-citizen request workspace stays open at the top. Unsupported, unclear, and failed requests explain the issue in place and leave dashboard recovery routes available.
 - My life visibly separates “Needs attention,” “Saved without guided steps,” and “All caught up.” A request without verified guidance is never presented as completed or placed under a green success state.
 - Within each state, My life separates My family, Other people, Homes & property, Vehicles & assets, Work & organisations, and Other records. Family labels come only from a stated family relationship; business partners, tenants, drivers, advisers, and signatories retain the contextual role that connects them.
 - A citizen may save a broader record before a researched guided service exists. The record shows the requested need as “Guided steps not available yet”; it never fabricates a checklist or hides the limitation.

@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, ClipboardList, FileSearch, FileText, Link2, LoaderCircle, MinusCircle, Paperclip, Plus, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Archive, ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, ClipboardList, FileSearch, FileText, Link2, LoaderCircle, MinusCircle, Paperclip, Plus, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import {
   Attachment,
   AttachmentInfo,
@@ -214,7 +214,7 @@ export function JourneyStarterComposer({
         <ComposerAttachments />
         <PromptInputBody>
           <PromptInputTextarea
-            aria-label={experience?.promptLabel ?? "Tell us what happened"}
+            aria-label={experience?.promptLabel ?? "Tell us what you need help with"}
             maxLength={300}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={experience?.placeholder ?? "I had a baby, we moved home, I bought a vehicle…"}
@@ -229,14 +229,14 @@ export function JourneyStarterComposer({
             </PromptInputActionMenu>
             <span>{experience?.documentLabel ?? "Attach a document, if you have one"}</span>
           </PromptInputTools>
-          <PromptInputSubmit aria-label={experience ? "Use this description" : "Show my steps"} className="journey-composer-submit">{experience ? "Use this description" : "Show my steps"}<ArrowRight /></PromptInputSubmit>
+          <PromptInputSubmit aria-label={experience ? "Use this description" : "Check my request"} className="journey-composer-submit">{experience ? "Use this description" : "Check my request"}<ArrowRight /></PromptInputSubmit>
         </PromptInputFooter>
       </PromptInput>
       <div className="journey-composer-after">
-        <p className="journey-composer-note">You can type, attach a PDF or photo, or do both. We’ll ask before updating anything.</p>
+        <p className="journey-composer-note">Nothing changes until you review and approve it.</p>
         {experience ? <button type="button" className="sample-document-link" onClick={() => void handleSampleDocument()}>{experience.sampleLabel}</button> : null}
       </div>
-      {error || requestState.error ? <div className="journey-composer-error" role="alert"><X /><span>{error ?? requestState.error}</span></div> : null}
+      {error || requestState.error ? <div className="journey-composer-error" role="alert"><CircleAlert /><div><strong>We couldn’t continue with that request.</strong><span>{error ?? requestState.error}</span><small>Try adding who or what this is about, or start with a life event below.</small></div></div> : null}
     </> : null}
 
     {phase === "analysing" || phase === "applying" || requestState.phase === "analysing" || requestState.phase === "applying" ? <div className="journey-composer-working" role="status" aria-live="polite">
