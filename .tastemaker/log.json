@@ -168,5 +168,15 @@
     "footer": "one next useful action",
     "knobs": "family-vs-other-people/contextual-roles/many-to-many-ownership/authority/plain-language/low-density",
     "brief": "UMANG Life · distinguish family, household, ownership, operating, and authority relationships without adding dashboard density"
+  },
+  {
+    "date": "2026-08-27",
+    "page": "all guided life-event plan pages",
+    "macrostructure": "Graph-backed Life Plan",
+    "nav": "existing familiar top navigation and mobile bottom navigation",
+    "hero": "one life event and its person-or-thing context",
+    "footer": "secondary detailed dependency map",
+    "knobs": "one-reading-flow/happening-now/parallel-ready-actions/vertical-graph/fixed-context-drawer",
+    "brief": "UMANG Life · make the existing journey graph understandable as immediate work, choices, and a long-term plan for ordinary citizens"
   }
 ]

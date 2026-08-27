@@ -1,6 +1,7 @@
 import { compileJourney, newBabyTemplate, type JourneyProjection } from "./journey-engine";
 import type { SandboxServiceRun } from "./service-workflows";
 import type { JourneyEvidence } from "./evidence";
+import type { JourneySubject } from "./journey-summary";
 
 export type RegistrationForm = { childName: string; localWard: string };
 export type FormErrors = Partial<Record<keyof RegistrationForm, string>>;
@@ -8,6 +9,7 @@ export type FormErrors = Partial<Record<keyof RegistrationForm, string>>;
 export type AppState = {
   hydrated: boolean;
   journeyId: string | null;
+  subject: JourneySubject | null;
   pending: boolean;
   error: string | null;
   statement: string;
@@ -28,6 +30,7 @@ export type AppState = {
 
 export type ServerJourney = {
   id: string;
+  subject: JourneySubject;
   projection: JourneyProjection;
   facts: Record<string, string>;
   serviceRuns?: Record<string, SandboxServiceRun | undefined>;
@@ -54,6 +57,7 @@ export type AppAction =
 export const pristineState: AppState = {
   hydrated: false,
   journeyId: null,
+  subject: null,
   pending: false,
   error: null,
   statement: "",
@@ -123,6 +127,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         pending: false,
         error: null,
         journeyId: action.journey.id,
+        subject: action.journey.subject,
         projection: action.journey.projection,
         facts: action.journey.facts,
         serviceRuns: action.journey.serviceRuns ?? {},

@@ -605,7 +605,56 @@ test("the vehicle intake starts in context and offers a reviewable sample RC", a
   await page.request.post("/api/demo/reset");
 });
 
-test("journey CTA advances past a completed birth certificate", async ({ page }) => {
+test("journey plan keeps parallel work and subject context in one graph-backed flow", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  const id = await seedJourney(page);
+
+  await page.goto(`/journeys/${id}`);
+  await expect(page.getByRole("heading", { name: "Having a baby" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Happening now" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ready for you" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What this involves" })).toBeVisible();
+
+  const shellBefore = await page.locator(".life-plan-shell").evaluate((element) => ({
+    x: element.getBoundingClientRect().x,
+    width: element.getBoundingClientRect().width,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  await page.getByRole("button", { name: /About Your baby/i }).click();
+  await expect(page.getByRole("dialog", { name: "Your baby" })).toBeVisible();
+  await expect(page.getByText("Apollo Hospital", { exact: true })).toBeVisible();
+  const shellAfter = await page.locator(".life-plan-shell").evaluate((element) => ({
+    x: element.getBoundingClientRect().x,
+    width: element.getBoundingClientRect().width,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(shellAfter).toEqual(shellBefore);
+  await page.getByRole("button", { name: "Close details" }).click();
+
+  const seriousA11y = await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(seriousA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+  for (const [templateId, title] of [
+    ["vehicle-purchase.india.v1", "Buying a vehicle"],
+    ["health-insurance.india.v1", "Health & insurance"],
+    ["moving-home.india.v1", "Moving home"],
+    ["business-setup.india.v1", "Starting a business"],
+    ["retirement.india.v1", "Retirement"],
+  ] as const) {
+    const created = await page.request.post("/api/journeys", { data: { templateId, facts: {} } });
+    const journey = await created.json() as { id: string };
+    await page.goto(`/journeys/${journey.id}`);
+    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "What this involves" })).toBeVisible();
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/journeys/${id}`);
+  await expect(page.getByRole("heading", { name: "Having a baby", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.request.post("/api/demo/reset");
+});
+
+test("journey plan advances past a completed birth certificate", async ({ page }) => {
   await login(page);
   await page.request.post("/api/demo/reset");
   const id = await seedJourney(page);
@@ -619,7 +668,7 @@ test("journey CTA advances past a completed birth certificate", async ({ page })
   }
 
   await page.goto(`/journeys/${id}`);
-  await expect(page.getByRole("link", { name: "Continue with mother and child record" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: /Mother and child record/ }).first()).toHaveAttribute(
     "href",
     `/journeys/${id}/services/child_health_record`,
   );

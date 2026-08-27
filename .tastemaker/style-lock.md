@@ -64,7 +64,9 @@ Established: 2026-08-26. Updated: 2026-08-27 for lifecycle-aware records and rel
 - Within each state, My life separates My family, Other people, Homes & property, Vehicles & assets, Work & organisations, and Other records. Family labels come only from a stated family relationship; business partners, tenants, drivers, advisers, and signatories retain the contextual role that connects them.
 - A citizen may save a broader record before a researched guided service exists. The record shows the requested need as “Guided steps not available yet”; it never fabricates a checklist or hides the limitation.
 - A person-or-thing page names its saved services directly and shows connected people with their roles, known ownership shares, and authority. It never summarises them as an abstract count of “areas.”
-- Journey pages remain next-action-first. The full dependency graph appears only in a wide slide-in Journey Map opened by the citizen.
+- Guided plan pages use one vertical reading flow: an event-and-subject hero, work already happening, all actions that are ready now, then a plain-language timeline projected from the dependency graph. Parallel ready actions use two columns on desktop and one on mobile; the full technical dependency map remains a secondary wide drawer.
+- Journey progress is written as a plain sentence beside the full plan, never as a top-level percentage, ring, KPI, or abstract section count.
+- “About {person or thing}” opens a fixed contextual drawer containing identity, dates, connections, and documents. It overlays the viewport and never widens or reflows the plan.
 - Documents expose “Add a document” as a disclosure above a plain library.
 - Service provider and data-sharing metadata are available under “Provider and data details.”
 - Intake is one narrow column with a short progress label; extracted facts are optional detail.

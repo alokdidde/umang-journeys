@@ -13,6 +13,7 @@ describe("demo journey state", () => {
       type: "server_journey_loaded",
       journey: {
         id: "journey-123",
+        subject: { id: "child-aarav", type: "child", displayName: "Aarav Sharma", canonicalEntityId: "entity-aarav" },
         projection: serverProjection,
         facts: { "child.name": "Aarav Sharma", "birth.place.ward": "Ward 72 — Serilingampally" },
         registrationId: "BR-2026-1234",
@@ -20,6 +21,7 @@ describe("demo journey state", () => {
     });
 
     expect(state.journeyId).toBe("journey-123");
+    expect(state.subject).toMatchObject({ displayName: "Aarav Sharma", canonicalEntityId: "entity-aarav" });
     expect(state.form).toEqual({ childName: "Aarav Sharma", localWard: "Ward 72 — Serilingampally" });
     expect(state.registrationId).toBe("BR-2026-1234");
     expect(state.projection.nodes[0]?.status).toBe("completed");
@@ -64,6 +66,7 @@ describe("demo journey state", () => {
       type: "server_journey_loaded",
       journey: {
         id: "journey-progress",
+        subject: { id: "child-aarav", type: "child", displayName: "Aarav Sharma" },
         projection: pristineState.projection,
         facts: {},
         serviceRuns: {
