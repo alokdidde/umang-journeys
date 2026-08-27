@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Baby, BriefcaseBusiness, Car, CheckCircle2, ClipboardList, FileSearch, FileText, Home, LoaderCircle, Paperclip, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Baby, BriefcaseBusiness, Car, CheckCircle2, ClipboardList, FileSearch, FileText, Home, Link2, LoaderCircle, Paperclip, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
 import {
   Attachment,
   AttachmentInfo,
@@ -277,9 +277,21 @@ function LifeRequestMap({ plan, answers = {}, answer, mode = "summary", invalidQ
   const presentedSubjects = presentLifeRequest(plan, answers);
   return <div className="life-request-map">{presentedSubjects.map((subject) => {
     const questions = plan.questions.filter((question) => question.subjectRef === subject.ref);
+    const subjectNameByRef = new Map(presentedSubjects.map((candidate) => [candidate.ref, candidate.displayName]));
+    const associations = (plan.associations ?? []).flatMap((association) => {
+      if (association.toSubjectRef === subject.ref) {
+        const person = association.fromSubjectRef === "account_holder" ? "You" : subjectNameByRef.get(association.fromSubjectRef) ?? "Another person";
+        return [{ id: association.id, label: `${person} · ${association.role}`, detail: [association.ownershipShare === undefined ? null : `${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(association.ownershipShare)}% share`, association.canAct === undefined ? null : association.canAct ? "Can act" : "No signing authority"].filter(Boolean).join(" · ") }];
+      }
+      if (association.fromSubjectRef === subject.ref) {
+        const target = subjectNameByRef.get(association.toSubjectRef) ?? "this record";
+        return [{ id: association.id, label: `${association.role} of ${target}`, detail: [association.ownershipShare === undefined ? null : `${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(association.ownershipShare)}% share`, association.canAct === undefined ? null : association.canAct ? "Can act" : "No signing authority"].filter(Boolean).join(" · ") }];
+      }
+      return [];
+    });
     return <article className="life-request-subject" key={subject.ref}>
       <div className="life-request-person"><span><LifeSubjectIcon type={subject.type} /></span><div><small>{subjectTypeLabel(subject)}</small><strong>{subject.displayName}</strong></div></div>
-      <div className="life-request-needs">{plan.needs.filter((need) => need.subjectRef === subject.ref).map((need) => <div key={need.id}><ClipboardList aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description}</small></span></div>)}</div>
+      <div className="life-request-needs">{plan.needs.filter((need) => need.subjectRef === subject.ref).map((need) => <div key={need.id}><ClipboardList aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description}</small></span></div>)}{associations.map((association) => <div className="life-request-association" key={association.id}><Link2 aria-hidden="true" /><span><strong>{association.label}</strong>{association.detail ? <small>{association.detail}</small> : null}</span></div>)}</div>
       {mode === "collect" && questions.length ? <fieldset className="life-request-subject-fields"><legend>Details for {subject.displayName}</legend>{questions.map((question) => {
         const fieldId = `life-request-${question.id}`;
         const errorId = `${fieldId}-error`;
@@ -303,7 +315,7 @@ function LifeRequestProposal({ plan, answers, edit, apply }: { plan: LifeRequest
   const multipleSubjects = plan.subjects.length > 1;
   return <Confirmation className="life-request-panel life-request-confirmation" approval={{ id: plan.requestId }} state="approval-requested">
     <ConfirmationRequest>
-      <header className="life-request-heading"><span><Sparkles /></span><div><p>Ready to add to My life</p><h2 id="life-request-proposal-title" tabIndex={-1}>{approvalHeading(plan, answers)}</h2><span>{multipleSubjects ? `${plan.needs.length} service areas will stay under the right person or thing. ` : ""}Check the details below before you continue.</span></div></header>
+      <header className="life-request-heading"><span><Sparkles /></span><div><p>Ready to add to My life</p><h2 id="life-request-proposal-title" tabIndex={-1}>{approvalHeading(plan, answers)}</h2><span>{multipleSubjects ? `Each service will be saved with the person or thing it concerns. ` : ""}Check the details below before you continue.</span></div></header>
       <LifeRequestMap plan={plan} answers={answers} mode="review" />
       <ConfirmationTitle><ShieldCheck />I’ll save only what is shown above. No department will be contacted.</ConfirmationTitle>
       <ConfirmationActions><ConfirmationAction variant="outline" onClick={edit}><ArrowLeft />Change details</ConfirmationAction><ConfirmationAction onClick={() => void apply()}>{multipleSubjects ? "Add these to My life" : "Add to My life"}<ArrowRight /></ConfirmationAction></ConfirmationActions>

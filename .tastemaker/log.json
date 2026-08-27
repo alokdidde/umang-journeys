@@ -158,5 +158,15 @@
     "footer": "one recommended next action after all affected records are visible",
     "knobs": "subject-grouped-facts/complete-approval-receipt/multi-subject-success/plain-language/low-density/accessibility-verified",
     "brief": "UMANG Life · make unusual compound requests verifiable before saving and visibly complete afterward"
+  },
+  {
+    "date": "2026-08-27",
+    "page": "My life collections, compound request relationships, and contextual people",
+    "macrostructure": "Contextual Life Records",
+    "nav": "existing familiar top navigation and mobile bottom navigation",
+    "hero": "one named person or thing with concrete services and connected people",
+    "footer": "one next useful action",
+    "knobs": "family-vs-other-people/contextual-roles/many-to-many-ownership/authority/plain-language/low-density",
+    "brief": "UMANG Life · distinguish family, household, ownership, operating, and authority relationships without adding dashboard density"
   }
 ]

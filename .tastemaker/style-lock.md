@@ -61,6 +61,8 @@ Established: 2026-08-26. Updated: 2026-08-27 for the subject-centred AI interact
 - Home ignores caught-up work when choosing the next action; when all work is done, it shows one “all caught up” state linked to My life.
 - “Tell us what changed” is collapsed by default for returning citizens.
 - My life visibly separates “Needs attention” from “All caught up”; completion changes placement, never availability.
+- Within each state, My life separates My family, Other people, Homes, Vehicles, and Businesses. Family labels come only from a stated family relationship; business partners, tenants, drivers, advisers, and signatories retain the contextual role that connects them.
+- A person-or-thing page names its saved services directly and shows connected people with their roles, known ownership shares, and authority. It never summarises them as an abstract count of “areas.”
 - Journey pages remain next-action-first. The full dependency graph appears only in a wide slide-in Journey Map opened by the citizen.
 - Documents expose “Add a document” as a disclosure above a plain library.
 - Service provider and data-sharing metadata are available under “Provider and data details.”

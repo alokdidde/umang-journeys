@@ -45,4 +45,55 @@ describe("life request plan", () => {
 
     expect(prepareLifeRequest(output, "request-keys").questions.map((question) => question.factKey)).toEqual(["child.name", "child.dateOfBirth"]);
   });
+
+  it("records family as a relationship instead of making it a global person role", () => {
+    const output = lifeRequestOutputSchema.parse({
+      supported: true,
+      summary: "Add your daughter and organise health cover.",
+      subjects: [{ ref: "aarohi", type: "child", displayName: "Aarohi", relationship: "daughter", facts: [] }],
+      needs: [{ id: "cover", subjectRef: "aarohi", lifeEvent: "managing_health_cover", label: "Health cover", description: "Prepare health cover.", confidence: 0.98, facts: [] }],
+      questions: [],
+    });
+
+    expect(prepareLifeRequest(output, "request-family").associations).toEqual([{
+      id: "family-aarohi",
+      fromSubjectRef: "account_holder",
+      toSubjectRef: "aarohi",
+      kind: "family",
+      role: "daughter",
+    }]);
+  });
+
+  it("allows several people to hold distinct roles in one business", () => {
+    const output = lifeRequestOutputSchema.parse({
+      supported: true,
+      summary: "Set up Sharma Foods for its two equal owners.",
+      subjects: [
+        { ref: "business", type: "business", displayName: "Sharma Foods", facts: [] },
+        { ref: "rohan", type: "person", displayName: "Rohan Mehta", facts: [] },
+      ],
+      needs: [{ id: "setup", subjectRef: "business", lifeEvent: "starting_a_business", label: "Set up Sharma Foods", description: "Prepare its registrations.", confidence: 0.98, facts: [] }],
+      questions: [],
+      associations: [
+        { id: "alok-owner", fromSubjectRef: "account_holder", toSubjectRef: "business", kind: "owner", role: "Co-owner", ownershipShare: 50, canAct: true },
+        { id: "rohan-owner", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "owner", role: "Co-owner", ownershipShare: 50, canAct: true },
+        { id: "rohan-director", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "director", role: "Director", canAct: true },
+      ],
+    });
+
+    const plan = prepareLifeRequest(output, "request-business");
+    expect(plan.associations).toHaveLength(3);
+    expect(plan.subjects.find((subject) => subject.ref === "rohan")?.relationship).toBeUndefined();
+  });
+
+  it("rejects ownership percentages on relationships that do not represent ownership", () => {
+    expect(() => lifeRequestOutputSchema.parse({
+      supported: true,
+      summary: "Add an accountant to a business.",
+      subjects: [{ ref: "business", type: "business", displayName: "Sharma Foods", facts: [] }, { ref: "accountant", type: "person", displayName: "Meera", facts: [] }],
+      needs: [{ id: "setup", subjectRef: "business", lifeEvent: "starting_a_business", label: "Set up the business", description: "Prepare it.", confidence: 0.9, facts: [] }],
+      questions: [],
+      associations: [{ id: "accountant", fromSubjectRef: "accountant", toSubjectRef: "business", kind: "adviser", role: "Accountant", ownershipShare: 30 }],
+    })).toThrow();
+  });
 });

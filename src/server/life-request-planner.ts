@@ -9,6 +9,11 @@ Rules:
 - A statement may contain several needs and several subjects. Do not reduce it to one category.
 - Resolve pronouns and relationships. If two needs concern the same person or thing, they must use the same subject ref.
 - A child who needs health cover remains a child subject; never turn them into the account holder.
+- When a need concerns the citizen personally, use one person subject with isAccountHolder true. Do not create a second identity for them.
+- People are not globally "dependants". Record a family relationship only when the citizen states one.
+- Use associations for contextual roles: family and household relationships; owners, partners, shareholders, directors, signatories and operators of businesses; owners, occupants and tenants of homes; owners, drivers and authorised users of vehicles; and guardians of children.
+- Use the reserved ref account_holder when the citizen is one side of an association. A business partner is connected to the business and is not a family member unless the citizen separately states a family relationship.
+- A business, home or vehicle may have several connected people. Preserve each person's distinct role, ownership share and authority to act when stated.
 - Keep labels plain and human. Never use the words journey, workflow, engine, orchestration, or data-driven.
 - Ask only for details needed to identify the subject or safely prepare the services. Ask no more than three questions.
 - Extract only stated facts. Never infer identity, eligibility, official status, approval, medical facts, or legal conclusions.

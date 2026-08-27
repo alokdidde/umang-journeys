@@ -7,6 +7,37 @@ const factSchema = z.object({
   confidence: z.number().min(0).max(1),
 });
 
+export const entityAssociationKindSchema = z.enum([
+  "family",
+  "household_member",
+  "guardian",
+  "owner",
+  "partner",
+  "shareholder",
+  "director",
+  "authorised_signatory",
+  "operator",
+  "manager",
+  "employee",
+  "adviser",
+  "occupant",
+  "tenant",
+  "driver",
+  "authorised_user",
+]);
+
+const entityAssociationSchema = z.object({
+  id: z.string().min(1).max(40),
+  fromSubjectRef: z.string().min(1).max(40),
+  toSubjectRef: z.string().min(1).max(40),
+  kind: entityAssociationKindSchema,
+  role: z.string().min(1).max(60),
+  ownershipShare: z.number().min(0).max(100).optional(),
+  canAct: z.boolean().optional(),
+});
+
+export type EntityAssociation = z.infer<typeof entityAssociationSchema>;
+
 const supportedLifeRequestSchema = z.object({
   supported: z.literal(true),
   summary: z.string().min(1).max(180),
@@ -14,9 +45,11 @@ const supportedLifeRequestSchema = z.object({
     ref: z.string().min(1).max(40),
     type: z.enum(["child", "person", "vehicle", "residence", "business"]),
     displayName: z.string().min(1).max(80),
+    isAccountHolder: z.boolean().optional(),
     relationship: z.string().max(40).optional(),
+    householdMember: z.boolean().optional(),
     facts: z.array(factSchema).max(12),
-  })).min(1).max(5),
+  })).min(1).max(8),
   needs: z.array(z.object({
     id: z.string().min(1).max(40),
     subjectRef: z.string().min(1).max(40),
@@ -34,15 +67,24 @@ const supportedLifeRequestSchema = z.object({
     input: z.enum(["text", "date", "choice"]),
     choices: z.array(z.object({ value: z.string().min(1).max(60), label: z.string().min(1).max(80) })).max(5).optional(),
     required: z.boolean(),
-  })).max(5),
+  })).max(8),
+  associations: z.array(entityAssociationSchema).max(16).default([]),
 }).superRefine((plan, context) => {
   const subjectRefs = new Set(plan.subjects.map((subject) => subject.ref));
+  const associationRefs = new Set(["account_holder", ...subjectRefs]);
+  if (plan.subjects.filter((subject) => subject.isAccountHolder).length > 1) context.addIssue({ code: "custom", path: ["subjects"], message: "Only one subject can be the account holder." });
   for (const need of plan.needs) {
     if (!subjectRefs.has(need.subjectRef)) context.addIssue({ code: "custom", path: ["needs"], message: `Unknown subject reference: ${need.subjectRef}` });
   }
   for (const question of plan.questions) {
     if (!subjectRefs.has(question.subjectRef)) context.addIssue({ code: "custom", path: ["questions"], message: `Unknown subject reference: ${question.subjectRef}` });
     if (question.input === "choice" && !question.choices?.length) context.addIssue({ code: "custom", path: ["questions"], message: "Choice questions require choices." });
+  }
+  for (const association of plan.associations) {
+    if (!associationRefs.has(association.fromSubjectRef)) context.addIssue({ code: "custom", path: ["associations"], message: `Unknown association reference: ${association.fromSubjectRef}` });
+    if (!associationRefs.has(association.toSubjectRef)) context.addIssue({ code: "custom", path: ["associations"], message: `Unknown association reference: ${association.toSubjectRef}` });
+    if (association.fromSubjectRef === association.toSubjectRef) context.addIssue({ code: "custom", path: ["associations"], message: "An association must connect two different people or things." });
+    if (association.ownershipShare !== undefined && !["owner", "partner", "shareholder"].includes(association.kind)) context.addIssue({ code: "custom", path: ["associations"], message: "Ownership share is only valid for an owner, partner, or shareholder." });
   }
 });
 
@@ -79,12 +121,38 @@ function canonicalQuestionFactKey(question: z.infer<typeof supportedLifeRequestS
   return question.factKey;
 }
 
-export function prepareLifeRequest(output: z.infer<typeof lifeRequestOutputSchema>, requestId = crypto.randomUUID()) {
+export function prepareLifeRequest(input: z.input<typeof lifeRequestOutputSchema>, requestId = crypto.randomUUID()) {
+  const output = lifeRequestOutputSchema.parse(input);
   if (!output.supported) throw Object.assign(new Error("That request does not yet match a service UMANG Life can organise."), { code: "UNSUPPORTED_LIFE_REQUEST", detail: output.reason });
+  const associations = output.associations;
+  const explicitFamilyRefs = new Set(associations
+    .filter((association) => association.fromSubjectRef === "account_holder" && association.kind === "family")
+    .map((association) => association.toSubjectRef));
+  const explicitHouseholdRefs = new Set(associations
+    .filter((association) => association.fromSubjectRef === "account_holder" && association.kind === "household_member")
+    .map((association) => association.toSubjectRef));
+  const inferredAssociations: EntityAssociation[] = output.subjects.flatMap((subject) => {
+    if (subject.isAccountHolder || !(subject.type === "person" || subject.type === "child") || !subject.relationship || explicitFamilyRefs.has(subject.ref)) return [];
+    return [{
+      id: `family-${subject.ref}`,
+      fromSubjectRef: "account_holder",
+      toSubjectRef: subject.ref,
+      kind: "family" as const,
+      role: subject.relationship,
+    }];
+  });
+  const inferredHouseholdAssociations: EntityAssociation[] = output.subjects.flatMap((subject) => subject.householdMember && !explicitHouseholdRefs.has(subject.ref) ? [{
+    id: `household-${subject.ref}`,
+    fromSubjectRef: "account_holder",
+    toSubjectRef: subject.ref,
+    kind: "household_member" as const,
+    role: "Household member",
+  }] : []);
   return {
     ...output,
     requestId,
     resolver: "ai_gateway" as const,
+    associations: [...associations, ...inferredAssociations, ...inferredHouseholdAssociations] as EntityAssociation[],
     needs: output.needs.map((need) => ({ ...need, templateId: templateIdByLifeEvent[need.lifeEvent] })),
     questions: output.questions.map((question) => ({
       ...question,

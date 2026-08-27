@@ -7,6 +7,7 @@ const plan: LifeRequestPlan = {
   resolver: "ai_gateway",
   requestId: "request-review",
   summary: "Help your father prepare for retirement and review his health cover.",
+  associations: [{ id: "family-father", fromSubjectRef: "account_holder", toSubjectRef: "father", kind: "family", role: "father" }],
   subjects: [{ ref: "father", type: "person", displayName: "Your father", relationship: "father", facts: [] }],
   needs: [
     { id: "retirement", subjectRef: "father", lifeEvent: "retirement", templateId: "retirement.india.v1", label: "Prepare for retirement", description: "Organise pension and retirement records.", confidence: 1, facts: [] },
@@ -32,7 +33,7 @@ describe("life request presentation", () => {
   });
 
   it("uses concrete names in the approval heading", () => {
-    expect(approvalHeading(plan, { name: "Ramesh" })).toBe("Add Ramesh and organise 2 areas");
+    expect(approvalHeading(plan, { name: "Ramesh" })).toBe("Add Ramesh and organise 2 services");
   });
 
   it("opens one subject directly and gives several subjects a complete receipt", () => {

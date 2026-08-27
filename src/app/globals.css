@@ -1,6 +1,6 @@
-/* tastemaker · macrostructure: Subject-centred request transformation · mood: calm, clear, humane · page: complete product
- * arc: plain-language request -> visible interpretation -> missing details -> approval -> persistent person record
- * nav: N1 familiar app top bar · hero: H5 · close: C1 · knobs: structured-AI/no-chat/one-subject-many-needs
+/* tastemaker · macrostructure: Contextual Life Records · mood: calm, clear, humane · page: My life and request approval
+ * arc: plain-language request -> named people and things -> explicit relationships -> approval -> contextual record
+ * nav: N1 familiar app top bar · hero: H5 · close: C1 · knobs: family-vs-other-people/contextual-roles/many-to-many-ownership
  * palette: locked UMANG · contrast: pass
  * critique: ShowTell 5 · Phil 5 · Hier 5 · Spec 5 · Restr 4 · Var 5 */
 @import "tailwindcss";
@@ -1252,6 +1252,8 @@ button,a,summary { touch-action:manipulation; }
 .life-request-needs span,.life-request-needs strong,.life-request-needs small { display:block; }
 .life-request-needs strong { font-size:14px; line-height:1.35; }
 .life-request-needs small { margin-top:3px; color:#536078; font-size:12px; line-height:1.45; }
+.life-request-needs > .life-request-association { background:#f3f7fd; border-color:#cad9ed; }
+.life-request-needs > .life-request-association svg { color:#5b55a5; }
 .life-request-subject-fields { grid-column:1/-1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; min-width:0; margin:0; padding:17px 0 0; border:0; border-top:1px solid #d5e0ef; }
 .life-request-subject-fields legend { width:100%; padding:16px 0 0; color:#42536f; font-size:13px; font-weight:800; }
 .life-request-subject-fields label { display:grid; align-content:start; gap:7px; color:#263653; font-size:14px; font-weight:700; }
@@ -1303,6 +1305,10 @@ button,a,summary { touch-action:manipulation; }
 
 /* One persistent person or thing */
 .life-card { overflow:hidden; background:white; border:1px solid #d8e1ee; border-radius:16px; box-shadow:0 8px 24px rgba(24,57,110,.07); }
+.life-collection-groups { display:grid; gap:24px; }
+.life-collection-group > header { margin:0 0 10px; padding-inline:2px; }
+.life-collection-group > header h3 { margin:0; color:var(--navy); font-size:15px; letter-spacing:-.01em; }
+.life-collection-group > header p { margin:3px 0 0; color:#65718a; font-size:11px; line-height:1.45; }
 .life-card > header { display:grid; grid-template-columns:48px minmax(0,1fr) auto; align-items:center; gap:13px; padding:18px; }
 .life-card > header small { color:#65718a; font-size:10px; font-weight:750; text-transform:capitalize; }
 .life-card > header h3 { margin:2px 0; font-size:20px; letter-spacing:-.025em; }
@@ -1340,6 +1346,13 @@ button,a,summary { touch-action:manipulation; }
 .life-item-action-list small { color:#65718a; font-size:9px; }
 .life-item-action-list strong { display:block; margin:2px 0; font-size:13px; }
 .life-item-action-list p { margin:0; color:#52637e; font-size:10px; }
+.life-item-people > div { display:grid; gap:8px; }
+.life-item-people article { display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:12px; min-height:64px; padding:12px 14px; background:#f8fafc; border:1px solid #e0e6ef; border-radius:11px; }
+.life-item-people article > span { width:36px; height:36px; display:grid; place-items:center; color:var(--blue); background:white; border:1px solid #dce4ef; border-radius:50%; }
+.life-item-people article > span svg { width:17px; }
+.life-item-people h3 { margin:0; color:var(--navy); font-size:13px; }
+.life-item-people article p { margin:3px 0 0; color:#65718a; font-size:10px; line-height:1.4; }
+.life-item-people article > small { padding:5px 8px; color:#43516a; background:#edf2f8; border-radius:999px; font-size:9px; font-weight:750; white-space:nowrap; }
 .life-item-needs > div { display:grid; gap:8px; }
 .life-item-needs article { display:grid; grid-template-columns:34px minmax(0,1fr) auto; align-items:center; gap:11px; padding:12px 14px; background:#f8fafc; border:1px solid #e0e6ef; border-radius:11px; }
 .life-item-needs article > span { width:32px; height:32px; display:grid; place-items:center; color:var(--green); background:white; border-radius:9px; }
@@ -1383,6 +1396,8 @@ button,a,summary { touch-action:manipulation; }
   .life-item-hero,.life-item-section { padding:17px; border-radius:14px; }
   .life-item-needs article { grid-template-columns:32px minmax(0,1fr); }
   .life-item-needs article > a { grid-column:2; }
+  .life-item-people article { grid-template-columns:36px minmax(0,1fr); }
+  .life-item-people article > small { grid-column:2; justify-self:start; }
 }
 
 .journey-document-suggestion { overflow:hidden; background:rgba(255,255,255,.98); border:1px solid #b8c7dc; border-radius:16px; box-shadow:0 12px 30px rgba(24,65,128,.11); }

@@ -45,9 +45,20 @@ export async function applyLifeRequest(sessionId: string, plan: LifeRequestPlan,
   const missing = plan.questions.filter((question) => question.required && !answers[question.id]?.trim());
   if (missing.length) throw Object.assign(new Error("Complete the required details before adding this to My life."), { code: "MISSING_REQUIRED_ANSWERS", fields: missing.map((question) => question.id) });
 
+  const graphSeeds = plan.subjects.map((subject) => {
+    const subjectNeed = plan.needs.find((need) => need.subjectRef === subject.ref);
+    const facts = subjectNeed ? factsForNeed(plan, subject, subjectNeed, answers) : {
+      ...factsFrom(subject.facts),
+      ...Object.fromEntries(plan.questions
+        .filter((question) => question.subjectRef === subject.ref && answers[question.id]?.trim())
+        .map((question) => [question.factKey, answers[question.id].trim()])),
+    };
+    return { ref: subject.ref, type: subject.type, displayName: displayNameFor(subject, facts), facts, isAccountHolder: subject.isAccountHolder };
+  });
+  const resolvedIds = await repository.syncEntityGraph(sessionId, graphSeeds, plan.associations);
   const existing = await repository.list(sessionId);
   const journeys: StoredJourney[] = [];
-  const entityIds = new Map<string, string>();
+  const entityIds = new Map<string, string>(Object.entries(resolvedIds));
 
   for (const need of plan.needs) {
     const alreadyCreated = existing.find((journey) => journey.facts["intake.requestId"] === plan.requestId && journey.facts["intake.needId"] === need.id);
@@ -62,7 +73,7 @@ export async function applyLifeRequest(sessionId: string, plan: LifeRequestPlan,
     const seed: JourneySubjectSeed = {
       type: subject.type,
       displayName: displayNameFor(subject, facts),
-      role: subject.type === "person" && !subject.relationship ? "account_holder" : subject.type === "person" || subject.type === "child" ? "dependent" : "asset",
+      role: subject.isAccountHolder ? "account_holder" : subject.type === "person" || subject.type === "child" ? "person" : "asset",
       canonicalEntityId: entityIds.get(subject.ref),
     };
     const journey = await repository.create(sessionId, facts, need.templateId, seed);
@@ -70,5 +81,11 @@ export async function applyLifeRequest(sessionId: string, plan: LifeRequestPlan,
     if (journey.subject.canonicalEntityId) entityIds.set(subject.ref, journey.subject.canonicalEntityId);
   }
 
-  return { journeys, subjectEntityIds: Object.fromEntries(entityIds) };
+  const graphIds = await repository.syncEntityGraph(sessionId, graphSeeds.map((seed) => ({ ...seed, canonicalEntityId: entityIds.get(seed.ref) })), plan.associations);
+
+  for (const [ref, entityId] of Object.entries(graphIds)) entityIds.set(ref, entityId);
+  const refreshed = await repository.list(sessionId);
+  const refreshedById = new Map(refreshed.map((journey) => [journey.id, journey]));
+
+  return { journeys: journeys.map((journey) => refreshedById.get(journey.id) ?? journey), subjectEntityIds: Object.fromEntries(entityIds) };
 }

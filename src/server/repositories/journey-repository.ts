@@ -4,6 +4,7 @@ import { agencyDecisionToServiceRun, evaluateSyntheticAgency, type AgencyCaseInp
 import { e2eAgencyAgent } from "@/server/integrations/e2e-agency-agent";
 import { serviceDefinitionFor, type SandboxServiceRun } from "@/domain/service-workflows";
 import type { JourneyLifecycleStatus, JourneySubject } from "@/domain/journey-summary";
+import type { EntityAssociation } from "@/domain/life-request";
 import { evidenceLabels, serviceEvidenceRequirements, type EvidenceRecord, type JourneyEvidence } from "@/domain/evidence";
 
 export type StoredJourney = {
@@ -25,6 +26,17 @@ export type StoredJourney = {
 export type JourneySubjectSeed = Pick<JourneySubject, "type" | "displayName" | "role"> & {
   canonicalEntityId?: string;
 };
+
+export type EntityGraphSeed = {
+  ref: string;
+  type: JourneySubject["type"];
+  displayName: string;
+  facts: Record<string, string>;
+  isAccountHolder?: boolean;
+  canonicalEntityId?: string;
+};
+
+export type EntityAssociationSeed = EntityAssociation;
 
 function identitySlug(value: string) {
   return value.trim().toLocaleLowerCase("en-IN").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
@@ -54,6 +66,7 @@ export interface JourneyRepository {
   getEvidence(sessionId: string, id: string, evidenceId: string): Promise<EvidenceRecord | null>;
   completeRegistration(sessionId: string, id: string, idempotencyKey: string): Promise<StoredJourney | null>;
   advanceService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string): Promise<StoredJourney | null>;
+  syncEntityGraph(sessionId: string, entities: EntityGraphSeed[], associations: EntityAssociationSeed[]): Promise<Record<string, string>>;
   reset(sessionId: string): Promise<void>;
 }
 
@@ -117,7 +130,8 @@ export class MemoryJourneyRepository implements JourneyRepository {
   private journeys = new Map<string, StoredJourney>();
   private idempotency = new Map<string, string>();
   private evidenceContents = new Map<string, EvidenceRecord>();
-  private entities = new Map<string, { id: string; type: JourneySubject["type"]; displayName: string }>();
+  private entities = new Map<string, { id: string; sessionId: string; type: JourneySubject["type"] | "household"; displayName: string; facts: Record<string, string>; isAccountHolder?: boolean }>();
+  private relationships = new Map<string, { fromId: string; toId: string; kind: EntityAssociationSeed["kind"]; role: string; ownershipShare?: number; canAct?: boolean }>();
 
   constructor(private readonly agencyAgent: ExternalAgencyAgent = evaluateSyntheticAgency) {}
 
@@ -130,14 +144,15 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const seededEntity = subjectSeed?.canonicalEntityId
       ? [...this.entities.values()].find((candidate) => candidate.id === subjectSeed.canonicalEntityId)
       : undefined;
-    const entity = seededEntity ?? this.entities.get(entityKey) ?? { id: `entity-${crypto.randomUUID()}`, type: subject.type, displayName: subject.displayName };
+    const entity = seededEntity ?? this.entities.get(entityKey) ?? { id: `entity-${crypto.randomUUID()}`, sessionId, type: subject.type, displayName: subject.displayName, facts };
+    entity.facts = { ...entity.facts, ...facts };
     this.entities.set(entityKey, entity);
     const subjectId = `${subject.type}-${crypto.randomUUID()}`;
     const journey: StoredJourney = {
       id: `journey-${crypto.randomUUID()}`,
       sessionId,
       status: "active",
-      subject: { id: subjectId, ...subject, canonicalEntityId: entity.id, householdId: `household:${sessionId}`, role: subject.role ?? (subject.type === "person" && !facts["health.dependentRelationship"] ? "account_holder" : subject.type === "person" || subject.type === "child" ? "dependent" : "asset") },
+      subject: { id: subjectId, ...subject, canonicalEntityId: entity.id, householdId: `household:${sessionId}`, role: subject.role ?? (subject.type === "person" && !facts["health.dependentRelationship"] ? "account_holder" : subject.type === "person" || subject.type === "child" ? "person" : "asset") },
       projection: compileJourney(template, facts),
       facts,
       factHistory: Object.entries(facts).map(([key, value]) => ({ id: `fact-${crypto.randomUUID()}`, key, value, source: "user_statement" as const, status: "active" as const, recordedAt: timestamp })),
@@ -286,7 +301,85 @@ export class MemoryJourneyRepository implements JourneyRepository {
     this.journeys.set(`${sessionId}:${id}`, updated);
     return updated;
   }
-  async reset(sessionId: string) { for (const [key] of this.journeys) if (key.startsWith(`${sessionId}:`)) this.journeys.delete(key); }
+  async syncEntityGraph(sessionId: string, entities: EntityGraphSeed[], associations: EntityAssociationSeed[]) {
+    const primaryKey = `${sessionId}:person:account-holder`;
+    const primary = this.entities.get(primaryKey) ?? { id: `entity-${crypto.randomUUID()}`, sessionId, type: "person" as const, displayName: "You", facts: {}, isAccountHolder: true };
+    this.entities.set(primaryKey, primary);
+    const entityIds: Record<string, string> = { account_holder: primary.id };
+    for (const seed of entities) {
+      if (seed.isAccountHolder) {
+        primary.displayName = seed.displayName;
+        primary.facts = { ...primary.facts, ...seed.facts };
+        entityIds[seed.ref] = primary.id;
+        continue;
+      }
+      const seeded = seed.canonicalEntityId ? [...this.entities.values()].find((entity) => entity.id === seed.canonicalEntityId && entity.sessionId === sessionId) : undefined;
+      const key = `${sessionId}:${canonicalEntityKey({ type: seed.type, displayName: seed.displayName, role: "person" }, seed.facts)}`;
+      const birthDate = seed.facts[seed.type === "child" ? "child.dateOfBirth" : "person.dateOfBirth"];
+      const relationship = seed.facts["person.relationship"] || seed.facts["health.dependentRelationship"];
+      const sameNamed = [...this.entities.values()].filter((entity) => entity.sessionId === sessionId && entity.type === seed.type && entity.displayName.trim().toLocaleLowerCase("en-IN") === seed.displayName.trim().toLocaleLowerCase("en-IN"));
+      const compatible = sameNamed.filter((entity) => {
+        const existingBirthDate = entity.facts[seed.type === "child" ? "child.dateOfBirth" : "person.dateOfBirth"];
+        const existingRelationship = entity.facts["person.relationship"] || entity.facts["health.dependentRelationship"];
+        return (!birthDate || !existingBirthDate || birthDate === existingBirthDate)
+          && (!relationship || !existingRelationship || relationship === existingRelationship);
+      });
+      const nameMatch = compatible.length === 1 ? compatible[0] : undefined;
+      const entity = seeded ?? this.entities.get(key) ?? nameMatch ?? { id: `entity-${crypto.randomUUID()}`, sessionId, type: seed.type, displayName: seed.displayName, facts: {} };
+      entity.displayName = seed.displayName;
+      entity.facts = { ...entity.facts, ...seed.facts };
+      this.entities.set(key, entity);
+      entityIds[seed.ref] = entity.id;
+    }
+    for (const association of associations) {
+      const fromId = entityIds[association.fromSubjectRef];
+      const toId = entityIds[association.toSubjectRef];
+      if (!fromId || !toId) continue;
+      this.relationships.set(`${sessionId}:${fromId}:${toId}:${association.kind}:${association.role}`, {
+        fromId, toId, kind: association.kind, role: association.role,
+        ownershipShare: association.ownershipShare, canAct: association.canAct,
+      });
+    }
+    this.applyEntityContexts(sessionId);
+    return Object.fromEntries(Object.entries(entityIds).filter(([ref]) => ref !== "account_holder"));
+  }
+  private applyEntityContexts(sessionId: string) {
+    const entities = [...this.entities.values()].filter((entity) => entity.sessionId === sessionId);
+    const entityById = new Map(entities.map((entity) => [entity.id, entity]));
+    for (const [key, journey] of this.journeys) {
+      if (journey.sessionId !== sessionId || !journey.subject.canonicalEntityId) continue;
+      const subjectId = journey.subject.canonicalEntityId;
+      const related = [...this.relationships.values()].filter((relationship) => relationship.toId === subjectId);
+      const family = related.find((relationship) => relationship.kind === "family" && entityById.get(relationship.fromId)?.isAccountHolder);
+      const household = related.some((relationship) => relationship.kind === "household_member" && entityById.get(relationship.fromId)?.isAccountHolder);
+      const connectedPeople = related
+        .filter((relationship) => !["family", "household_member"].includes(relationship.kind))
+        .reduce<NonNullable<JourneySubject["context"]>["connectedPeople"]>((people, relationship) => {
+          const person = entityById.get(relationship.fromId);
+          if (!person || person.type !== "person") return people;
+          const existing = people?.find((candidate) => candidate.entityId === person.id);
+          if (existing) {
+            if (!existing.roles.includes(relationship.role)) existing.roles.push(relationship.role);
+            existing.ownershipShare ??= relationship.ownershipShare;
+            existing.canAct ||= relationship.canAct;
+            return people;
+          }
+          return [...(people ?? []), { entityId: person.id, displayName: person.isAccountHolder ? "You" : person.displayName, isAccountHolder: Boolean(person.isAccountHolder), roles: [relationship.role], ownershipShare: relationship.ownershipShare, canAct: relationship.canAct }];
+        }, []);
+      const updated: StoredJourney = { ...journey, subject: { ...journey.subject, context: {
+        relationshipToAccountHolder: family?.role,
+        householdMember: household || undefined,
+        connectedPeople: connectedPeople?.length ? connectedPeople : undefined,
+      } } };
+      this.journeys.set(key, updated);
+    }
+  }
+  async reset(sessionId: string) {
+    for (const [key] of this.journeys) if (key.startsWith(`${sessionId}:`)) this.journeys.delete(key);
+    for (const [key, entity] of this.entities) if (entity.sessionId === sessionId) this.entities.delete(key);
+    const remainingEntityIds = new Set([...this.entities.values()].map((entity) => entity.id));
+    for (const [key, relationship] of this.relationships) if (key.startsWith(`${sessionId}:`) || !remainingEntityIds.has(relationship.fromId) || !remainingEntityIds.has(relationship.toId)) this.relationships.delete(key);
+  }
 }
 
 const runtimeAgencyAgent = process.env.NODE_ENV !== "production" && process.env.UMANG_E2E_AGENCY === "approved" ? e2eAgencyAgent : evaluateSyntheticAgency;

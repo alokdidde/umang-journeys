@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Baby, BriefcaseBusiness, Car, CheckCircle2, Home, LoaderCircle, ShieldCheck, UserRound } from "lucide-react";
-import { groupLifeItems, type LifeItem } from "@/domain/life-item";
+import { groupLifeItems, lifeItemKindLabel, type LifeItem } from "@/domain/life-item";
 import type { JourneySummary } from "@/domain/journey-summary";
 
 export function LifeRequestAdded() {
@@ -36,10 +36,7 @@ export function LifeRequestAdded() {
   if (error) return <main className="page workflow-state"><p role="alert">{error}</p><Link href="/journeys">Open My life</Link></main>;
 
   const firstAction = items.flatMap((item) => item.actions)[0];
-  const peopleOnly = items.every((item) => item.type === "person" || item.type === "child");
-  const savedLabel = peopleOnly
-    ? `${items.length} ${items.length === 1 ? "family member is" : "family members are"}`
-    : `${items.length} ${items.length === 1 ? "person or thing is" : "people and things are"}`;
+  const savedLabel = `${items.length} ${items.length === 1 ? "record is" : "records are"}`;
   return <main className="page life-added-page">
     <header className="life-added-hero content-layer">
       <span><CheckCircle2 aria-hidden="true" /></span>
@@ -62,11 +59,7 @@ export function LifeRequestAdded() {
 }
 
 function subjectLabel(item: LifeItem) {
-  if (item.role === "dependent") return "Family member";
-  if (item.type === "residence") return "Home";
-  if (item.type === "business") return "Business";
-  if (item.type === "vehicle") return "Vehicle";
-  return item.type === "child" ? "Child" : "Person";
+  return lifeItemKindLabel(item);
 }
 
 function SubjectIcon({ type }: { type: LifeItem["type"] }) {

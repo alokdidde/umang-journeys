@@ -29,6 +29,7 @@ export type EntityRelationshipMinAggregateOutputType = {
   fromId: string | null
   toId: string | null
   kind: string | null
+  role: string | null
   validFrom: Date | null
   validTo: Date | null
   createdAt: Date | null
@@ -39,6 +40,7 @@ export type EntityRelationshipMaxAggregateOutputType = {
   fromId: string | null
   toId: string | null
   kind: string | null
+  role: string | null
   validFrom: Date | null
   validTo: Date | null
   createdAt: Date | null
@@ -49,6 +51,8 @@ export type EntityRelationshipCountAggregateOutputType = {
   fromId: number
   toId: number
   kind: number
+  role: number
+  metadataJson: number
   validFrom: number
   validTo: number
   createdAt: number
@@ -61,6 +65,7 @@ export type EntityRelationshipMinAggregateInputType = {
   fromId?: true
   toId?: true
   kind?: true
+  role?: true
   validFrom?: true
   validTo?: true
   createdAt?: true
@@ -71,6 +76,7 @@ export type EntityRelationshipMaxAggregateInputType = {
   fromId?: true
   toId?: true
   kind?: true
+  role?: true
   validFrom?: true
   validTo?: true
   createdAt?: true
@@ -81,6 +87,8 @@ export type EntityRelationshipCountAggregateInputType = {
   fromId?: true
   toId?: true
   kind?: true
+  role?: true
+  metadataJson?: true
   validFrom?: true
   validTo?: true
   createdAt?: true
@@ -164,6 +172,8 @@ export type EntityRelationshipGroupByOutputType = {
   fromId: string
   toId: string
   kind: string
+  role: string
+  metadataJson: runtime.JsonValue
   validFrom: Date | null
   validTo: Date | null
   createdAt: Date
@@ -195,6 +205,8 @@ export type EntityRelationshipWhereInput = {
   fromId?: Prisma.StringFilter<"EntityRelationship"> | string
   toId?: Prisma.StringFilter<"EntityRelationship"> | string
   kind?: Prisma.StringFilter<"EntityRelationship"> | string
+  role?: Prisma.StringFilter<"EntityRelationship"> | string
+  metadataJson?: Prisma.JsonFilter<"EntityRelationship">
   validFrom?: Prisma.DateTimeNullableFilter<"EntityRelationship"> | Date | string | null
   validTo?: Prisma.DateTimeNullableFilter<"EntityRelationship"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"EntityRelationship"> | Date | string
@@ -207,6 +219,8 @@ export type EntityRelationshipOrderByWithRelationInput = {
   fromId?: Prisma.SortOrder
   toId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  metadataJson?: Prisma.SortOrder
   validFrom?: Prisma.SortOrderInput | Prisma.SortOrder
   validTo?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -222,6 +236,8 @@ export type EntityRelationshipWhereUniqueInput = Prisma.AtLeast<{
   fromId?: Prisma.StringFilter<"EntityRelationship"> | string
   toId?: Prisma.StringFilter<"EntityRelationship"> | string
   kind?: Prisma.StringFilter<"EntityRelationship"> | string
+  role?: Prisma.StringFilter<"EntityRelationship"> | string
+  metadataJson?: Prisma.JsonFilter<"EntityRelationship">
   validFrom?: Prisma.DateTimeNullableFilter<"EntityRelationship"> | Date | string | null
   validTo?: Prisma.DateTimeNullableFilter<"EntityRelationship"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"EntityRelationship"> | Date | string
@@ -234,6 +250,8 @@ export type EntityRelationshipOrderByWithAggregationInput = {
   fromId?: Prisma.SortOrder
   toId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  metadataJson?: Prisma.SortOrder
   validFrom?: Prisma.SortOrderInput | Prisma.SortOrder
   validTo?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -250,6 +268,8 @@ export type EntityRelationshipScalarWhereWithAggregatesInput = {
   fromId?: Prisma.StringWithAggregatesFilter<"EntityRelationship"> | string
   toId?: Prisma.StringWithAggregatesFilter<"EntityRelationship"> | string
   kind?: Prisma.StringWithAggregatesFilter<"EntityRelationship"> | string
+  role?: Prisma.StringWithAggregatesFilter<"EntityRelationship"> | string
+  metadataJson?: Prisma.JsonWithAggregatesFilter<"EntityRelationship">
   validFrom?: Prisma.DateTimeNullableWithAggregatesFilter<"EntityRelationship"> | Date | string | null
   validTo?: Prisma.DateTimeNullableWithAggregatesFilter<"EntityRelationship"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"EntityRelationship"> | Date | string
@@ -258,6 +278,8 @@ export type EntityRelationshipScalarWhereWithAggregatesInput = {
 export type EntityRelationshipCreateInput = {
   id?: string
   kind: string
+  role?: string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Date | string | null
   validTo?: Date | string | null
   createdAt?: Date | string
@@ -270,6 +292,8 @@ export type EntityRelationshipUncheckedCreateInput = {
   fromId: string
   toId: string
   kind: string
+  role?: string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Date | string | null
   validTo?: Date | string | null
   createdAt?: Date | string
@@ -278,6 +302,8 @@ export type EntityRelationshipUncheckedCreateInput = {
 export type EntityRelationshipUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -290,6 +316,8 @@ export type EntityRelationshipUncheckedUpdateInput = {
   fromId?: Prisma.StringFieldUpdateOperationsInput | string
   toId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -300,6 +328,8 @@ export type EntityRelationshipCreateManyInput = {
   fromId: string
   toId: string
   kind: string
+  role?: string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Date | string | null
   validTo?: Date | string | null
   createdAt?: Date | string
@@ -308,6 +338,8 @@ export type EntityRelationshipCreateManyInput = {
 export type EntityRelationshipUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -318,6 +350,8 @@ export type EntityRelationshipUncheckedUpdateManyInput = {
   fromId?: Prisma.StringFieldUpdateOperationsInput | string
   toId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -338,6 +372,8 @@ export type EntityRelationshipCountOrderByAggregateInput = {
   fromId?: Prisma.SortOrder
   toId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  metadataJson?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -348,6 +384,7 @@ export type EntityRelationshipMaxOrderByAggregateInput = {
   fromId?: Prisma.SortOrder
   toId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -358,6 +395,7 @@ export type EntityRelationshipMinOrderByAggregateInput = {
   fromId?: Prisma.SortOrder
   toId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -454,6 +492,8 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
 export type EntityRelationshipCreateWithoutFromInput = {
   id?: string
   kind: string
+  role?: string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Date | string | null
   validTo?: Date | string | null
   createdAt?: Date | string
@@ -464,6 +504,8 @@ export type EntityRelationshipUncheckedCreateWithoutFromInput = {
   id?: string
   toId: string
   kind: string
+  role?: string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Date | string | null
   validTo?: Date | string | null
   createdAt?: Date | string
@@ -482,6 +524,8 @@ export type EntityRelationshipCreateManyFromInputEnvelope = {
 export type EntityRelationshipCreateWithoutToInput = {
   id?: string
   kind: string
+  role?: string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Date | string | null
   validTo?: Date | string | null
   createdAt?: Date | string
@@ -492,6 +536,8 @@ export type EntityRelationshipUncheckedCreateWithoutToInput = {
   id?: string
   fromId: string
   kind: string
+  role?: string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Date | string | null
   validTo?: Date | string | null
   createdAt?: Date | string
@@ -531,6 +577,8 @@ export type EntityRelationshipScalarWhereInput = {
   fromId?: Prisma.StringFilter<"EntityRelationship"> | string
   toId?: Prisma.StringFilter<"EntityRelationship"> | string
   kind?: Prisma.StringFilter<"EntityRelationship"> | string
+  role?: Prisma.StringFilter<"EntityRelationship"> | string
+  metadataJson?: Prisma.JsonFilter<"EntityRelationship">
   validFrom?: Prisma.DateTimeNullableFilter<"EntityRelationship"> | Date | string | null
   validTo?: Prisma.DateTimeNullableFilter<"EntityRelationship"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"EntityRelationship"> | Date | string
@@ -556,6 +604,8 @@ export type EntityRelationshipCreateManyFromInput = {
   id?: string
   toId: string
   kind: string
+  role?: string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Date | string | null
   validTo?: Date | string | null
   createdAt?: Date | string
@@ -565,6 +615,8 @@ export type EntityRelationshipCreateManyToInput = {
   id?: string
   fromId: string
   kind: string
+  role?: string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Date | string | null
   validTo?: Date | string | null
   createdAt?: Date | string
@@ -573,6 +625,8 @@ export type EntityRelationshipCreateManyToInput = {
 export type EntityRelationshipUpdateWithoutFromInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -583,6 +637,8 @@ export type EntityRelationshipUncheckedUpdateWithoutFromInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   toId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -592,6 +648,8 @@ export type EntityRelationshipUncheckedUpdateManyWithoutFromInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   toId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -600,6 +658,8 @@ export type EntityRelationshipUncheckedUpdateManyWithoutFromInput = {
 export type EntityRelationshipUpdateWithoutToInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -610,6 +670,8 @@ export type EntityRelationshipUncheckedUpdateWithoutToInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   fromId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -619,6 +681,8 @@ export type EntityRelationshipUncheckedUpdateManyWithoutToInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   fromId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   validFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -631,6 +695,8 @@ export type EntityRelationshipSelect<ExtArgs extends runtime.Types.Extensions.In
   fromId?: boolean
   toId?: boolean
   kind?: boolean
+  role?: boolean
+  metadataJson?: boolean
   validFrom?: boolean
   validTo?: boolean
   createdAt?: boolean
@@ -643,6 +709,8 @@ export type EntityRelationshipSelectCreateManyAndReturn<ExtArgs extends runtime.
   fromId?: boolean
   toId?: boolean
   kind?: boolean
+  role?: boolean
+  metadataJson?: boolean
   validFrom?: boolean
   validTo?: boolean
   createdAt?: boolean
@@ -655,6 +723,8 @@ export type EntityRelationshipSelectUpdateManyAndReturn<ExtArgs extends runtime.
   fromId?: boolean
   toId?: boolean
   kind?: boolean
+  role?: boolean
+  metadataJson?: boolean
   validFrom?: boolean
   validTo?: boolean
   createdAt?: boolean
@@ -667,12 +737,14 @@ export type EntityRelationshipSelectScalar = {
   fromId?: boolean
   toId?: boolean
   kind?: boolean
+  role?: boolean
+  metadataJson?: boolean
   validFrom?: boolean
   validTo?: boolean
   createdAt?: boolean
 }
 
-export type EntityRelationshipOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "fromId" | "toId" | "kind" | "validFrom" | "validTo" | "createdAt", ExtArgs["result"]["entityRelationship"]>
+export type EntityRelationshipOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "fromId" | "toId" | "kind" | "role" | "metadataJson" | "validFrom" | "validTo" | "createdAt", ExtArgs["result"]["entityRelationship"]>
 export type EntityRelationshipInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   from?: boolean | Prisma.CanonicalEntityDefaultArgs<ExtArgs>
   to?: boolean | Prisma.CanonicalEntityDefaultArgs<ExtArgs>
@@ -697,6 +769,8 @@ export type $EntityRelationshipPayload<ExtArgs extends runtime.Types.Extensions.
     fromId: string
     toId: string
     kind: string
+    role: string
+    metadataJson: runtime.JsonValue
     validFrom: Date | null
     validTo: Date | null
     createdAt: Date
@@ -1129,6 +1203,8 @@ export interface EntityRelationshipFieldRefs {
   readonly fromId: Prisma.FieldRef<"EntityRelationship", 'String'>
   readonly toId: Prisma.FieldRef<"EntityRelationship", 'String'>
   readonly kind: Prisma.FieldRef<"EntityRelationship", 'String'>
+  readonly role: Prisma.FieldRef<"EntityRelationship", 'String'>
+  readonly metadataJson: Prisma.FieldRef<"EntityRelationship", 'Json'>
   readonly validFrom: Prisma.FieldRef<"EntityRelationship", 'DateTime'>
   readonly validTo: Prisma.FieldRef<"EntityRelationship", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"EntityRelationship", 'DateTime'>

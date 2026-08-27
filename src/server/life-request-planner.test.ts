@@ -66,4 +66,27 @@ describe("AI life request planner", () => {
     await expect(planLifeRequest("I bought a van and started a delivery business", { model })).resolves.toMatchObject({ needs: [{ lifeEvent: "buying_a_vehicle" }, { lifeEvent: "starting_a_business" }] });
     expect(calls).toBe(2);
   });
+
+  it("tells the model to keep business roles separate from family relationships", async () => {
+    const model = new MockLanguageModelV3({ doGenerate: {
+      content: [{ type: "text", text: JSON.stringify({
+        supported: true,
+        summary: "Set up Sharma Foods with Rohan as an equal co-owner.",
+        subjects: [{ ref: "business", type: "business", displayName: "Sharma Foods", facts: [] }, { ref: "rohan", type: "person", displayName: "Rohan", facts: [] }],
+        needs: [{ id: "setup", subjectRef: "business", lifeEvent: "starting_a_business", label: "Set up Sharma Foods", description: "Prepare its registrations.", confidence: 0.99, facts: [] }],
+        questions: [],
+        associations: [
+          { id: "self-owner", fromSubjectRef: "account_holder", toSubjectRef: "business", kind: "owner", role: "Co-owner", ownershipShare: 50, canAct: true },
+          { id: "rohan-owner", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "owner", role: "Co-owner", ownershipShare: 50, canAct: true },
+        ],
+      }) }],
+      finishReason: { unified: "stop", raw: "stop" }, usage, warnings: [],
+    }});
+
+    const plan = await planLifeRequest("Rohan and I own Sharma Foods equally", { model });
+    const prompt = JSON.stringify(model.doGenerateCalls[0]?.prompt);
+    expect(prompt).toContain("business partner");
+    expect(plan.associations).toHaveLength(2);
+    expect(plan.subjects.find((subject) => subject.ref === "rohan")?.relationship).toBeUndefined();
+  });
 });

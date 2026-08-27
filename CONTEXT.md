@@ -13,12 +13,44 @@ The reusable dependency graph of Journey Branches, Journey Steps, and guidance a
 _Avoid_: Journey, workflow instance
 
 **Journey**:
-One person’s ongoing or completed pursuit of a Life Event, created from a Journey Template.
+A persisted service plan for one person or thing, created from a Journey Template. Several Journeys may concern the same person or thing without creating another identity for it.
 _Avoid_: Form, application, template
 
 **Journey Subject**:
-The one person or thing the Journey is about. A newborn or dependent parent remains distinct from the account holder. A request concerning two people creates one Journey for each person so their identity, evidence, eligibility, and progress cannot be mixed.
+The one person or thing a Journey is about. A newborn or parent remains distinct from the account holder. A request concerning two people creates one Journey for each person so their identity, evidence, eligibility, and progress cannot be mixed.
 _Avoid_: User, account, applicant
+
+**Canonical Entity**:
+The enduring identity of one person or thing in My Life. It may be linked to several Journeys and several contextual relationships without being duplicated.
+_Avoid_: Journey Subject, card, profile row
+
+**Person**:
+One human being represented by a Canonical Entity. Being a Person does not imply family membership, dependency, ownership, household membership, or authority.
+_Avoid_: Dependent, family member, applicant
+
+**Family Relationship**:
+A stated personal relationship between two People, such as daughter, parent, spouse, sibling, or ward. It determines whether someone appears in My Family; it does not determine eligibility or authority for a service.
+_Avoid_: Dependent, household member, business partner
+
+**Household Membership**:
+A time-bounded relationship showing that a Person belongs to a Household. It is independent of Family Relationship: relatives may live elsewhere, and non-relatives may share a household.
+_Avoid_: Family, dependant, address
+
+**Contextual Role**:
+A Person’s role in relation to another person or thing, such as guardian of a child, co-owner of a business, tenant of a home, or driver of a vehicle. The same Person may have different Contextual Roles in different contexts.
+_Avoid_: Global role, user type, dependent
+
+**Ownership Association**:
+A Contextual Role connecting a Person to a Business, Home, or Vehicle they own. Several People may own the same thing, and an ownership share may be recorded when known.
+_Avoid_: Operator, family member, applicant
+
+**Authority to Act**:
+The explicit scope in which a Person may sign, apply, manage, or otherwise act for another person or thing. Ownership and Family Relationship do not automatically grant Authority to Act.
+_Avoid_: Owner access, family access, assumed consent
+
+**My Family**:
+The citizen-facing collection of People who have a Family Relationship to the account holder. Other People remain available in the context that connects them, such as a Business, Home, Vehicle, or service.
+_Avoid_: All people, dependants, household
 
 **Multi-person Request**:
 A single request concerning more than one Journey Subject, such as arranging health cover for both parents. It is split into separate Journeys while retaining the same account holder as the person helping them.

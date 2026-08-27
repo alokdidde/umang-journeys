@@ -84,7 +84,7 @@ async function expectCentredInClosest(page: Page, childSelector: string, ancesto
   }, ancestorSelector)).toBeLessThanOrEqual(1);
 }
 
-test("one request becomes one child with several organised needs", async ({ page }) => {
+test("one request becomes one child with several saved services", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
   await login(page);
   await page.request.post("/api/demo/reset");
@@ -99,7 +99,7 @@ test("one request becomes one child with several organised needs", async ({ page
   await page.getByLabel("What is your baby's name?").fill("Mira");
   await page.getByLabel("When was she born?").fill("2026-08-20");
   await page.getByRole("button", { name: "Review what will be added" }).click();
-  const approvalHeading = page.getByRole("heading", { name: "Add Mira and organise 2 areas" });
+  const approvalHeading = page.getByRole("heading", { name: "Add Mira and organise 2 services" });
   await expect(approvalHeading).toBeVisible();
   await expect(approvalHeading).toBeFocused();
   await expect.poll(() => approvalHeading.evaluate((heading) => Math.round(heading.closest(".life-request-panel")?.getBoundingClientRect().width ?? 0))).toBe(800);
@@ -133,7 +133,7 @@ test("one request becomes one child with several organised needs", async ({ page
   await expect(page.getByRole("heading", { name: "Health & Insurance" })).toBeVisible();
   await page.locator("main").getByRole("link", { name: "My life" }).click();
   await expect(page.locator(".life-card").getByRole("heading", { name: "Mira", exact: true })).toHaveCount(1);
-  await expect(page.locator(".life-card").getByText("2 areas organised")).toBeVisible();
+  await expect(page.locator(".life-card").getByText("2 services saved here")).toBeVisible();
 });
 
 async function seedJourney(page: Page) {

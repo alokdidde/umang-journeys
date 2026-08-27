@@ -1,10 +1,11 @@
 import { activateBranch as activateJourneyBranch, compileJourney, completeNode, getJourneyTemplate, hydrateJourney, isJourneyComplete, newBabyTemplate, type JourneyTemplate, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
-import { buildAgencyCaseInput, canAdvanceFromVerifiedEvidence, canonicalEntityKey, evidenceFacts, type JourneyRepository, type JourneySubjectSeed, type StoredJourney } from "@/server/repositories/journey-repository";
+import { buildAgencyCaseInput, canAdvanceFromVerifiedEvidence, canonicalEntityKey, evidenceFacts, type EntityAssociationSeed, type EntityGraphSeed, type JourneyRepository, type JourneySubjectSeed, type StoredJourney } from "@/server/repositories/journey-repository";
 import { agencyDecisionToServiceRun, evaluateSyntheticAgency, type ExternalAgencyAgent } from "@/server/integrations/external-agency-agent";
 import { serviceDefinitionFor, type SandboxServiceRun } from "@/domain/service-workflows";
 import type { EvidenceRecord, EvidenceSource, EvidenceType, JourneyEvidence } from "@/domain/evidence";
-import type { JourneySubject } from "@/domain/journey-summary";
+import type { ConnectedPerson, JourneySubject } from "@/domain/journey-summary";
+import type { Prisma } from "@/generated/prisma/client";
 
 type DatabaseJourney = Awaited<ReturnType<ReturnType<typeof getPrisma>["journeyInstance"]["findFirst"]>>;
 
@@ -134,7 +135,7 @@ function mapJourney(
       displayName: journey.subject.displayName,
       canonicalEntityId: journey.entityLinks.find((link) => link.role === "subject")?.entityId,
       householdId: journey.entityLinks.find((link) => link.role === "household")?.entityId,
-      role: journey.entityLinks.find((link) => link.role === "subject")?.entityId === journey.entityLinks.find((link) => link.role === "applicant")?.entityId ? "account_holder" : journey.subject.type === "PERSON" || journey.subject.type === "CHILD" ? "dependent" : "asset",
+      role: journey.entityLinks.find((link) => link.role === "subject")?.entityId === journey.entityLinks.find((link) => link.role === "applicant")?.entityId ? "account_holder" : journey.subject.type === "PERSON" || journey.subject.type === "CHILD" ? "person" : "asset",
     },
     projection,
     facts,
@@ -162,6 +163,57 @@ const transactionOptions = {
   maxWait: 10_000,
   timeout: 30_000,
 } as const;
+
+function associationKindForDatabase(kind: EntityAssociationSeed["kind"]) {
+  return kind.toUpperCase();
+}
+
+function jsonRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+async function addEntityContexts(sessionId: string, journeys: StoredJourney[]) {
+  const subjectIds = journeys.flatMap((journey) => journey.subject.canonicalEntityId ? [journey.subject.canonicalEntityId] : []);
+  if (!subjectIds.length) return journeys;
+  const entities = await getPrisma().canonicalEntity.findMany({
+    where: { id: { in: subjectIds }, profile: { sessionId } },
+    include: { incomingRelationships: { include: { from: true } } },
+  });
+  const entityById = new Map(entities.map((entity) => [entity.id, entity]));
+  return journeys.map((journey) => {
+    const entityId = journey.subject.canonicalEntityId;
+    const entity = entityId ? entityById.get(entityId) : undefined;
+    if (!entity) return journey;
+    const family = entity.incomingRelationships.find((relationship) => relationship.kind === "FAMILY" && jsonRecord(relationship.from.dataJson).role === "account_holder");
+    const householdMember = entity.incomingRelationships.some((relationship) => relationship.kind === "HOUSEHOLD_MEMBER");
+    const byPerson = new Map<string, ConnectedPerson>();
+    for (const relationship of entity.incomingRelationships) {
+      if (["FAMILY", "HOUSEHOLD_MEMBER"].includes(relationship.kind) || relationship.from.type !== "PERSON") continue;
+      const metadata = jsonRecord(relationship.metadataJson);
+      const accountHolder = jsonRecord(relationship.from.dataJson).role === "account_holder";
+      const existing = byPerson.get(relationship.fromId);
+      if (existing) {
+        if (!existing.roles.includes(relationship.role)) existing.roles.push(relationship.role);
+        existing.ownershipShare ??= typeof metadata.ownershipShare === "number" ? metadata.ownershipShare : undefined;
+        existing.canAct ||= metadata.canAct === true;
+      } else {
+        byPerson.set(relationship.fromId, {
+          entityId: relationship.fromId,
+          displayName: accountHolder ? "You" : relationship.from.displayName,
+          isAccountHolder: accountHolder,
+          roles: [relationship.role],
+          ownershipShare: typeof metadata.ownershipShare === "number" ? metadata.ownershipShare : undefined,
+          canAct: metadata.canAct === true ? true : undefined,
+        });
+      }
+    }
+    return { ...journey, subject: { ...journey.subject, displayName: entity.displayName, context: {
+      relationshipToAccountHolder: family?.role || undefined,
+      householdMember: householdMember || undefined,
+      connectedPeople: byPerson.size ? [...byPerson.values()] : undefined,
+    } } };
+  });
+}
 
 function validDate(value: string | undefined) {
   if (!value) return undefined;
@@ -217,11 +269,17 @@ export class PrismaJourneyRepository implements JourneyRepository {
       create: { profileId: profile.id, type: canonicalType(subject), externalKey: subjectEntityKey, displayName: subject.displayName, dataJson: facts },
     }));
     const relationships = [
-      { fromId: household.id, toId: primaryPerson.id, kind: "MEMBER" },
-      ...(subjectEntity.id === primaryPerson.id ? [] : [{ fromId: subject.type === "CHILD" ? household.id : primaryPerson.id, toId: subjectEntity.id, kind: subject.type === "CHILD" || subject.type === "PERSON" ? "DEPENDENT" : subject.type === "RESIDENCE" ? "OCCUPIES" : subject.type === "BUSINESS" ? "OPERATES" : "OWNS" }]),
+      { fromId: household.id, toId: primaryPerson.id, kind: "HOUSEHOLD_MEMBER", role: "Household member", metadataJson: {} },
+      ...(subjectEntity.id === primaryPerson.id ? [] : [{
+        fromId: primaryPerson.id,
+        toId: subjectEntity.id,
+        kind: subject.type === "CHILD" || subject.type === "PERSON" ? "FAMILY" : subject.type === "RESIDENCE" ? "OCCUPANT" : "OWNER",
+        role: subject.type === "CHILD" || subject.type === "PERSON" ? facts["person.relationship"] || facts["health.dependentRelationship"] || "Family member" : subject.type === "RESIDENCE" ? "Occupant" : "Owner",
+        metadataJson: subject.type === "BUSINESS" ? { canAct: true } : {},
+      }]),
     ];
     for (const relationship of relationships) {
-      const existing = await prisma.entityRelationship.findFirst({ where: relationship });
+      const existing = await prisma.entityRelationship.findFirst({ where: { fromId: relationship.fromId, toId: relationship.toId, kind: relationship.kind, role: relationship.role } });
       if (!existing) await prisma.entityRelationship.create({ data: relationship });
     }
 
@@ -264,7 +322,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       },
       include: includeJourney,
     });
-    return mapJourney(journey, sessionId);
+    return (await addEntityContexts(sessionId, [mapJourney(journey, sessionId)]))[0]!;
   }
 
   async list(sessionId: string) {
@@ -273,7 +331,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       orderBy: { updatedAt: "desc" },
       include: includeJourney,
     });
-    return journeys.map((journey) => mapJourney(journey, sessionId));
+    return addEntityContexts(sessionId, journeys.map((journey) => mapJourney(journey, sessionId)));
   }
 
   async get(sessionId: string, id: string) {
@@ -281,7 +339,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
       where: { id, profile: { sessionId } },
       include: includeJourney,
     });
-    return journey ? mapJourney(journey, sessionId) : null;
+    return journey ? (await addEntityContexts(sessionId, [mapJourney(journey, sessionId)]))[0]! : null;
   }
 
   async updateFacts(sessionId: string, id: string, facts: Record<string, string>, provenance: { source: "user_statement" | "document" | "provider" | "demo"; sourceRef?: string } = { source: "user_statement" }) {
@@ -533,6 +591,71 @@ export class PrismaJourneyRepository implements JourneyRepository {
       });
     }, transactionOptions);
     return this.get(sessionId, id);
+  }
+
+  async syncEntityGraph(sessionId: string, entities: EntityGraphSeed[], associations: EntityAssociationSeed[]) {
+    const prisma = getPrisma();
+    const profile = await prisma.userProfile.upsert({
+      where: { sessionId },
+      update: {},
+      create: { sessionId, displayName: "Ananya", stateCode: "DL", demoProfile: true },
+    });
+    const primary = await prisma.canonicalEntity.upsert({
+      where: { profileId_type_externalKey: { profileId: profile.id, type: "PERSON", externalKey: "person:ananya-sharma" } },
+      update: {},
+      create: { profileId: profile.id, type: "PERSON", externalKey: "person:ananya-sharma", displayName: "Ananya Sharma", dataJson: { role: "account_holder" } },
+    });
+    const entityIds: Record<string, string> = { account_holder: primary.id };
+    for (const seed of entities) {
+      if (seed.isAccountHolder) {
+        await prisma.canonicalEntity.update({ where: { id: primary.id }, data: { displayName: seed.displayName, dataJson: { role: "account_holder", ...seed.facts } } });
+        entityIds[seed.ref] = primary.id;
+        continue;
+      }
+      const selected = seed.canonicalEntityId
+        ? await prisma.canonicalEntity.findFirst({ where: { id: seed.canonicalEntityId, profileId: profile.id } })
+        : null;
+      const type = seed.type === "vehicle" ? "VEHICLE" as const : seed.type === "residence" ? "ADDRESS" as const : seed.type === "business" ? "BUSINESS" as const : "PERSON" as const;
+      const externalKey = canonicalEntityKey({ type: seed.type, displayName: seed.displayName, role: "person" }, seed.facts);
+      const birthDateKey = seed.type === "child" ? "child.dateOfBirth" : "person.dateOfBirth";
+      const birthDate = seed.facts[birthDateKey];
+      const relationship = seed.facts["person.relationship"] || seed.facts["health.dependentRelationship"];
+      const sameNamedPeople = type === "PERSON" && !selected ? await prisma.canonicalEntity.findMany({
+        where: { profileId: profile.id, type: "PERSON", displayName: { equals: seed.displayName, mode: "insensitive" } },
+      }) : [];
+      const compatiblePeople = sameNamedPeople.filter((candidate) => {
+        const existingBirthDate = jsonRecord(candidate.dataJson)[birthDateKey];
+        const existingData = jsonRecord(candidate.dataJson);
+        const existingRelationship = existingData["person.relationship"] || existingData["health.dependentRelationship"];
+        return (!birthDate || typeof existingBirthDate !== "string" || birthDate === existingBirthDate)
+          && (!relationship || typeof existingRelationship !== "string" || relationship === existingRelationship);
+      });
+      const nameMatch = compatiblePeople.length === 1 ? compatiblePeople[0] : null;
+      const entity = selected ?? nameMatch ?? await prisma.canonicalEntity.upsert({
+        where: { profileId_type_externalKey: { profileId: profile.id, type, externalKey } },
+        update: { displayName: seed.displayName, dataJson: seed.facts },
+        create: { profileId: profile.id, type, externalKey, displayName: seed.displayName, dataJson: seed.facts },
+      });
+      if (selected || nameMatch) {
+        const mergedData = JSON.parse(JSON.stringify({ ...jsonRecord(entity.dataJson), ...seed.facts })) as Prisma.InputJsonObject;
+        await prisma.canonicalEntity.update({ where: { id: entity.id }, data: { displayName: seed.displayName, dataJson: mergedData } });
+      }
+      entityIds[seed.ref] = entity.id;
+    }
+    for (const association of associations) {
+      const fromId = entityIds[association.fromSubjectRef];
+      const toId = entityIds[association.toSubjectRef];
+      if (!fromId || !toId) continue;
+      const kind = associationKindForDatabase(association.kind);
+      const metadataJson = {
+        ...(association.ownershipShare === undefined ? {} : { ownershipShare: association.ownershipShare }),
+        ...(association.canAct === undefined ? {} : { canAct: association.canAct }),
+      };
+      const existing = await prisma.entityRelationship.findFirst({ where: { fromId, toId, kind, role: association.role } });
+      if (existing) await prisma.entityRelationship.update({ where: { id: existing.id }, data: { metadataJson } });
+      else await prisma.entityRelationship.create({ data: { fromId, toId, kind, role: association.role, metadataJson } });
+    }
+    return Object.fromEntries(Object.entries(entityIds).filter(([ref]) => ref !== "account_holder"));
   }
 
   async reset(sessionId: string) {

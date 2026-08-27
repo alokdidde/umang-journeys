@@ -2063,6 +2063,8 @@ export const EntityRelationshipScalarFieldEnum = {
   fromId: 'fromId',
   toId: 'toId',
   kind: 'kind',
+  role: 'role',
+  metadataJson: 'metadataJson',
   validFrom: 'validFrom',
   validTo: 'validTo',
   createdAt: 'createdAt'

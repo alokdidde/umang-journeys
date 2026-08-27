@@ -122,11 +122,15 @@ model EntityRelationship {
   fromId    String
   toId      String
   kind      String
+  role      String          @default("")
+  metadataJson Json         @default("{}")
   validFrom DateTime?
   validTo   DateTime?
   from      CanonicalEntity @relation("RelationshipFrom", fields: [fromId], references: [id], onDelete: Cascade)
   to        CanonicalEntity @relation("RelationshipTo", fields: [toId], references: [id], onDelete: Cascade)
   createdAt DateTime        @default(now())
+
+  @@index([fromId, toId, kind])
 }
 
 model JourneySubject {

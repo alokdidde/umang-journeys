@@ -2,13 +2,27 @@ import type { JourneyProjection, NodeStatus } from "./journey-engine";
 import { getJourneyTemplate, isJourneyComplete, journeyProgressNodes } from "./journey-engine";
 import type { SandboxServiceRun } from "./service-workflows";
 
+export type ConnectedPerson = {
+  entityId: string;
+  displayName: string;
+  isAccountHolder: boolean;
+  roles: string[];
+  ownershipShare?: number;
+  canAct?: boolean;
+};
+
 export type JourneySubject = {
   id: string;
   type: "child" | "vehicle" | "person" | "residence" | "business";
   displayName: string;
   canonicalEntityId?: string;
   householdId?: string;
-  role?: "account_holder" | "dependent" | "asset";
+  role?: "account_holder" | "person" | "asset" | "dependent";
+  context?: {
+    relationshipToAccountHolder?: string;
+    householdMember?: boolean;
+    connectedPeople?: ConnectedPerson[];
+  };
 };
 
 export type JourneyLifecycleStatus = "active" | "completed" | "abandoned";
