@@ -3,10 +3,12 @@ import { lifeRequestOutputSchema, prepareLifeRequest } from "@/domain/life-reque
 
 const systemPrompt = `Interpret a citizen's request for UMANG Life as a small, reviewable plan.
 
-Supported needs are: having a baby, buying a vehicle, managing health cover, moving home, starting a business, and retirement.
+Guided needs are: having a baby, buying a vehicle, managing health cover, moving home, starting a business, and retirement.
 
 Rules:
 - A statement may contain several needs and several subjects. Do not reduce it to one category.
+- Classify each subject with entityKind: person, household, organisation, premises, property, vehicle, registered_asset, animal, estate, or other. Keep the compatible legacy type as person/child for people, business for organisations, residence for premises/property/estate, and vehicle for vehicles/registered assets/animals.
+- Put researched guided needs in needs. Put any other clearly requested government service in unavailableNeeds with a plain reason that location- or service-specific guidance is not available yet. Preserve guided and unavailable needs together.
 - Resolve pronouns and relationships. If two needs concern the same person or thing, they must use the same subject ref.
 - A child who needs health cover remains a child subject; never turn them into the account holder.
 - When a need concerns the citizen personally, use one person subject with isAccountHolder true. Do not create a second identity for them.
@@ -18,7 +20,7 @@ Rules:
 - Ask only for details needed to identify the subject or safely prepare the services. Ask no more than three questions.
 - Extract only stated facts. Never infer identity, eligibility, official status, approval, medical facts, or legal conclusions.
 - Use stable subject refs and need ids made from short lowercase words.
-- Set supported to false if none of the supported needs apply.`;
+- Set supported to false only when the request is unrelated to organising a person's real-life records or government services.`;
 
 function plannerError(code: "AI_GATEWAY_NOT_CONFIGURED" | "AI_GATEWAY_AUTH_FAILED" | "AI_LIFE_REQUEST_FAILED", message: string, cause?: unknown) {
   return Object.assign(new Error(message), { code, cause });

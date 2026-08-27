@@ -7,21 +7,23 @@ import { LifeCard } from "@/components/life-card";
 import { useJourney } from "@/components/journey-provider";
 import type { JourneySummary } from "@/domain/journey-summary";
 import type { IntakeJourneyKey } from "@/domain/intake-experience";
-import { groupLifeItems, lifeItemCollection, type LifeItem } from "@/domain/life-item";
+import { groupLifeItems, lifeItemCollection, type LifeEntityRecordProjection, type LifeItem } from "@/domain/life-item";
 
 export default function JourneysPage() {
   const { dispatch } = useJourney();
   const [journeys, setJourneys] = useState<JourneySummary[]>([]);
+  const [entities, setEntities] = useState<LifeEntityRecordProjection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/journeys", { signal: controller.signal })
+    void fetch("/api/life", { signal: controller.signal })
       .then(async (response) => {
-        const body = await response.json() as { journeys: JourneySummary[]; message?: string };
+        const body = await response.json() as { journeys: JourneySummary[]; entities: LifeEntityRecordProjection[]; message?: string };
         if (!response.ok) throw new Error(body.message ?? "The people and things in your life could not be loaded.");
         setJourneys(body.journeys);
+        setEntities(body.entities);
       })
       .catch((cause) => {
         if (cause instanceof DOMException && cause.name === "AbortError") return;
@@ -36,13 +38,13 @@ export default function JourneysPage() {
     dispatch({ type: "set_statement", value: "" });
     router.push(journey ? `/intake?journey=${journey}` : "/intake");
   }
-  const lifeItems = groupLifeItems(journeys);
+  const lifeItems = groupLifeItems(journeys, entities);
   const activeItems = lifeItems.filter((item) => !item.completed);
   const completedItems = lifeItems.filter((item) => item.completed);
   return <main className="page hub-page journeys-index-page">
     <header className="hub-page-header content-layer"><div><p className="eyebrow"><Route />My life</p><h1>People and things in your life</h1><p>Keep their services, documents and upcoming responsibilities together.</p></div><button className="secondary-button" type="button" onClick={() => start()}><Plus />Tell us what changed</button></header>
     {error ? <p className="workflow-error content-layer" role="alert">{error}</p> : null}
-    {loading ? <div className="collection-state content-layer" role="status"><LoaderCircle className="service-spinner" /><p>Loading your records…</p></div> : journeys.length ? <>
+    {loading ? <div className="collection-state content-layer" role="status"><LoaderCircle className="service-spinner" /><p>Loading your records…</p></div> : lifeItems.length ? <>
       <section className="journey-collection content-layer" aria-labelledby="active-journeys-title">
         <header><div><h2 id="active-journeys-title">Needs attention</h2><p>People and things with something to do now.</p></div><span>{activeItems.length}</span></header>
         {activeItems.length ? <LifeItemGroups items={activeItems} /> : <div className="journey-section-empty"><CheckCircle2 /><div><strong>Nothing needs your attention</strong><p>Everything here is caught up for now.</p></div></div>}
@@ -58,9 +60,10 @@ export default function JourneysPage() {
 const collectionLabels = {
   family: { title: "My family", description: "Children, parents, partners and relatives you have identified." },
   people: { title: "Other people", description: "People connected to a service but not identified as family." },
-  homes: { title: "Homes", description: "Homes and addresses you look after." },
-  vehicles: { title: "Vehicles", description: "Vehicles you own, use or help manage." },
-  businesses: { title: "Businesses", description: "Businesses and the people connected to them." },
+  homes_property: { title: "Homes & property", description: "Homes, premises, land and property you look after." },
+  vehicles_assets: { title: "Vehicles & assets", description: "Vehicles and registered assets you own, use or help manage." },
+  work_organisations: { title: "Work & organisations", description: "Businesses, organisations and the people connected to them." },
+  other: { title: "Other records", description: "Animals, estates and other registered records you manage." },
 } as const;
 
 function LifeItemGroups({ items }: { items: LifeItem[] }) {

@@ -19,6 +19,34 @@ describe("life request plan", () => {
     expect(plan.subjects).toHaveLength(1);
     expect(plan.needs.map((need) => need.subjectRef)).toEqual(["baby", "baby"]);
     expect(plan.needs.map((need) => need.templateId)).toEqual(["new-baby.india.v1", "health-insurance.india.v1"]);
+    expect(plan.subjects[0]?.entityKind).toBe("person");
+  });
+
+  it("preserves a broader entity kind while using a compatible guided subject", () => {
+    const output = lifeRequestOutputSchema.parse({
+      supported: true,
+      summary: "Prepare the move for a rented shop.",
+      subjects: [{ ref: "shop", type: "residence", entityKind: "premises", displayName: "Khan Market shop", facts: [] }],
+      needs: [{ id: "move", subjectRef: "shop", lifeEvent: "moving_home", label: "Update services", description: "Prepare address-related services.", confidence: 0.9, facts: [] }],
+      questions: [],
+    });
+
+    expect(prepareLifeRequest(output, "request-shop").subjects[0]?.entityKind).toBe("premises");
+  });
+
+  it("keeps an understood record when its requested service is not guided yet", () => {
+    const plan = prepareLifeRequest({
+      supported: true,
+      summary: "Keep your inherited farm and note the mutation request.",
+      subjects: [{ ref: "farm", type: "residence", entityKind: "property", displayName: "Inherited farm", facts: [{ key: "property.surveyNumber", value: "118/2", confidence: 1 }] }],
+      needs: [],
+      unavailableNeeds: [{ id: "mutation", subjectRef: "farm", label: "Transfer the land record", description: "Mutation guidance is not available for this location yet.", reason: "This service needs location-specific research." }],
+      questions: [],
+      associations: [{ id: "owner", fromSubjectRef: "account_holder", toSubjectRef: "farm", kind: "owner", role: "Owner", canAct: true }],
+    }, "request-farm");
+
+    expect(plan.needs).toHaveLength(0);
+    expect(plan.unavailableNeeds[0]).toMatchObject({ subjectRef: "farm", label: "Transfer the land record" });
   });
 
   it("rejects a need that points at a subject the plan did not define", () => {

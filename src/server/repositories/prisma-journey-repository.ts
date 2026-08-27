@@ -1,11 +1,12 @@
 import { activateBranch as activateJourneyBranch, compileJourney, completeNode, getJourneyTemplate, hydrateJourney, isJourneyComplete, newBabyTemplate, type JourneyTemplate, type NodeStatus } from "@/domain/journey-engine";
 import { getPrisma } from "@/server/db";
-import { buildAgencyCaseInput, canAdvanceFromVerifiedEvidence, canonicalEntityKey, evidenceFacts, type EntityAssociationSeed, type EntityGraphSeed, type JourneyRepository, type JourneySubjectSeed, type StoredJourney } from "@/server/repositories/journey-repository";
+import { buildAgencyCaseInput, canAdvanceFromVerifiedEvidence, canonicalEntityKey, evidenceFacts, type EntityAssociationSeed, type EntityGraphSeed, type JourneyRepository, type JourneySubjectSeed, type LifeEntityRecord, type StoredJourney } from "@/server/repositories/journey-repository";
 import { agencyDecisionToServiceRun, evaluateSyntheticAgency, type ExternalAgencyAgent } from "@/server/integrations/external-agency-agent";
 import { serviceDefinitionFor, type SandboxServiceRun } from "@/domain/service-workflows";
 import type { EvidenceRecord, EvidenceSource, EvidenceType, JourneyEvidence } from "@/domain/evidence";
 import type { ConnectedPerson, JourneySubject } from "@/domain/journey-summary";
 import type { Prisma } from "@/generated/prisma/client";
+import { entityKindFromLegacySubject, type LifeEntityKind } from "@/domain/life-entity";
 
 type DatabaseJourney = Awaited<ReturnType<ReturnType<typeof getPrisma>["journeyInstance"]["findFirst"]>>;
 
@@ -132,6 +133,7 @@ function mapJourney(
     subject: {
       id: journey.subject.id,
       type: toSubjectType(journey.subject.type),
+      entityKind: (facts["intake.entityKind"] as LifeEntityKind | undefined) ?? entityKindFromLegacySubject(toSubjectType(journey.subject.type)),
       displayName: journey.subject.displayName,
       canonicalEntityId: journey.entityLinks.find((link) => link.role === "subject")?.entityId,
       householdId: journey.entityLinks.find((link) => link.role === "household")?.entityId,
@@ -262,11 +264,12 @@ export class PrismaJourneyRepository implements JourneyRepository {
       ? await prisma.canonicalEntity.findFirst({ where: { id: subjectSeed.canonicalEntityId, profileId: profile.id } })
       : null;
     if (subjectSeed?.canonicalEntityId && !selectedSubjectEntity) throw new Error("The selected person or thing is not available in this profile.");
-    const subjectEntityKey = canonicalEntityKey({ type: toSubjectType(subject.type), displayName: subject.displayName, role: subjectSeed?.role }, facts);
+    const entityKind = subjectSeed?.entityKind ?? entityKindFromLegacySubject(toSubjectType(subject.type));
+    const subjectEntityKey = canonicalEntityKey({ type: toSubjectType(subject.type), entityKind, displayName: subject.displayName, role: subjectSeed?.role }, facts);
     const subjectEntity = selectedSubjectEntity ?? (subjectIsAccountHolder ? primaryPerson : await prisma.canonicalEntity.upsert({
       where: { profileId_type_externalKey: { profileId: profile.id, type: canonicalType(subject), externalKey: subjectEntityKey } },
-      update: { displayName: subject.displayName, dataJson: facts },
-      create: { profileId: profile.id, type: canonicalType(subject), externalKey: subjectEntityKey, displayName: subject.displayName, dataJson: facts },
+      update: { displayName: subject.displayName, dataJson: { entityKind, ...facts } },
+      create: { profileId: profile.id, type: canonicalType(subject), externalKey: subjectEntityKey, displayName: subject.displayName, dataJson: { entityKind, ...facts } },
     }));
     const relationships = [
       { fromId: household.id, toId: primaryPerson.id, kind: "HOUSEHOLD_MEMBER", role: "Household member", metadataJson: {} },
@@ -608,7 +611,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
     const entityIds: Record<string, string> = { account_holder: primary.id };
     for (const seed of entities) {
       if (seed.isAccountHolder) {
-        await prisma.canonicalEntity.update({ where: { id: primary.id }, data: { displayName: seed.displayName, dataJson: { role: "account_holder", ...seed.facts } } });
+        await prisma.canonicalEntity.update({ where: { id: primary.id }, data: { displayName: seed.displayName, dataJson: { role: "account_holder", entityKind: "person", ...seed.facts } } });
         entityIds[seed.ref] = primary.id;
         continue;
       }
@@ -616,7 +619,7 @@ export class PrismaJourneyRepository implements JourneyRepository {
         ? await prisma.canonicalEntity.findFirst({ where: { id: seed.canonicalEntityId, profileId: profile.id } })
         : null;
       const type = seed.type === "vehicle" ? "VEHICLE" as const : seed.type === "residence" ? "ADDRESS" as const : seed.type === "business" ? "BUSINESS" as const : "PERSON" as const;
-      const externalKey = canonicalEntityKey({ type: seed.type, displayName: seed.displayName, role: "person" }, seed.facts);
+      const externalKey = canonicalEntityKey({ type: seed.type, entityKind: seed.entityKind, displayName: seed.displayName, role: "person" }, seed.facts);
       const birthDateKey = seed.type === "child" ? "child.dateOfBirth" : "person.dateOfBirth";
       const birthDate = seed.facts[birthDateKey];
       const relationship = seed.facts["person.relationship"] || seed.facts["health.dependentRelationship"];
@@ -633,11 +636,11 @@ export class PrismaJourneyRepository implements JourneyRepository {
       const nameMatch = compatiblePeople.length === 1 ? compatiblePeople[0] : null;
       const entity = selected ?? nameMatch ?? await prisma.canonicalEntity.upsert({
         where: { profileId_type_externalKey: { profileId: profile.id, type, externalKey } },
-        update: { displayName: seed.displayName, dataJson: seed.facts },
-        create: { profileId: profile.id, type, externalKey, displayName: seed.displayName, dataJson: seed.facts },
+        update: { displayName: seed.displayName, dataJson: { entityKind: seed.entityKind, ...seed.facts } },
+        create: { profileId: profile.id, type, externalKey, displayName: seed.displayName, dataJson: { entityKind: seed.entityKind, ...seed.facts } },
       });
       if (selected || nameMatch) {
-        const mergedData = JSON.parse(JSON.stringify({ ...jsonRecord(entity.dataJson), ...seed.facts })) as Prisma.InputJsonObject;
+        const mergedData = JSON.parse(JSON.stringify({ ...jsonRecord(entity.dataJson), entityKind: seed.entityKind, ...seed.facts })) as Prisma.InputJsonObject;
         await prisma.canonicalEntity.update({ where: { id: entity.id }, data: { displayName: seed.displayName, dataJson: mergedData } });
       }
       entityIds[seed.ref] = entity.id;
@@ -658,10 +661,42 @@ export class PrismaJourneyRepository implements JourneyRepository {
     return Object.fromEntries(Object.entries(entityIds).filter(([ref]) => ref !== "account_holder"));
   }
 
+  async listEntityRecords(sessionId: string) {
+    const entities = await getPrisma().canonicalEntity.findMany({
+      where: { profile: { sessionId } },
+      include: { incomingRelationships: { include: { from: true } } },
+      orderBy: { updatedAt: "desc" },
+    });
+    return entities.flatMap((entity): LifeEntityRecord[] => {
+      const data = jsonRecord(entity.dataJson);
+      if (entity.type === "HOUSEHOLD" || data.role === "account_holder" || data["intake.recordVisibility"] !== "standalone") return [];
+      const inferred = entity.type === "VEHICLE" ? "vehicle" : entity.type === "BUSINESS" ? "organisation" : entity.type === "ADDRESS" ? "premises" : entity.type === "PERSON" ? "person" : "other";
+      const kind = typeof data.entityKind === "string" ? data.entityKind as LifeEntityKind : inferred;
+      const family = entity.incomingRelationships.find((relationship) => relationship.kind === "FAMILY" && jsonRecord(relationship.from.dataJson).role === "account_holder");
+      const householdMember = entity.incomingRelationships.some((relationship) => relationship.kind === "HOUSEHOLD_MEMBER");
+      const connectedPeople = entity.incomingRelationships.flatMap((relationship) => {
+        if (["FAMILY", "HOUSEHOLD_MEMBER"].includes(relationship.kind) || relationship.from.type !== "PERSON") return [];
+        const metadata = jsonRecord(relationship.metadataJson);
+        const accountHolder = jsonRecord(relationship.from.dataJson).role === "account_holder";
+        return [{ entityId: relationship.fromId, displayName: accountHolder ? "You" : relationship.from.displayName, isAccountHolder: accountHolder, roles: [relationship.role], ownershipShare: typeof metadata.ownershipShare === "number" ? metadata.ownershipShare : undefined, canAct: typeof metadata.canAct === "boolean" ? metadata.canAct : undefined }];
+      });
+      let unavailableNeeds: LifeEntityRecord["unavailableNeeds"] = [];
+      try { unavailableNeeds = JSON.parse(typeof data["intake.unavailableNeeds"] === "string" ? data["intake.unavailableNeeds"] : "[]") as LifeEntityRecord["unavailableNeeds"]; } catch { /* Ignore invalid historical metadata. */ }
+      return [{ id: entity.id, kind, displayName: entity.displayName, context: family || householdMember || connectedPeople.length ? { relationshipToAccountHolder: family?.role || undefined, householdMember: householdMember || undefined, connectedPeople: connectedPeople.length ? connectedPeople : undefined } : undefined, unavailableNeeds, updatedAt: entity.updatedAt.toISOString() }];
+    });
+  }
+
   async reset(sessionId: string) {
-    await getPrisma().journeyInstance.updateMany({
+    const prisma = getPrisma();
+    await prisma.journeyInstance.updateMany({
       where: { profile: { sessionId }, status: { not: "ABANDONED" } },
       data: { status: "ABANDONED" },
     });
+    const standalone = await prisma.canonicalEntity.findMany({ where: { profile: { sessionId } } });
+    await Promise.all(standalone.flatMap((entity) => {
+      const data = jsonRecord(entity.dataJson);
+      if (data["intake.recordVisibility"] !== "standalone") return [];
+      return [prisma.canonicalEntity.update({ where: { id: entity.id }, data: { dataJson: { ...data, "intake.recordVisibility": "archived" } as Prisma.InputJsonObject } })];
+    }));
   }
 }

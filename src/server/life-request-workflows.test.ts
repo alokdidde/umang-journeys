@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { prepareLifeRequest, type EntityAssociation } from "@/domain/life-request";
 import { applyLifeRequest } from "./apply-life-request";
 import { MemoryJourneyRepository } from "./repositories/journey-repository";
+import type { LifeEntityKind } from "@/domain/life-entity";
 
 type Subject = [ref: string, type: "child" | "person" | "vehicle" | "residence" | "business", name: string, relationship?: string];
 type Need = [id: string, subjectRef: string, event: "having_a_baby" | "buying_a_vehicle" | "managing_health_cover" | "moving_home" | "starting_a_business" | "retirement"];
@@ -79,5 +80,40 @@ describe("compound life workflows", () => {
       const subject = result.journeys.find((journey) => journey.subject.canonicalEntityId === entityId)?.subject;
       expect(subject?.context?.connectedPeople?.map((person) => person.displayName)).toEqual(expectedPeople);
     }
+  });
+
+  const broaderCases: Array<{ name: string; records: Array<[ref: string, type: Subject[1], kind: LifeEntityKind, label: string]> }> = [
+    { name: "inherited farm and tagged livestock", records: [["farm", "residence", "property", "Inherited farm"], ["cattle", "vehicle", "animal", "Tagged cattle herd"]] },
+    { name: "estate administration and inherited flat", records: [["estate", "residence", "estate", "Ramesh Sharma estate"], ["flat", "residence", "property", "Inherited flat"]] },
+    { name: "housing society and common premises", records: [["society", "business", "organisation", "Lake View Housing Society"], ["clubhouse", "residence", "premises", "Society clubhouse"]] },
+    { name: "family trust and agricultural land", records: [["trust", "business", "estate", "Sharma Family Trust"], ["land", "residence", "property", "Agricultural land"]] },
+    { name: "registered boat and its storage premises", records: [["boat", "vehicle", "registered_asset", "Fishing boat TG-17"], ["shed", "residence", "premises", "Boat storage shed"]] },
+    { name: "factory equipment and operating company", records: [["machine", "vehicle", "registered_asset", "Industrial boiler"], ["company", "business", "organisation", "Deccan Works Private Limited"]] },
+    { name: "rented shop and tenant business", records: [["shop", "residence", "premises", "Khan Market shop"], ["firm", "business", "organisation", "North Star Retail"]] },
+    { name: "household and jointly owned home", records: [["household", "person", "household", "Sharma household"], ["home", "residence", "property", "Jointly owned home"]] },
+    { name: "dairy cooperative and tagged buffalo", records: [["cooperative", "business", "organisation", "Nandi Dairy Cooperative"], ["buffalo", "vehicle", "animal", "Gauri"]] },
+    { name: "warehouse and registered weighing equipment", records: [["warehouse", "residence", "premises", "Balanagar warehouse"], ["scale", "vehicle", "registered_asset", "Certified weighbridge"]] },
+    { name: "charitable trust and community hall", records: [["charity", "business", "estate", "Seva Charitable Trust"], ["hall", "residence", "premises", "Community hall"]] },
+    { name: "orchard land and irrigation asset", records: [["orchard", "residence", "property", "Mango orchard"], ["pump", "vehicle", "registered_asset", "Registered irrigation pump"]] },
+  ];
+
+  it.each(broaderCases)("keeps broader records without inventing service steps: $name", async ({ name, records }) => {
+    const repository = new MemoryJourneyRepository();
+    const plan = prepareLifeRequest({
+      supported: true,
+      summary: name,
+      subjects: records.map(([ref, type, entityKind, displayName]) => ({ ref, type, entityKind, displayName, facts: [] })),
+      needs: [],
+      unavailableNeeds: records.map(([ref, , , displayName]) => ({ id: `need-${ref}`, subjectRef: ref, label: `Review services for ${displayName}`, description: "This needs service- and location-specific guidance.", reason: "A researched guided workflow is not available yet." })),
+      questions: [],
+      associations: records.map(([ref]) => ({ id: `owner-${ref}`, fromSubjectRef: "account_holder" as const, toSubjectRef: ref, kind: "owner" as const, role: "Owner or responsible person", canAct: true })),
+    }, `request-${name}`);
+
+    const result = await applyLifeRequest(`session-${name}`, plan, {}, repository);
+    const saved = await repository.listEntityRecords(`session-${name}`);
+
+    expect(plan.unavailableNeeds).toHaveLength(2);
+    expect(result.journeys).toHaveLength(0);
+    expect(saved.map((record) => record.kind)).toEqual(records.map(([, , kind]) => kind));
   });
 });

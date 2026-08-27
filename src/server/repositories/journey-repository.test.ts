@@ -168,6 +168,32 @@ describe("journey repository", () => {
     expect(await repository.get("session-b", created.id)).toBeNull();
   });
 
+  it("lists a broader life record even when it has no guided journey", async () => {
+    const repository = new MemoryJourneyRepository();
+    await repository.syncEntityGraph("session-records", [{
+      ref: "plot",
+      type: "residence",
+      entityKind: "property",
+      displayName: "Family plot in Warangal",
+      facts: { "property.surveyNumber": "118/2", "intake.recordVisibility": "standalone" },
+    }], [{
+      id: "plot-owner",
+      fromSubjectRef: "account_holder",
+      toSubjectRef: "plot",
+      kind: "owner",
+      role: "Owner",
+      ownershipShare: 50,
+      canAct: true,
+    }]);
+
+    expect(await repository.listEntityRecords("session-records")).toEqual([
+      expect.objectContaining({ kind: "property", displayName: "Family plot in Warangal" }),
+    ]);
+    expect(await repository.list("session-records")).toHaveLength(0);
+    await repository.reset("session-records");
+    expect(await repository.listEntityRecords("session-records")).toHaveLength(0);
+  });
+
   it("replays an idempotent registration without changing its identifier", async () => {
     const repository = new MemoryJourneyRepository(approvedTestAgencyAgent);
     const created = await repository.create("session-a");

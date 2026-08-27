@@ -24,6 +24,38 @@ _Avoid_: User, account, applicant
 The enduring identity of one person or thing in My Life. It may be linked to several Journeys and several contextual relationships without being duplicated.
 _Avoid_: Journey Subject, card, profile row
 
+**Life Entity Kind**:
+The extensible kind of enduring record kept in My Life: Person, Household, Organisation, Premises, Property, Vehicle, Registered Asset, Animal, Estate, or Other. It is independent of the older Journey Subject type used by existing guided templates.
+_Avoid_: Journey type, service category, database enum
+
+**Organisation**:
+A business, company, partnership, cooperative, society, association, or other organised body. Several People may own, direct, operate, advise, or act for it without becoming family members.
+_Avoid_: Business owner, employer account, household
+
+**Premises**:
+A home, office, shop, warehouse, or other place occupied or used by a Person or Organisation. Premises is distinct from legal ownership of the underlying Property.
+_Avoid_: Property, address string, household
+
+**Property**:
+Land or an immovable property interest that may be owned, leased, inherited, transferred, or otherwise recorded. A Property may contain one or more Premises.
+_Avoid_: Home, address, move
+
+**Registered Asset**:
+A durable asset other than a Vehicle that has its own official registration, certification, serial identity, or compliance record.
+_Avoid_: Document, service output, generic possession
+
+**Animal**:
+An individually identified animal or managed group for which registration, tagging, health, movement, ownership, or benefit services may apply.
+_Avoid_: Pet profile, household member
+
+**Estate**:
+A legal arrangement or body of property administered after death or through a trust-like arrangement. The Estate is distinct from its beneficiaries, administrators, and individual assets.
+_Avoid_: Family, inherited property, organisation
+
+**Unavailable Need**:
+A government-service need the citizen asked UMANG Life to remember but for which the product has no researched guided workflow for the relevant service or location. It must remain visibly unavailable and must not create authoritative-looking steps.
+_Avoid_: Unsupported user, generic journey, suggested checklist
+
 **Person**:
 One human being represented by a Canonical Entity. Being a Person does not imply family membership, dependency, ownership, household membership, or authority.
 _Avoid_: Dependent, family member, applicant

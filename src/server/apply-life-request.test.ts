@@ -17,6 +17,24 @@ const output = {
 };
 
 describe("applying a life request", () => {
+  it("saves a broader record without fabricating a guided journey", async () => {
+    const repository = new MemoryJourneyRepository();
+    const plan = prepareLifeRequest({
+      supported: true,
+      summary: "Keep an inherited farm and note a land-record need.",
+      subjects: [{ ref: "farm", type: "residence", entityKind: "property", displayName: "Farm in Warangal", facts: [{ key: "property.surveyNumber", value: "118/2", confidence: 1 }] }],
+      needs: [],
+      unavailableNeeds: [{ id: "mutation", subjectRef: "farm", label: "Transfer the land record", description: "Guidance is not available for this location yet.", reason: "Location-specific research is required." }],
+      questions: [],
+      associations: [{ id: "owner", fromSubjectRef: "account_holder", toSubjectRef: "farm", kind: "owner", role: "Owner", canAct: true }],
+    }, "request-property");
+
+    const result = await applyLifeRequest("session-property", plan, {}, repository);
+
+    expect(result.journeys).toHaveLength(0);
+    expect(Object.keys(result.subjectEntityIds)).toEqual(["farm"]);
+    expect(await repository.listEntityRecords("session-property")).toEqual([expect.objectContaining({ kind: "property", displayName: "Farm in Warangal" })]);
+  });
   it("creates every need once and links them to one subject", async () => {
     const repository = new MemoryJourneyRepository();
     const plan = prepareLifeRequest(output, "request-1");

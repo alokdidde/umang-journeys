@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { lifeEventValueSchema, type LifeEventValue } from "./intake-analysis";
+import { entityKindFromLegacySubject, entityKindSchema } from "./life-entity";
 
 const factSchema = z.object({
   key: z.string().min(1).max(80),
@@ -44,6 +45,7 @@ const supportedLifeRequestSchema = z.object({
   subjects: z.array(z.object({
     ref: z.string().min(1).max(40),
     type: z.enum(["child", "person", "vehicle", "residence", "business"]),
+    entityKind: entityKindSchema.optional(),
     displayName: z.string().min(1).max(80),
     isAccountHolder: z.boolean().optional(),
     relationship: z.string().max(40).optional(),
@@ -58,7 +60,14 @@ const supportedLifeRequestSchema = z.object({
     description: z.string().min(1).max(180),
     confidence: z.number().min(0).max(1),
     facts: z.array(factSchema).max(12),
-  })).min(1).max(6),
+  })).max(6),
+  unavailableNeeds: z.array(z.object({
+    id: z.string().min(1).max(40),
+    subjectRef: z.string().min(1).max(40),
+    label: z.string().min(1).max(80),
+    description: z.string().min(1).max(180),
+    reason: z.string().min(1).max(180),
+  })).max(6).default([]),
   questions: z.array(z.object({
     id: z.string().min(1).max(40),
     subjectRef: z.string().min(1).max(40),
@@ -72,6 +81,7 @@ const supportedLifeRequestSchema = z.object({
 }).superRefine((plan, context) => {
   const subjectRefs = new Set(plan.subjects.map((subject) => subject.ref));
   const associationRefs = new Set(["account_holder", ...subjectRefs]);
+  if (plan.needs.length + plan.unavailableNeeds.length === 0) context.addIssue({ code: "custom", path: ["needs"], message: "A supported request needs at least one guided or unavailable service need." });
   if (plan.subjects.filter((subject) => subject.isAccountHolder).length > 1) context.addIssue({ code: "custom", path: ["subjects"], message: "Only one subject can be the account holder." });
   for (const need of plan.needs) {
     if (!subjectRefs.has(need.subjectRef)) context.addIssue({ code: "custom", path: ["needs"], message: `Unknown subject reference: ${need.subjectRef}` });
@@ -79,6 +89,9 @@ const supportedLifeRequestSchema = z.object({
   for (const question of plan.questions) {
     if (!subjectRefs.has(question.subjectRef)) context.addIssue({ code: "custom", path: ["questions"], message: `Unknown subject reference: ${question.subjectRef}` });
     if (question.input === "choice" && !question.choices?.length) context.addIssue({ code: "custom", path: ["questions"], message: "Choice questions require choices." });
+  }
+  for (const need of plan.unavailableNeeds) {
+    if (!subjectRefs.has(need.subjectRef)) context.addIssue({ code: "custom", path: ["unavailableNeeds"], message: `Unknown subject reference: ${need.subjectRef}` });
   }
   for (const association of plan.associations) {
     if (!associationRefs.has(association.fromSubjectRef)) context.addIssue({ code: "custom", path: ["associations"], message: `Unknown association reference: ${association.fromSubjectRef}` });
@@ -152,6 +165,7 @@ export function prepareLifeRequest(input: z.input<typeof lifeRequestOutputSchema
     ...output,
     requestId,
     resolver: "ai_gateway" as const,
+    subjects: output.subjects.map((subject) => ({ ...subject, entityKind: subject.entityKind ?? entityKindFromLegacySubject(subject.type) })),
     associations: [...associations, ...inferredAssociations, ...inferredHouseholdAssociations] as EntityAssociation[],
     needs: output.needs.map((need) => ({ ...need, templateId: templateIdByLifeEvent[need.lifeEvent] })),
     questions: output.questions.map((question) => ({

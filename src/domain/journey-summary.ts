@@ -1,6 +1,7 @@
 import type { JourneyProjection, NodeStatus } from "./journey-engine";
 import { getJourneyTemplate, isJourneyComplete, journeyProgressNodes } from "./journey-engine";
 import type { SandboxServiceRun } from "./service-workflows";
+import type { LifeEntityKind } from "./life-entity";
 
 export type ConnectedPerson = {
   entityId: string;
@@ -14,6 +15,7 @@ export type ConnectedPerson = {
 export type JourneySubject = {
   id: string;
   type: "child" | "vehicle" | "person" | "residence" | "business";
+  entityKind?: LifeEntityKind;
   displayName: string;
   canonicalEntityId?: string;
   householdId?: string;

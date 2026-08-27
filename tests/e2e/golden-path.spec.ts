@@ -26,6 +26,14 @@ async function mockIntakeAI(page: Page) {
 
 function lifeRequestFixture(statement: string) {
   const normalized = statement.toLowerCase();
+  if (normalized === "i inherited a farm and need to transfer the land record") return {
+    supported: true, resolver: "ai_gateway", requestId: "e2e-property-record", summary: "Save your inherited farm and note the land-record transfer.",
+    subjects: [{ ref: "farm", type: "residence", entityKind: "property", displayName: "Inherited farm", facts: [{ key: "property.surveyNumber", value: "118/2", confidence: 1 }] }],
+    needs: [],
+    unavailableNeeds: [{ id: "mutation", subjectRef: "farm", label: "Transfer the land record", description: "Guidance is not available for this location yet.", reason: "This needs location-specific research." }],
+    questions: [],
+    associations: [{ id: "owner", fromSubjectRef: "account_holder", toSubjectRef: "farm", kind: "owner", role: "Owner", canAct: true }],
+  };
   if (["need to get insurance for parents", "i need to get insurance for my parents", "i need health insurance for my parents"].includes(normalized)) return {
     supported: true, resolver: "ai_gateway", requestId: "e2e-parent-cover", summary: "Two parents, with health cover organised separately.",
     subjects: [
@@ -134,6 +142,26 @@ test("one request becomes one child with several saved services", async ({ page 
   await page.locator("main").getByRole("link", { name: "My life" }).click();
   await expect(page.locator(".life-card").getByRole("heading", { name: "Mira", exact: true })).toHaveCount(1);
   await expect(page.locator(".life-card").getByText("2 services saved here")).toBeVisible();
+});
+
+test("a broader record is saved without fabricated service steps", async ({ page }) => {
+  await login(page);
+  await page.request.post("/api/demo/reset");
+  await page.reload();
+
+  await page.getByLabel("Tell us what happened").fill("I inherited a farm and need to transfer the land record");
+  await page.getByRole("button", { name: "Show my steps" }).click();
+  await expect(page.getByRole("heading", { name: "Add Inherited farm to My life" })).toBeVisible();
+  await expect(page.getByText(/will not create service steps/i)).toBeVisible();
+  await page.getByRole("button", { name: "Add to My life" }).click();
+
+  await expect(page).toHaveURL(/\/life\/entity-/);
+  await expect(page.getByRole("heading", { name: "Inherited farm", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Transfer the land record" })).toBeVisible();
+  await expect(page.getByText("Guided steps not available yet", { exact: true })).toBeVisible();
+  await page.locator("main").getByRole("link", { name: "My life" }).click();
+  await expect(page.getByRole("heading", { name: "Homes & property" })).toBeVisible();
+  await expect(page.locator(".life-card").getByRole("heading", { name: "Inherited farm" })).toBeVisible();
 });
 
 async function seedJourney(page: Page) {

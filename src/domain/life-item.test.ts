@@ -44,6 +44,27 @@ describe("My life grouping", () => {
     };
     const [item] = groupLifeItems([business]);
     expect(item?.context?.connectedPeople?.[0]).toMatchObject({ displayName: "Rohan", roles: ["Co-owner", "Director"], ownershipShare: 50 });
-    expect(lifeItemCollection(item!)).toBe("businesses");
+    expect(lifeItemCollection(item!)).toBe("work_organisations");
+  });
+
+  it.each([
+    ["property", "homes_property", "Property or land"],
+    ["registered_asset", "vehicles_assets", "Registered asset"],
+    ["organisation", "work_organisations", "Organisation"],
+    ["animal", "other", "Animal"],
+    ["estate", "other", "Estate or trust"],
+  ] as const)("projects %s records into %s", (entityKind, collection, label) => {
+    const record = summary(entityKind, "Service", "Review");
+    record.subject = { ...record.subject, type: "person", entityKind, role: "asset" };
+    const [item] = groupLifeItems([record]);
+    expect(lifeItemCollection(item!)).toBe(collection);
+    expect(lifeItemKindLabel(item!)).toBe(label);
+  });
+
+  it("keeps a family member in My family even though their entity kind is person", () => {
+    const record = summary("mother", "Health cover", "Review");
+    record.subject = { ...record.subject, type: "person", entityKind: "person", context: { relationshipToAccountHolder: "mother" } };
+    const [item] = groupLifeItems([record]);
+    expect(lifeItemCollection(item!)).toBe("family");
   });
 });

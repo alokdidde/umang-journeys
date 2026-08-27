@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Baby, BriefcaseBusiness, Car, CheckCircle2, ClipboardList, FileSearch, FileText, Home, Link2, LoaderCircle, Paperclip, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, ClipboardList, FileSearch, FileText, Link2, LoaderCircle, Paperclip, ShieldCheck, Sparkles, X } from "lucide-react";
 import {
   Attachment,
   AttachmentInfo,
@@ -31,6 +31,8 @@ import type { LifeRequestPlan } from "@/domain/life-request";
 import { approvalHeading, lifeRequestDestination, presentLifeRequest } from "@/domain/life-request-presentation";
 import { initialLifeRequestState, lifeRequestReducer } from "@/domain/life-request-reducer";
 import { Confirmation, ConfirmationAction, ConfirmationActions, ConfirmationRequest, ConfirmationTitle } from "@/components/ai-elements/confirmation";
+import { LifeEntityIcon } from "@/components/life-entity-icon";
+import { entityDefinitionFor } from "@/domain/life-entity";
 
 type ComposerPhase = "idle" | "analysing" | "proposal" | "applying" | "error";
 type ProposalResponse = { document: DocumentDeskRecord; message?: string };
@@ -267,10 +269,8 @@ function LifeRequestDetails({ plan, answers, answer, review }: { plan: LifeReque
 
 function subjectTypeLabel(subject: LifeRequestPlan["subjects"][number]) {
   if (subject.relationship) return subject.relationship;
-  if (subject.type === "residence") return "Home";
-  if (subject.type === "business") return "Business";
-  if (subject.type === "vehicle") return "Vehicle";
-  return subject.type === "child" ? "Child" : "Person";
+  if (subject.type === "child") return "Child";
+  return entityDefinitionFor(subject.entityKind).label;
 }
 
 function LifeRequestMap({ plan, answers = {}, answer, mode = "summary", invalidQuestionIds = new Set<string>() }: { plan: LifeRequestPlan; answers?: Record<string, string>; answer?: (id: string, value: string) => void; mode?: "collect" | "review" | "summary"; invalidQuestionIds?: Set<string> }) {
@@ -290,8 +290,8 @@ function LifeRequestMap({ plan, answers = {}, answer, mode = "summary", invalidQ
       return [];
     });
     return <article className="life-request-subject" key={subject.ref}>
-      <div className="life-request-person"><span><LifeSubjectIcon type={subject.type} /></span><div><small>{subjectTypeLabel(subject)}</small><strong>{subject.displayName}</strong></div></div>
-      <div className="life-request-needs">{plan.needs.filter((need) => need.subjectRef === subject.ref).map((need) => <div key={need.id}><ClipboardList aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description}</small></span></div>)}{associations.map((association) => <div className="life-request-association" key={association.id}><Link2 aria-hidden="true" /><span><strong>{association.label}</strong>{association.detail ? <small>{association.detail}</small> : null}</span></div>)}</div>
+      <div className="life-request-person"><span><LifeEntityIcon kind={subject.entityKind} /></span><div><small>{subjectTypeLabel(subject)}</small><strong>{subject.displayName}</strong></div></div>
+      <div className="life-request-needs">{plan.needs.filter((need) => need.subjectRef === subject.ref).map((need) => <div key={need.id}><ClipboardList aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description}</small></span></div>)}{(plan.unavailableNeeds ?? []).filter((need) => need.subjectRef === subject.ref).map((need) => <div className="life-request-unavailable" key={need.id}><CircleAlert aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description} UMANG Life will save this record, but will not create service steps.</small></span></div>)}{associations.map((association) => <div className="life-request-association" key={association.id}><Link2 aria-hidden="true" /><span><strong>{association.label}</strong>{association.detail ? <small>{association.detail}</small> : null}</span></div>)}</div>
       {mode === "collect" && questions.length ? <fieldset className="life-request-subject-fields"><legend>Details for {subject.displayName}</legend>{questions.map((question) => {
         const fieldId = `life-request-${question.id}`;
         const errorId = `${fieldId}-error`;
@@ -301,14 +301,6 @@ function LifeRequestMap({ plan, answers = {}, answer, mode = "summary", invalidQ
       {mode === "review" && subject.details.length ? <div className="life-request-review-details"><div className="life-request-review-label"><ClipboardList aria-hidden="true" /><strong>Details you gave</strong></div><dl>{subject.details.map((detail) => <div key={detail.id}><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}</dl></div> : null}
     </article>;
   })}</div>;
-}
-
-function LifeSubjectIcon({ type }: { type: LifeRequestPlan["subjects"][number]["type"] }) {
-  if (type === "child") return <Baby />;
-  if (type === "vehicle") return <Car />;
-  if (type === "residence") return <Home />;
-  if (type === "business") return <BriefcaseBusiness />;
-  return <UserRound />;
 }
 
 function LifeRequestProposal({ plan, answers, edit, apply }: { plan: LifeRequestPlan; answers: Record<string, string>; edit: () => void; apply: () => Promise<void> }) {

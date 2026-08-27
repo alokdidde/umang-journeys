@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Baby, BriefcaseBusiness, Car, CheckCircle2, Home, LoaderCircle, ShieldCheck, UserRound } from "lucide-react";
-import { groupLifeItems, lifeItemKindLabel, type LifeItem } from "@/domain/life-item";
+import { ArrowRight, CheckCircle2, LoaderCircle, ShieldCheck } from "lucide-react";
+import { groupLifeItems, lifeItemKindLabel, type LifeEntityRecordProjection, type LifeItem } from "@/domain/life-item";
 import type { JourneySummary } from "@/domain/journey-summary";
+import { LifeEntityIcon } from "@/components/life-entity-icon";
 
 export function LifeRequestAdded() {
   const searchParams = useSearchParams();
@@ -17,10 +18,10 @@ export function LifeRequestAdded() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/journeys", { signal: controller.signal }).then(async (response) => {
-      const body = await response.json() as { journeys?: JourneySummary[]; message?: string };
+    void fetch("/api/life", { signal: controller.signal }).then(async (response) => {
+      const body = await response.json() as { journeys?: JourneySummary[]; entities?: LifeEntityRecordProjection[]; message?: string };
       if (!response.ok) throw new Error(body.message ?? "What you added could not be loaded.");
-      const grouped = groupLifeItems(body.journeys ?? []);
+      const grouped = groupLifeItems(body.journeys ?? [], body.entities ?? []);
       const byId = new Map(grouped.map((item) => [item.entityId, item]));
       const requested = requestedIds.map((id) => byId.get(id)).filter((item): item is LifeItem => Boolean(item));
       if (!requested.length) throw new Error("The saved people and things are available in My life.");
@@ -45,7 +46,7 @@ export function LifeRequestAdded() {
     <section className="life-added-summary content-layer" aria-labelledby="added-summary-title">
       <header><div><p>Your request, organised</p><h2 id="added-summary-title">What was added</h2></div><span>{items.length}</span></header>
       <div className="life-added-list">{items.map((item) => <article key={item.entityId}>
-        <span className={`journey-avatar ${item.type}`}><SubjectIcon type={item.type} /></span>
+        <span className={`journey-avatar ${item.type}`}><LifeEntityIcon kind={item.entityKind} /></span>
         <div><small>{subjectLabel(item)}</small><h3>{item.displayName}</h3><p>{item.needs.map((need) => need.title).join(" · ")}</p></div>
         <Link href={`/life/${encodeURIComponent(item.entityId)}`}>See everything<ArrowRight /></Link>
       </article>)}</div>
@@ -60,12 +61,4 @@ export function LifeRequestAdded() {
 
 function subjectLabel(item: LifeItem) {
   return lifeItemKindLabel(item);
-}
-
-function SubjectIcon({ type }: { type: LifeItem["type"] }) {
-  if (type === "child") return <Baby />;
-  if (type === "vehicle") return <Car />;
-  if (type === "residence") return <Home />;
-  if (type === "business") return <BriefcaseBusiness />;
-  return <UserRound />;
 }

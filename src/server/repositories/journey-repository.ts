@@ -6,6 +6,7 @@ import { serviceDefinitionFor, type SandboxServiceRun } from "@/domain/service-w
 import type { JourneyLifecycleStatus, JourneySubject } from "@/domain/journey-summary";
 import type { EntityAssociation } from "@/domain/life-request";
 import { evidenceLabels, serviceEvidenceRequirements, type EvidenceRecord, type JourneyEvidence } from "@/domain/evidence";
+import { entityKindFromLegacySubject, lifeEntityIdentityKey, type LifeEntityKind } from "@/domain/life-entity";
 
 export type StoredJourney = {
   id: string;
@@ -23,13 +24,14 @@ export type StoredJourney = {
   updatedAt: string;
 };
 
-export type JourneySubjectSeed = Pick<JourneySubject, "type" | "displayName" | "role"> & {
+export type JourneySubjectSeed = Pick<JourneySubject, "type" | "entityKind" | "displayName" | "role"> & {
   canonicalEntityId?: string;
 };
 
 export type EntityGraphSeed = {
   ref: string;
   type: JourneySubject["type"];
+  entityKind: LifeEntityKind;
   displayName: string;
   facts: Record<string, string>;
   isAccountHolder?: boolean;
@@ -38,11 +40,21 @@ export type EntityGraphSeed = {
 
 export type EntityAssociationSeed = EntityAssociation;
 
+export type LifeEntityRecord = {
+  id: string;
+  kind: LifeEntityKind;
+  displayName: string;
+  context?: JourneySubject["context"];
+  unavailableNeeds: Array<{ label: string; description: string; reason: string }>;
+  updatedAt: string;
+};
+
 function identitySlug(value: string) {
   return value.trim().toLocaleLowerCase("en-IN").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
 }
 
 export function canonicalEntityKey(subject: JourneySubjectSeed, facts: Record<string, string>) {
+  if (subject.entityKind) return lifeEntityIdentityKey(subject.entityKind, subject.displayName, facts);
   if (subject.type === "child") return `child:${identitySlug(facts["child.dateOfBirth"] || facts["child.name"] || subject.displayName)}`;
   if (subject.type === "vehicle") return `vehicle:${identitySlug(facts["vehicle.registrationNumber"] || subject.displayName)}`;
   if (subject.type === "residence") return `address:${identitySlug(facts["move.postalCode"] || facts["move.newCity"] || subject.displayName)}`;
@@ -67,6 +79,7 @@ export interface JourneyRepository {
   completeRegistration(sessionId: string, id: string, idempotencyKey: string): Promise<StoredJourney | null>;
   advanceService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string): Promise<StoredJourney | null>;
   syncEntityGraph(sessionId: string, entities: EntityGraphSeed[], associations: EntityAssociationSeed[]): Promise<Record<string, string>>;
+  listEntityRecords(sessionId: string): Promise<LifeEntityRecord[]>;
   reset(sessionId: string): Promise<void>;
 }
 
@@ -130,7 +143,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
   private journeys = new Map<string, StoredJourney>();
   private idempotency = new Map<string, string>();
   private evidenceContents = new Map<string, EvidenceRecord>();
-  private entities = new Map<string, { id: string; sessionId: string; type: JourneySubject["type"] | "household"; displayName: string; facts: Record<string, string>; isAccountHolder?: boolean }>();
+  private entities = new Map<string, { id: string; sessionId: string; type: JourneySubject["type"] | "household"; entityKind: LifeEntityKind; displayName: string; facts: Record<string, string>; isAccountHolder?: boolean }>();
   private relationships = new Map<string, { fromId: string; toId: string; kind: EntityAssociationSeed["kind"]; role: string; ownershipShare?: number; canAct?: boolean }>();
 
   constructor(private readonly agencyAgent: ExternalAgencyAgent = evaluateSyntheticAgency) {}
@@ -144,7 +157,8 @@ export class MemoryJourneyRepository implements JourneyRepository {
     const seededEntity = subjectSeed?.canonicalEntityId
       ? [...this.entities.values()].find((candidate) => candidate.id === subjectSeed.canonicalEntityId)
       : undefined;
-    const entity = seededEntity ?? this.entities.get(entityKey) ?? { id: `entity-${crypto.randomUUID()}`, sessionId, type: subject.type, displayName: subject.displayName, facts };
+    const entityKind = subject.entityKind ?? entityKindFromLegacySubject(subject.type);
+    const entity = seededEntity ?? this.entities.get(entityKey) ?? { id: `entity-${crypto.randomUUID()}`, sessionId, type: subject.type, entityKind, displayName: subject.displayName, facts };
     entity.facts = { ...entity.facts, ...facts };
     this.entities.set(entityKey, entity);
     const subjectId = `${subject.type}-${crypto.randomUUID()}`;
@@ -152,7 +166,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
       id: `journey-${crypto.randomUUID()}`,
       sessionId,
       status: "active",
-      subject: { id: subjectId, ...subject, canonicalEntityId: entity.id, householdId: `household:${sessionId}`, role: subject.role ?? (subject.type === "person" && !facts["health.dependentRelationship"] ? "account_holder" : subject.type === "person" || subject.type === "child" ? "person" : "asset") },
+      subject: { id: subjectId, ...subject, entityKind, canonicalEntityId: entity.id, householdId: `household:${sessionId}`, role: subject.role ?? (subject.type === "person" && !facts["health.dependentRelationship"] ? "account_holder" : subject.type === "person" || subject.type === "child" ? "person" : "asset") },
       projection: compileJourney(template, facts),
       facts,
       factHistory: Object.entries(facts).map(([key, value]) => ({ id: `fact-${crypto.randomUUID()}`, key, value, source: "user_statement" as const, status: "active" as const, recordedAt: timestamp })),
@@ -303,7 +317,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
   }
   async syncEntityGraph(sessionId: string, entities: EntityGraphSeed[], associations: EntityAssociationSeed[]) {
     const primaryKey = `${sessionId}:person:account-holder`;
-    const primary = this.entities.get(primaryKey) ?? { id: `entity-${crypto.randomUUID()}`, sessionId, type: "person" as const, displayName: "You", facts: {}, isAccountHolder: true };
+    const primary = this.entities.get(primaryKey) ?? { id: `entity-${crypto.randomUUID()}`, sessionId, type: "person" as const, entityKind: "person" as const, displayName: "You", facts: {}, isAccountHolder: true };
     this.entities.set(primaryKey, primary);
     const entityIds: Record<string, string> = { account_holder: primary.id };
     for (const seed of entities) {
@@ -314,10 +328,10 @@ export class MemoryJourneyRepository implements JourneyRepository {
         continue;
       }
       const seeded = seed.canonicalEntityId ? [...this.entities.values()].find((entity) => entity.id === seed.canonicalEntityId && entity.sessionId === sessionId) : undefined;
-      const key = `${sessionId}:${canonicalEntityKey({ type: seed.type, displayName: seed.displayName, role: "person" }, seed.facts)}`;
+      const key = `${sessionId}:${canonicalEntityKey({ type: seed.type, entityKind: seed.entityKind, displayName: seed.displayName, role: "person" }, seed.facts)}`;
       const birthDate = seed.facts[seed.type === "child" ? "child.dateOfBirth" : "person.dateOfBirth"];
       const relationship = seed.facts["person.relationship"] || seed.facts["health.dependentRelationship"];
-      const sameNamed = [...this.entities.values()].filter((entity) => entity.sessionId === sessionId && entity.type === seed.type && entity.displayName.trim().toLocaleLowerCase("en-IN") === seed.displayName.trim().toLocaleLowerCase("en-IN"));
+      const sameNamed = [...this.entities.values()].filter((entity) => entity.sessionId === sessionId && entity.entityKind === seed.entityKind && entity.displayName.trim().toLocaleLowerCase("en-IN") === seed.displayName.trim().toLocaleLowerCase("en-IN"));
       const compatible = sameNamed.filter((entity) => {
         const existingBirthDate = entity.facts[seed.type === "child" ? "child.dateOfBirth" : "person.dateOfBirth"];
         const existingRelationship = entity.facts["person.relationship"] || entity.facts["health.dependentRelationship"];
@@ -325,7 +339,7 @@ export class MemoryJourneyRepository implements JourneyRepository {
           && (!relationship || !existingRelationship || relationship === existingRelationship);
       });
       const nameMatch = compatible.length === 1 ? compatible[0] : undefined;
-      const entity = seeded ?? this.entities.get(key) ?? nameMatch ?? { id: `entity-${crypto.randomUUID()}`, sessionId, type: seed.type, displayName: seed.displayName, facts: {} };
+      const entity = seeded ?? this.entities.get(key) ?? nameMatch ?? { id: `entity-${crypto.randomUUID()}`, sessionId, type: seed.type, entityKind: seed.entityKind, displayName: seed.displayName, facts: {} };
       entity.displayName = seed.displayName;
       entity.facts = { ...entity.facts, ...seed.facts };
       this.entities.set(key, entity);
@@ -342,6 +356,31 @@ export class MemoryJourneyRepository implements JourneyRepository {
     }
     this.applyEntityContexts(sessionId);
     return Object.fromEntries(Object.entries(entityIds).filter(([ref]) => ref !== "account_holder"));
+  }
+  async listEntityRecords(sessionId: string) {
+    const entities = [...this.entities.values()].filter((entity) => entity.sessionId === sessionId && entity.type !== "household" && !entity.isAccountHolder && entity.facts["intake.recordVisibility"] === "standalone");
+    const entityById = new Map([...this.entities.values()].filter((entity) => entity.sessionId === sessionId).map((entity) => [entity.id, entity]));
+    return entities.map((entity): LifeEntityRecord => {
+      const related = [...this.relationships.values()].filter((relationship) => relationship.toId === entity.id);
+      const family = related.find((relationship) => relationship.kind === "family" && entityById.get(relationship.fromId)?.isAccountHolder);
+      const householdMember = related.some((relationship) => relationship.kind === "household_member");
+      const connectedPeople = related.flatMap((relationship) => {
+        if (["family", "household_member"].includes(relationship.kind)) return [];
+        const person = entityById.get(relationship.fromId);
+        if (!person || person.entityKind !== "person") return [];
+        return [{ entityId: person.id, displayName: person.isAccountHolder ? "You" : person.displayName, isAccountHolder: Boolean(person.isAccountHolder), roles: [relationship.role], ownershipShare: relationship.ownershipShare, canAct: relationship.canAct }];
+      });
+      let unavailableNeeds: LifeEntityRecord["unavailableNeeds"] = [];
+      try { unavailableNeeds = JSON.parse(entity.facts["intake.unavailableNeeds"] ?? "[]") as LifeEntityRecord["unavailableNeeds"]; } catch { /* Ignore invalid historical metadata. */ }
+      return {
+        id: entity.id,
+        kind: entity.entityKind,
+        displayName: entity.displayName,
+        context: family || householdMember || connectedPeople.length ? { relationshipToAccountHolder: family?.role, householdMember: householdMember || undefined, connectedPeople: connectedPeople.length ? connectedPeople : undefined } : undefined,
+        unavailableNeeds,
+        updatedAt: now(),
+      };
+    });
   }
   private applyEntityContexts(sessionId: string) {
     const entities = [...this.entities.values()].filter((entity) => entity.sessionId === sessionId);

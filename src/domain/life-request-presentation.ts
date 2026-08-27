@@ -35,7 +35,7 @@ export function approvalHeading(plan: LifeRequestPlan, answers: Record<string, s
     ? new Intl.ListFormat("en-IN", { style: "long", type: "conjunction" }).format(names)
     : `${names.slice(0, 2).join(", ")} and ${names.length - 2} others`;
   return plan.subjects.length === 1
-    ? `Add ${subjectNames} and organise ${plan.needs.length} ${plan.needs.length === 1 ? "service" : "services"}`
+    ? plan.needs.length ? `Add ${subjectNames} and organise ${plan.needs.length} ${plan.needs.length === 1 ? "service" : "services"}` : `Add ${subjectNames} to My life`
     : `Add ${subjectNames}`;
 }
 

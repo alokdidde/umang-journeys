@@ -24,6 +24,7 @@ function factsForNeed(plan: LifeRequestPlan, subject: LifeRequestPlan["subjects"
     "intake.requestId": plan.requestId,
     "intake.needId": need.id,
     "intake.subjectRef": subject.ref,
+    "intake.entityKind": subject.entityKind,
   };
   if ((subject.type === "person" || subject.type === "child") && subject.relationship) {
     facts["person.relationship"] = subject.relationship;
@@ -53,7 +54,8 @@ export async function applyLifeRequest(sessionId: string, plan: LifeRequestPlan,
         .filter((question) => question.subjectRef === subject.ref && answers[question.id]?.trim())
         .map((question) => [question.factKey, answers[question.id].trim()])),
     };
-    return { ref: subject.ref, type: subject.type, displayName: displayNameFor(subject, facts), facts, isAccountHolder: subject.isAccountHolder };
+    const unavailableNeeds = plan.unavailableNeeds.filter((need) => need.subjectRef === subject.ref).map(({ label, description, reason }) => ({ label, description, reason }));
+    return { ref: subject.ref, type: subject.type, entityKind: subject.entityKind, displayName: displayNameFor(subject, facts), facts: { ...facts, ...(unavailableNeeds.length ? { "intake.unavailableNeeds": JSON.stringify(unavailableNeeds), "intake.recordVisibility": "standalone" } : {}) }, isAccountHolder: subject.isAccountHolder };
   });
   const resolvedIds = await repository.syncEntityGraph(sessionId, graphSeeds, plan.associations);
   const existing = await repository.list(sessionId);
@@ -72,6 +74,7 @@ export async function applyLifeRequest(sessionId: string, plan: LifeRequestPlan,
     const facts = factsForNeed(plan, subject, need, answers);
     const seed: JourneySubjectSeed = {
       type: subject.type,
+      entityKind: subject.entityKind,
       displayName: displayNameFor(subject, facts),
       role: subject.isAccountHolder ? "account_holder" : subject.type === "person" || subject.type === "child" ? "person" : "asset",
       canonicalEntityId: entityIds.get(subject.ref),
