@@ -15,6 +15,7 @@ export type AppliedDocumentResult = {
   documentId: string;
   status: "applied" | "rejected";
   journeyId: string | null;
+  entityId: string | null;
   message: string;
 };
 
@@ -99,11 +100,14 @@ export class DocumentAssistantService {
   ) {}
 
   async propose(sessionId: string, input: ProposedDocumentInput): Promise<StoredDocumentIntake> {
-    const journeys = await this.journeys.list(sessionId);
+    const [journeys, entities] = await Promise.all([this.journeys.list(sessionId), this.journeys.listEntityRecords(sessionId)]);
     const baseProposal = proposeDocumentAction(input.analysis, journeys);
     const proposal = baseProposal.canApply ? baseProposal : {
       ...baseProposal,
-      targetOptions: journeys.map((journey) => ({ id: journey.id, label: journey.subject.displayName, type: journey.subject.type })),
+      targetOptions: [
+        ...journeys.map((journey) => ({ id: journey.id, label: journey.subject.displayName, type: journey.subject.type, targetType: "journey" as const })),
+        ...entities.map((entity) => ({ id: entity.id, label: entity.displayName, type: entity.kind, targetType: "entity" as const })),
+      ],
     };
     return this.documents.create(sessionId, {
       fileName: input.fileName,
@@ -116,13 +120,14 @@ export class DocumentAssistantService {
     });
   }
 
-  async apply(sessionId: string, documentId: string, approved: boolean, options?: { targetJourneyId?: string; fields?: Record<string, string> }): Promise<AppliedDocumentResult> {
+  async apply(sessionId: string, documentId: string, approved: boolean, options?: { targetJourneyId?: string; targetEntityId?: string; fields?: Record<string, string> }): Promise<AppliedDocumentResult> {
     const intake = await this.documents.get(sessionId, documentId);
     if (!intake) throw Object.assign(new Error("Document proposal not found."), { code: "DOCUMENT_NOT_FOUND" });
     if (intake.status === "applied") return {
       documentId,
       status: "applied",
       journeyId: intake.appliedJourneyId,
+      entityId: intake.appliedEntityId,
       message: "This document was already applied.",
     };
     if (intake.status === "rejected") {
@@ -130,12 +135,19 @@ export class DocumentAssistantService {
         documentId,
         status: "rejected",
         journeyId: null,
+        entityId: null,
         message: "This proposal was already rejected. Nothing in My life was changed.",
       };
     }
     if (!approved) {
       await this.documents.setDecision(sessionId, documentId, "rejected");
-      return { documentId, status: "rejected", journeyId: null, message: "Nothing in My life was changed." };
+      return { documentId, status: "rejected", journeyId: null, entityId: null, message: "Nothing in My life was changed." };
+    }
+    if (options?.targetEntityId) {
+      const target = (await this.journeys.listEntityRecords(sessionId)).find((entity) => entity.id === options.targetEntityId);
+      if (!target) throw Object.assign(new Error("Choose a person or thing from this account."), { code: "ENTITY_NOT_FOUND" });
+      await this.documents.setDecision(sessionId, documentId, "applied", undefined, target.id);
+      return { documentId, status: "applied", journeyId: null, entityId: target.id, message: `The document was added to ${target.displayName}.` };
     }
     const manualTool = options?.targetJourneyId ? ({
       vehicle_rc: "updateVehicleFromRC",
@@ -209,6 +221,7 @@ export class DocumentAssistantService {
       documentId,
       status: "applied",
       journeyId,
+      entityId: null,
       message: intake.proposal.toolName === "recordVaccination"
         ? "The vaccination receipt was added and the child’s timeline was refreshed."
         : intake.proposal.toolName === "recordVehicleInsurance"

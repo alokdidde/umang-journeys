@@ -20,7 +20,7 @@ export type DocumentProposal = {
   description: string;
   toolName: "createVehicleJourneyFromRC" | "updateVehicleFromRC" | "recordVaccination" | "recordVehicleInsurance" | "createHealthJourneyFromPolicy" | "recordHealthInsurance" | "createChildJourneyFromDischargeSummary" | "updateChildFromDischargeSummary" | "createMoveJourneyFromResidenceProof" | "updateMoveFromResidenceProof" | "createBusinessJourneyFromPremisesProof" | "updateBusinessFromPremisesProof" | "createRetirementJourneyFromStatement" | "updateRetirementFromStatement" | null;
   changes: Array<{ label: string; value: string }>;
-  targetOptions?: Array<{ id: string; label: string; type: JourneyMatchCandidate["subject"]["type"] }>;
+  targetOptions?: Array<{ id: string; label: string; type: string; targetType: "journey" | "entity" }>;
 };
 
 const vehicleChanges = (fields: Record<string, string>) => [

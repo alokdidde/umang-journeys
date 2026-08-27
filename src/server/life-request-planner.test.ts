@@ -89,4 +89,25 @@ describe("AI life request planner", () => {
     expect(plan.associations).toHaveLength(2);
     expect(plan.subjects.find((subject) => subject.ref === "rohan")?.relationship).toBeUndefined();
   });
+
+  it("gives the model current records and accepts an explicit update target", async () => {
+    const model = new MockLanguageModelV3({ doGenerate: {
+      content: [{ type: "text", text: JSON.stringify({
+        supported: true,
+        summary: "Renew Aarohi's health cover.",
+        subjects: [{ ref: "aarohi", type: "child", entityKind: "person", displayName: "Aarohi Sharma", existingEntityId: "entity-aarohi", operation: "update", relationship: "daughter", facts: [] }],
+        needs: [{ id: "renew-cover", subjectRef: "aarohi", lifeEvent: "managing_health_cover", label: "Renew health cover", description: "Review her renewed cover.", confidence: 0.99, facts: [] }],
+        questions: [],
+      }) }],
+      finishReason: { unified: "stop", raw: "stop" }, usage, warnings: [],
+    }});
+
+    const plan = await planLifeRequest("Renew insurance for my daughter", {
+      model,
+      records: [{ id: "entity-aarohi", displayName: "Aarohi Sharma", entityKind: "person", relationship: "daughter", services: ["Health cover"] }],
+    });
+
+    expect(plan.subjects[0]).toMatchObject({ existingEntityId: "entity-aarohi", operation: "update" });
+    expect(JSON.stringify(model.doGenerateCalls[0]?.prompt)).toContain("Aarohi Sharma");
+  });
 });

@@ -108,6 +108,7 @@ model CanonicalEntity {
   dataJson    Json
   profile     UserProfile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
   journeyLinks JourneyEntityLink[]
+  documentIntakes DocumentIntake[]
   outgoingRelationships EntityRelationship[] @relation("RelationshipFrom")
   incomingRelationships EntityRelationship[] @relation("RelationshipTo")
   createdAt   DateTime            @default(now())
@@ -206,6 +207,7 @@ model DocumentIntake {
   id               String           @id @default(cuid())
   profileId        String
   journeyId        String?
+  entityId         String?
   status           String           @default("proposed")
   fileName         String
   mimeType         String
@@ -218,10 +220,12 @@ model DocumentIntake {
   proposalJson     Json
   profile          UserProfile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
   journey          JourneyInstance? @relation(fields: [journeyId], references: [id], onDelete: SetNull)
+  entity           CanonicalEntity? @relation(fields: [entityId], references: [id], onDelete: SetNull)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
   @@index([profileId, createdAt])
+  @@index([entityId])
 }
 
 model JourneyNode {

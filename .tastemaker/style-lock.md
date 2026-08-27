@@ -1,6 +1,6 @@
 # Style lock — UMANG Life
 
-Established: 2026-08-26. Updated: 2026-08-27 for the subject-centred AI interaction direction.
+Established: 2026-08-26. Updated: 2026-08-27 for lifecycle-aware records and relationships.
 
 ## Palette
 - Background: #f7f9fc
@@ -69,6 +69,10 @@ Established: 2026-08-26. Updated: 2026-08-27 for the subject-centred AI interact
 - Service provider and data-sharing metadata are available under “Provider and data details.”
 - Intake is one narrow column with a short progress label; extracted facts are optional detail.
 - A request may describe several related needs and several people or things. AI proposes the subjects, relationships, facts, and service needs it understood; the citizen reviews this proposal before anything is saved or performed. Confirmed service graphs remain authoritative after creation.
+- Before proposing a change, AI receives the citizen’s current active records so it can distinguish a new person or thing from one already in My life. It may target only a supplied record identifier; uncertain matches must remain new proposals rather than silent merges.
+- Every proposal names its lifecycle effect in plain language: Add new record, Update saved record, Keep saved record, or Remove this record. Relationship changes likewise say whether a connection will be added or removed.
+- Removing a record is visually and verbally destructive, requires the same explicit confirmation boundary, archives its guided services, and removes its active connections. It is never inferred from an ambiguous request.
+- Documents may belong directly to a person-or-thing record even when no guided service exists. Record pages and the document library expose that attachment without inventing a service workflow.
 - Activity stays chronological, readable, and filterable without summary tiles.
 - Health & Insurance keeps its required cover-readiness path distinct from optional public-scheme and digital-record branches; none of these outputs may look like approval or guaranteed cover.
 - Moving Home, Starting a Business, and Retirement distinguish a short required path from optional authority-specific branches. Synthetic readiness, registration, pension, and entitlement outputs must never look like official approval.
@@ -91,6 +95,7 @@ Established: 2026-08-26. Updated: 2026-08-27 for the subject-centred AI interact
 - The request composer may stream a short interpretation and proposed update, then collapse into the persistent person-or-thing record after approval.
 - Render authoritative tasks from the journey engine with the existing citizen task UI. Do not present model reasoning, raw tool calls, JSON, model selectors, or generated task guesses as citizen-facing service guidance.
 - Every mutating AI action states what will be added or changed and requires explicit approval. External submission, data sharing, declarations, and payments require a separate explicit approval at the point of action.
+- “My life” changes use one review surface for adds, updates, relationship connections/disconnections, and archives; the interface never exposes internal entity IDs or implementation terminology.
 - Compound-request approval shows every citizen-supplied answer under the person or thing it belongs to. After approval, one subject may open directly; several subjects first resolve into a complete saved-result receipt with every affected record and one recommended next action.
 - Standalone guided task surfaces—including request details, approval, and every profile form—stay centred within their shared reading lane. Their copy remains left-aligned for scanning, and the compact request composer remains aligned with its entry point.
 - On mobile, request details and approval are focused transactional states: the bottom navigation and alternative life-event grid recede until the request is applied, changed, or abandoned.

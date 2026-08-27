@@ -58,7 +58,7 @@ import {
 } from "@/domain/document-desk-reducer";
 
 type ProposalResponse = { document: DocumentDeskRecord; message?: string };
-type DecisionResponse = { status: "applied" | "rejected"; journeyId: string | null; message: string };
+type DecisionResponse = { status: "applied" | "rejected"; journeyId: string | null; entityId: string | null; message: string };
 
 export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Promise<void> }) {
   const [state, dispatch] = useEffectReducer(documentDeskReducer, initialDocumentDeskState);
@@ -94,7 +94,7 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
     await analyseForm(form);
   }
 
-  async function decide(approved: boolean, options?: { targetJourneyId?: string; fields?: Record<string, string> }) {
+  async function decide(approved: boolean, options?: { targetJourneyId?: string; targetEntityId?: string; fields?: Record<string, string> }) {
     if (!state.document) return;
     dispatch({ type: "application_started" });
     try {
@@ -107,7 +107,7 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
       if (!response.ok) throw new Error(body.message ?? "The proposed update could not be applied.");
       if (approved) {
         await onJourneyChanged();
-        dispatch({ type: "application_finished", journeyId: body.journeyId, message: body.message });
+        dispatch({ type: "application_finished", journeyId: body.journeyId, entityId: body.entityId, message: body.message });
       } else {
         dispatch({ type: "dismissed", message: body.message });
       }
@@ -171,7 +171,7 @@ export function DocumentDesk({ onJourneyChanged }: { onJourneyChanged: () => Pro
       {state.phase === "success" ? <div className="document-result success" role="status" aria-live="polite">
         <span><BadgeCheck /></span>
         <div><p>Document handled</p><h3>{state.message}</h3><small>The document and resulting changes are recorded in this evaluation account.</small></div>
-        <div>{state.journeyId ? <Link className="primary-cta" href={`/journeys/${state.journeyId}`}>Open updated record<ArrowRight /></Link> : null}<button className="secondary-button" type="button" onClick={() => dispatch({ type: "reset" })}>Use another document</button></div>
+        <div>{state.journeyId ? <Link className="primary-cta" href={`/journeys/${state.journeyId}`}>Open updated record<ArrowRight /></Link> : state.entityId ? <Link className="primary-cta" href={`/life/${state.entityId}`}>Open updated record<ArrowRight /></Link> : null}<button className="secondary-button" type="button" onClick={() => dispatch({ type: "reset" })}>Use another document</button></div>
       </div> : null}
 
       {state.phase === "error" ? <div className="document-result error" role="alert">
@@ -201,9 +201,9 @@ function DocumentProcessing({ mode }: { mode: "analyse" | "apply" }) {
   </div>;
 }
 
-function ProposalReview({ document, decide }: { document: DocumentDeskRecord; decide: (approved: boolean, options?: { targetJourneyId?: string; fields?: Record<string, string> }) => Promise<void> }) {
+function ProposalReview({ document, decide }: { document: DocumentDeskRecord; decide: (approved: boolean, options?: { targetJourneyId?: string; targetEntityId?: string; fields?: Record<string, string> }) => Promise<void> }) {
   const proposal = document.proposal;
-  const [targetJourneyId, setTargetJourneyId] = useState(proposal.targetJourneyId ?? "");
+  const [targetKey, setTargetKey] = useState(proposal.targetJourneyId ? `journey:${proposal.targetJourneyId}` : "");
   const [fields, setFields] = useState(document.analysis.fields);
   const [included, setIncluded] = useState(() => new Set(Object.keys(document.analysis.fields)));
   const approvedFields = Object.fromEntries(Object.entries(fields).filter(([key]) => included.has(key)));
@@ -231,7 +231,7 @@ function ProposalReview({ document, decide }: { document: DocumentDeskRecord; de
       <em><Check />Analysis complete</em>
     </header>
     <div className="document-proposal-body">
-      <div><p>{proposal.description}</p>{Object.keys(fields).length ? <fieldset className="document-field-review"><legend>Choose and check the values to use</legend>{Object.entries(fields).map(([key, value]) => <label key={key}><input type="checkbox" checked={included.has(key)} onChange={(event) => setIncluded((current) => { const next = new Set(current); if (event.target.checked) next.add(key); else next.delete(key); return next; })} /><span>{key.replace(/([A-Z])/g, " $1")}</span><input value={value} disabled={!included.has(key)} onChange={(event) => setFields((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</fieldset> : <p>No supported values were read from this copy.</p>}{!proposal.canApply && proposal.targetOptions?.length ? <label className="document-target-picker"><span>Who or what is this document for?</span><select value={targetJourneyId} onChange={(event) => setTargetJourneyId(event.target.value)}><option value="">Choose a person or thing</option>{proposal.targetOptions.map((option) => <option value={option.id} key={option.id}>{option.label} · {option.type}</option>)}</select></label> : null}</div>
+      <div><p>{proposal.description}</p>{Object.keys(fields).length ? <fieldset className="document-field-review"><legend>Choose and check the values to use</legend>{Object.entries(fields).map(([key, value]) => <label key={key}><input type="checkbox" checked={included.has(key)} onChange={(event) => setIncluded((current) => { const next = new Set(current); if (event.target.checked) next.add(key); else next.delete(key); return next; })} /><span>{key.replace(/([A-Z])/g, " $1")}</span><input value={value} disabled={!included.has(key)} onChange={(event) => setFields((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</fieldset> : <p>No supported values were read from this copy.</p>}{!proposal.canApply && proposal.targetOptions?.length ? <label className="document-target-picker"><span>Who or what is this document for?</span><select value={targetKey} onChange={(event) => setTargetKey(event.target.value)}><option value="">Choose a person or thing</option>{proposal.targetOptions.map((option) => <option value={`${option.targetType}:${option.id}`} key={`${option.targetType}:${option.id}`}>{option.label} · {option.type}</option>)}</select></label> : null}</div>
       <aside><ShieldCheck /><strong>You stay in control</strong><p>We’ll run only the named update and preserve the source document as evidence.</p></aside>
     </div>
     {proposal.canApply ? <Confirmation approval={{ id: document.id }} state="approval-requested" className="document-confirmation">
@@ -242,7 +242,7 @@ function ProposalReview({ document, decide }: { document: DocumentDeskRecord; de
           <ConfirmationAction disabled={!Object.keys(approvedFields).length} onClick={() => void decide(true, { fields: approvedFields })}>Approve update with selected values<ArrowRight /></ConfirmationAction>
         </ConfirmationActions>
       </ConfirmationRequest>
-    </Confirmation> : <div className="document-needs-review"><ShieldCheck /><div><strong>Choose where this document belongs</strong><p>Select a person or thing and approve only the values you want to use. If the document is unreadable, dismiss it and upload a clearer copy.</p></div><button type="button" className="secondary-button" onClick={() => void decide(false)}>Dismiss</button><button type="button" disabled={!targetJourneyId || !Object.keys(approvedFields).length} onClick={() => void decide(true, { targetJourneyId, fields: approvedFields })}>Add to selected record</button></div>}
+    </Confirmation> : <div className="document-needs-review"><ShieldCheck /><div><strong>Choose where this document belongs</strong><p>Select a person or thing and approve the document and any values shown. If the document is unreadable, dismiss it and upload a clearer copy.</p></div><button type="button" className="secondary-button" onClick={() => void decide(false)}>Dismiss</button><button type="button" disabled={!targetKey} onClick={() => { const [targetType, ...idParts] = targetKey.split(":"); const id = idParts.join(":"); void decide(true, { ...(targetType === "entity" ? { targetEntityId: id } : { targetJourneyId: id }), fields: approvedFields }); }}>Add to selected record</button></div>}
   </div>;
 }
 

@@ -54,7 +54,7 @@ function DocumentRow({ document }: { document: DocumentLibraryItem }) {
   return <article className="document-row">
     <span className={`library-document-icon ${document.category}`}>{icon}</span>
     <div className="document-row-primary"><strong>{document.title}</strong><span>{document.fileName ?? "Interactive service record"}</span><small>{document.sourceLabel} · {formatDate(document.createdAt)}</small></div>
-    <div className="document-row-journey">{document.journeyName ? <><small>For</small><Link href={`/journeys/${document.journeyId}`}>{document.journeyName}</Link></> : <><small>For</small><span>Not linked</span></>}</div>
+    <div className="document-row-journey">{document.journeyName && document.recordHref ? <><small>For</small><Link href={document.recordHref}>{document.journeyName}</Link></> : <><small>For</small><span>Not linked</span></>}</div>
     <em className={`document-library-status ${document.status}`}><ShieldCheck />{document.status === "available" ? "Available" : document.status === "applied" ? "Applied" : document.status === "rejected" ? "Dismissed" : "Needs review"}</em>
     <div className="document-row-actions">
       {document.downloadHref ? <a className="icon-action" href={document.downloadHref} target="_blank" rel="noreferrer" aria-label={`Download ${document.title}`}><Download /></a> : null}

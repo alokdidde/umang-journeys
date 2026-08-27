@@ -15,6 +15,7 @@ export type StoredDocumentIntake = {
   analysis: DocumentAnalysis;
   proposal: DocumentProposal;
   appliedJourneyId: string | null;
+  appliedEntityId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -27,7 +28,7 @@ export interface DocumentIntakeRepository {
   create(sessionId: string, input: NewDocumentIntake): Promise<StoredDocumentIntake>;
   list(sessionId: string): Promise<StoredDocumentIntake[]>;
   get(sessionId: string, id: string): Promise<StoredDocumentIntake | null>;
-  setDecision(sessionId: string, id: string, status: "applied" | "rejected", appliedJourneyId?: string): Promise<StoredDocumentIntake | null>;
+  setDecision(sessionId: string, id: string, status: "applied" | "rejected", appliedJourneyId?: string, appliedEntityId?: string): Promise<StoredDocumentIntake | null>;
   reset(sessionId: string): Promise<void>;
 }
 
@@ -42,6 +43,7 @@ export class MemoryDocumentIntakeRepository implements DocumentIntakeRepository 
       sessionId,
       status: "proposed",
       appliedJourneyId: null,
+      appliedEntityId: null,
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -59,10 +61,10 @@ export class MemoryDocumentIntakeRepository implements DocumentIntakeRepository 
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }
 
-  async setDecision(sessionId: string, id: string, status: "applied" | "rejected", appliedJourneyId?: string) {
+  async setDecision(sessionId: string, id: string, status: "applied" | "rejected", appliedJourneyId?: string, appliedEntityId?: string) {
     const record = await this.get(sessionId, id);
     if (!record) return null;
-    const updated = { ...record, status, appliedJourneyId: appliedJourneyId ?? record.appliedJourneyId, updatedAt: new Date().toISOString() };
+    const updated = { ...record, status, appliedJourneyId: appliedJourneyId ?? record.appliedJourneyId, appliedEntityId: appliedEntityId ?? record.appliedEntityId, updatedAt: new Date().toISOString() };
     this.records.set(`${sessionId}:${id}`, updated);
     return updated;
   }
@@ -107,6 +109,7 @@ export class PrismaDocumentIntakeRepository implements DocumentIntakeRepository 
       analysis: record.analysisJson as DocumentAnalysis,
       proposal: record.proposalJson as DocumentProposal,
       appliedJourneyId: record.journeyId,
+      appliedEntityId: record.entityId,
       createdAt: record.createdAt.toISOString(),
       updatedAt: record.updatedAt.toISOString(),
     };
@@ -129,6 +132,7 @@ export class PrismaDocumentIntakeRepository implements DocumentIntakeRepository 
       analysis: record.analysisJson as DocumentAnalysis,
       proposal: record.proposalJson as DocumentProposal,
       appliedJourneyId: record.journeyId,
+      appliedEntityId: record.entityId,
       createdAt: record.createdAt.toISOString(),
       updatedAt: record.updatedAt.toISOString(),
     };
@@ -151,17 +155,18 @@ export class PrismaDocumentIntakeRepository implements DocumentIntakeRepository 
       analysis: record.analysisJson as DocumentAnalysis,
       proposal: record.proposalJson as DocumentProposal,
       appliedJourneyId: record.journeyId,
+      appliedEntityId: record.entityId,
       createdAt: record.createdAt.toISOString(),
       updatedAt: record.updatedAt.toISOString(),
     }));
   }
 
-  async setDecision(sessionId: string, id: string, status: "applied" | "rejected", appliedJourneyId?: string) {
+  async setDecision(sessionId: string, id: string, status: "applied" | "rejected", appliedJourneyId?: string, appliedEntityId?: string) {
     const existing = await this.get(sessionId, id);
     if (!existing) return null;
     await getPrisma().documentIntake.update({
       where: { id },
-      data: { status, journeyId: appliedJourneyId ?? existing.appliedJourneyId },
+      data: { status, journeyId: appliedJourneyId ?? existing.appliedJourneyId, entityId: appliedEntityId ?? existing.appliedEntityId },
     });
     return this.get(sessionId, id);
   }

@@ -179,7 +179,7 @@ async function addEntityContexts(sessionId: string, journeys: StoredJourney[]) {
   if (!subjectIds.length) return journeys;
   const entities = await getPrisma().canonicalEntity.findMany({
     where: { id: { in: subjectIds }, profile: { sessionId } },
-    include: { incomingRelationships: { include: { from: true } } },
+    include: { incomingRelationships: { where: { validTo: null }, include: { from: true } } },
   });
   const entityById = new Map(entities.map((entity) => [entity.id, entity]));
   return journeys.map((journey) => {
@@ -645,6 +645,24 @@ export class PrismaJourneyRepository implements JourneyRepository {
       }
       entityIds[seed.ref] = entity.id;
     }
+    const ownershipKinds = new Set(["owner", "partner", "shareholder"]);
+    const ownershipChanges = associations.filter((association) => ownershipKinds.has(association.kind));
+    const ownershipTargetIds = [...new Set(ownershipChanges.flatMap((association) => entityIds[association.toSubjectRef] ?? []))];
+    if (ownershipTargetIds.length) {
+      const current = await prisma.entityRelationship.findMany({ where: { toId: { in: ownershipTargetIds }, kind: { in: ["OWNER", "PARTNER", "SHAREHOLDER"] }, validTo: null } });
+      const projected = new Map(current.map((relationship) => [`${relationship.fromId}:${relationship.toId}:${relationship.kind}:${relationship.role}`, { toId: relationship.toId, share: Number(jsonRecord(relationship.metadataJson).ownershipShare ?? 0) }]));
+      for (const association of ownershipChanges) {
+        const fromId = entityIds[association.fromSubjectRef];
+        const toId = entityIds[association.toSubjectRef];
+        if (!fromId || !toId) continue;
+        const key = `${fromId}:${toId}:${associationKindForDatabase(association.kind)}:${association.role}`;
+        if (association.operation === "disconnect") projected.delete(key);
+        else projected.set(key, { toId, share: association.ownershipShare ?? 0 });
+      }
+      const totals = new Map<string, number>();
+      for (const relationship of projected.values()) totals.set(relationship.toId, (totals.get(relationship.toId) ?? 0) + relationship.share);
+      if ([...totals.values()].some((total) => total > 100)) throw Object.assign(new Error("Saved ownership shares cannot add up to more than 100%."), { code: "INVALID_OWNERSHIP_TOTAL" });
+    }
     for (const association of associations) {
       const fromId = entityIds[association.fromSubjectRef];
       const toId = entityIds[association.toSubjectRef];
@@ -654,17 +672,35 @@ export class PrismaJourneyRepository implements JourneyRepository {
         ...(association.ownershipShare === undefined ? {} : { ownershipShare: association.ownershipShare }),
         ...(association.canAct === undefined ? {} : { canAct: association.canAct }),
       };
-      const existing = await prisma.entityRelationship.findFirst({ where: { fromId, toId, kind, role: association.role } });
+      const existing = await prisma.entityRelationship.findFirst({ where: { fromId, toId, kind, role: association.role, validTo: null } });
+      if (association.operation === "disconnect") {
+        if (existing) await prisma.entityRelationship.update({ where: { id: existing.id }, data: { validTo: new Date() } });
+        continue;
+      }
       if (existing) await prisma.entityRelationship.update({ where: { id: existing.id }, data: { metadataJson } });
       else await prisma.entityRelationship.create({ data: { fromId, toId, kind, role: association.role, metadataJson } });
     }
     return Object.fromEntries(Object.entries(entityIds).filter(([ref]) => ref !== "account_holder"));
   }
 
+  async archiveEntity(sessionId: string, entityId: string, reason?: string) {
+    const prisma = getPrisma();
+    const entity = await prisma.canonicalEntity.findFirst({ where: { id: entityId, profile: { sessionId } } });
+    if (!entity || jsonRecord(entity.dataJson).role === "account_holder") return false;
+    await prisma.$transaction(async (tx) => {
+      const data = jsonRecord(entity.dataJson);
+      await tx.canonicalEntity.update({ where: { id: entity.id }, data: { dataJson: { ...data, "intake.recordVisibility": "archived", ...(reason ? { "record.archiveReason": reason } : {}) } as Prisma.InputJsonObject } });
+      const links = await tx.journeyEntityLink.findMany({ where: { entityId: entity.id, role: "subject" }, select: { journeyId: true } });
+      if (links.length) await tx.journeyInstance.updateMany({ where: { id: { in: links.map((link) => link.journeyId) }, profile: { sessionId } }, data: { status: "ABANDONED" } });
+      await tx.entityRelationship.updateMany({ where: { OR: [{ fromId: entity.id }, { toId: entity.id }], validTo: null }, data: { validTo: new Date() } });
+    }, transactionOptions);
+    return true;
+  }
+
   async listEntityRecords(sessionId: string) {
     const entities = await getPrisma().canonicalEntity.findMany({
       where: { profile: { sessionId } },
-      include: { incomingRelationships: { include: { from: true } } },
+      include: { incomingRelationships: { where: { validTo: null }, include: { from: true } } },
       orderBy: { updatedAt: "desc" },
     });
     return entities.flatMap((entity): LifeEntityRecord[] => {
@@ -683,6 +719,16 @@ export class PrismaJourneyRepository implements JourneyRepository {
       let unavailableNeeds: LifeEntityRecord["unavailableNeeds"] = [];
       try { unavailableNeeds = JSON.parse(typeof data["intake.unavailableNeeds"] === "string" ? data["intake.unavailableNeeds"] : "[]") as LifeEntityRecord["unavailableNeeds"]; } catch { /* Ignore invalid historical metadata. */ }
       return [{ id: entity.id, kind, displayName: entity.displayName, context: family || householdMember || connectedPeople.length ? { relationshipToAccountHolder: family?.role || undefined, householdMember: householdMember || undefined, connectedPeople: connectedPeople.length ? connectedPeople : undefined } : undefined, unavailableNeeds, updatedAt: entity.updatedAt.toISOString() }];
+    });
+  }
+
+  async listEntityCandidates(sessionId: string) {
+    const entities = await getPrisma().canonicalEntity.findMany({ where: { profile: { sessionId } }, orderBy: { updatedAt: "desc" } });
+    return entities.flatMap((entity) => {
+      const data = jsonRecord(entity.dataJson);
+      if (entity.type === "HOUSEHOLD" || data.role === "account_holder" || data["intake.recordVisibility"] === "archived") return [];
+      const inferred = entity.type === "VEHICLE" ? "vehicle" : entity.type === "BUSINESS" ? "organisation" : entity.type === "ADDRESS" ? "premises" : entity.type === "PERSON" ? "person" : "other";
+      return [{ id: entity.id, kind: typeof data.entityKind === "string" ? data.entityKind as LifeEntityKind : inferred as LifeEntityKind, displayName: entity.displayName }];
     });
   }
 

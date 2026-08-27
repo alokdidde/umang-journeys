@@ -48,6 +48,7 @@ export type LifeEntityRecord = {
   unavailableNeeds: Array<{ label: string; description: string; reason: string }>;
   updatedAt: string;
 };
+export type LifeEntityCandidate = Pick<LifeEntityRecord, "id" | "kind" | "displayName" | "context">;
 
 function identitySlug(value: string) {
   return value.trim().toLocaleLowerCase("en-IN").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
@@ -79,7 +80,9 @@ export interface JourneyRepository {
   completeRegistration(sessionId: string, id: string, idempotencyKey: string): Promise<StoredJourney | null>;
   advanceService(sessionId: string, id: string, nodeKey: string, idempotencyKey: string): Promise<StoredJourney | null>;
   syncEntityGraph(sessionId: string, entities: EntityGraphSeed[], associations: EntityAssociationSeed[]): Promise<Record<string, string>>;
+  archiveEntity(sessionId: string, entityId: string, reason?: string): Promise<boolean>;
   listEntityRecords(sessionId: string): Promise<LifeEntityRecord[]>;
+  listEntityCandidates(sessionId: string): Promise<LifeEntityCandidate[]>;
   reset(sessionId: string): Promise<void>;
 }
 
@@ -345,17 +348,43 @@ export class MemoryJourneyRepository implements JourneyRepository {
       this.entities.set(key, entity);
       entityIds[seed.ref] = entity.id;
     }
+    const nextRelationships = new Map(this.relationships);
     for (const association of associations) {
       const fromId = entityIds[association.fromSubjectRef];
       const toId = entityIds[association.toSubjectRef];
       if (!fromId || !toId) continue;
-      this.relationships.set(`${sessionId}:${fromId}:${toId}:${association.kind}:${association.role}`, {
+      const relationshipKey = `${sessionId}:${fromId}:${toId}:${association.kind}:${association.role}`;
+      if (association.operation === "disconnect") {
+        nextRelationships.delete(relationshipKey);
+        continue;
+      }
+      nextRelationships.set(relationshipKey, {
         fromId, toId, kind: association.kind, role: association.role,
         ownershipShare: association.ownershipShare, canAct: association.canAct,
       });
     }
+    const ownershipTotals = new Map<string, number>();
+    for (const relationship of nextRelationships.values()) {
+      if (!["owner", "partner", "shareholder"].includes(relationship.kind) || relationship.ownershipShare === undefined) continue;
+      ownershipTotals.set(relationship.toId, (ownershipTotals.get(relationship.toId) ?? 0) + relationship.ownershipShare);
+    }
+    if ([...ownershipTotals.values()].some((total) => total > 100)) throw Object.assign(new Error("Saved ownership shares cannot add up to more than 100%."), { code: "INVALID_OWNERSHIP_TOTAL" });
+    this.relationships = nextRelationships;
     this.applyEntityContexts(sessionId);
     return Object.fromEntries(Object.entries(entityIds).filter(([ref]) => ref !== "account_holder"));
+  }
+  async archiveEntity(sessionId: string, entityId: string, reason?: string) {
+    const entity = [...this.entities.values()].find((candidate) => candidate.sessionId === sessionId && candidate.id === entityId);
+    if (!entity || entity.isAccountHolder) return false;
+    entity.facts = { ...entity.facts, "intake.recordVisibility": "archived", ...(reason ? { "record.archiveReason": reason } : {}) };
+    for (const [key, journey] of this.journeys) {
+      if (journey.sessionId === sessionId && journey.subject.canonicalEntityId === entityId) this.journeys.set(key, { ...journey, status: "abandoned", updatedAt: now() });
+    }
+    for (const [key, relationship] of this.relationships) {
+      if (relationship.fromId === entityId || relationship.toId === entityId) this.relationships.delete(key);
+    }
+    this.applyEntityContexts(sessionId);
+    return true;
   }
   async listEntityRecords(sessionId: string) {
     const entities = [...this.entities.values()].filter((entity) => entity.sessionId === sessionId && entity.type !== "household" && !entity.isAccountHolder && entity.facts["intake.recordVisibility"] === "standalone");
@@ -381,6 +410,11 @@ export class MemoryJourneyRepository implements JourneyRepository {
         updatedAt: now(),
       };
     });
+  }
+  async listEntityCandidates(sessionId: string) {
+    return [...this.entities.values()]
+      .filter((entity) => entity.sessionId === sessionId && entity.type !== "household" && !entity.isAccountHolder && entity.facts["intake.recordVisibility"] !== "archived")
+      .map((entity) => ({ id: entity.id, kind: entity.entityKind, displayName: entity.displayName }));
   }
   private applyEntityContexts(sessionId: string) {
     const entities = [...this.entities.values()].filter((entity) => entity.sessionId === sessionId);

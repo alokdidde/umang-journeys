@@ -89,6 +89,7 @@ describe("life request plan", () => {
       toSubjectRef: "aarohi",
       kind: "family",
       role: "daughter",
+      operation: "connect",
     }]);
   });
 
@@ -123,5 +124,76 @@ describe("life request plan", () => {
       questions: [],
       associations: [{ id: "accountant", fromSubjectRef: "accountant", toSubjectRef: "business", kind: "adviser", role: "Accountant", ownershipShare: 30 }],
     })).toThrow();
+  });
+
+  it("rejects ownership percentages above one hundred for the same record", () => {
+    expect(() => lifeRequestOutputSchema.parse({
+      supported: true,
+      summary: "Update the owners of Sharma Foods.",
+      subjects: [
+        { ref: "business", type: "business", displayName: "Sharma Foods", facts: [] },
+        { ref: "rohan", type: "person", displayName: "Rohan", facts: [] },
+      ],
+      needs: [],
+      unavailableNeeds: [{ id: "ownership", subjectRef: "business", label: "Update ownership", description: "Save the ownership change.", reason: "No guided steps are available." }],
+      questions: [],
+      associations: [
+        { id: "self", fromSubjectRef: "account_holder", toSubjectRef: "business", kind: "owner", role: "Owner", ownershipShare: 60, canAct: true },
+        { id: "rohan", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "owner", role: "Owner", ownershipShare: 50, canAct: true },
+      ],
+    })).toThrow(/more than 100/i);
+  });
+
+  it("keeps explicit record and relationship lifecycle operations", () => {
+    const plan = prepareLifeRequest({
+      supported: true,
+      summary: "Remove Rohan from Sharma Foods.",
+      subjects: [
+        { ref: "business", type: "business", entityKind: "organisation", displayName: "Sharma Foods", existingEntityId: "entity-business", operation: "update", facts: [] },
+        { ref: "rohan", type: "person", displayName: "Rohan", existingEntityId: "entity-rohan", operation: "keep", facts: [] },
+      ],
+      needs: [],
+      unavailableNeeds: [{ id: "ownership", subjectRef: "business", label: "Update ownership", description: "Save the ownership change.", reason: "No guided steps are available." }],
+      questions: [],
+      associations: [{ id: "rohan-owner", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "owner", role: "Co-owner", operation: "disconnect" }],
+    }, "request-remove-owner");
+
+    expect(plan.subjects.map((subject) => [subject.ref, subject.operation, subject.existingEntityId])).toEqual([
+      ["business", "update", "entity-business"],
+      ["rohan", "keep", "entity-rohan"],
+    ]);
+    expect(plan.associations[0]?.operation).toBe("disconnect");
+  });
+
+  it("allows a relationship-only change between saved records", () => {
+    const plan = prepareLifeRequest({
+      supported: true,
+      summary: "Add Rohan as a co-owner of Sharma Foods.",
+      subjects: [
+        { ref: "business", type: "business", displayName: "Sharma Foods", existingEntityId: "entity-business", operation: "keep", facts: [] },
+        { ref: "rohan", type: "person", displayName: "Rohan", existingEntityId: "entity-rohan", operation: "keep", facts: [] },
+      ],
+      needs: [], questions: [],
+      associations: [{ id: "rohan-owner", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "owner", role: "Co-owner", ownershipShare: 50, operation: "connect" }],
+    }, "request-add-owner");
+
+    expect(plan.needs).toHaveLength(0);
+    expect(plan.associations[0]).toMatchObject({ operation: "connect", ownershipShare: 50 });
+  });
+
+  it("rejects contradictory changes to the same relationship", () => {
+    expect(() => lifeRequestOutputSchema.parse({
+      supported: true,
+      summary: "Change Rohan's business role.",
+      subjects: [
+        { ref: "business", type: "business", displayName: "Sharma Foods", existingEntityId: "entity-business", operation: "update", facts: [] },
+        { ref: "rohan", type: "person", displayName: "Rohan", existingEntityId: "entity-rohan", operation: "keep", facts: [] },
+      ],
+      needs: [], questions: [],
+      associations: [
+        { id: "remove", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "director", role: "Director", operation: "disconnect" },
+        { id: "keep", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "director", role: "Director", operation: "connect", canAct: true },
+      ],
+    })).toThrow(/same relationship/i);
   });
 });

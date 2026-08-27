@@ -10,6 +10,7 @@ export type DocumentDeskRecord = {
   analysis: DocumentAnalysis;
   proposal: DocumentProposal;
   appliedJourneyId: string | null;
+  appliedEntityId?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -19,6 +20,7 @@ export type DocumentDeskState = {
   document: DocumentDeskRecord | null;
   message: string | null;
   journeyId: string | null;
+  entityId: string | null;
   error: string | null;
 };
 
@@ -26,7 +28,7 @@ export type DocumentDeskAction =
   | { type: "analysis_started" }
   | { type: "proposal_received"; document: DocumentDeskRecord }
   | { type: "application_started" }
-  | { type: "application_finished"; journeyId: string | null; message: string }
+  | { type: "application_finished"; journeyId: string | null; entityId?: string | null; message: string }
   | { type: "dismissed"; message: string }
   | { type: "failed"; message: string }
   | { type: "reset" };
@@ -36,6 +38,7 @@ export const initialDocumentDeskState: DocumentDeskState = {
   document: null,
   message: null,
   journeyId: null,
+  entityId: null,
   error: null,
 };
 
@@ -48,9 +51,9 @@ export function documentDeskReducer(state: DocumentDeskState, action: DocumentDe
     case "application_started":
       return { ...state, phase: "applying", error: null };
     case "application_finished":
-      return { ...state, phase: "success", journeyId: action.journeyId, message: action.message, error: null };
+      return { ...state, phase: "success", journeyId: action.journeyId, entityId: action.entityId ?? null, message: action.message, error: null };
     case "dismissed":
-      return { ...state, phase: "success", journeyId: null, message: action.message, error: null };
+      return { ...state, phase: "success", journeyId: null, entityId: null, message: action.message, error: null };
     case "failed":
       return { ...state, phase: "error", error: action.message };
     case "reset":

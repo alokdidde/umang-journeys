@@ -40,6 +40,7 @@ export type DocumentIntakeMinAggregateOutputType = {
   id: string | null
   profileId: string | null
   journeyId: string | null
+  entityId: string | null
   status: string | null
   fileName: string | null
   mimeType: string | null
@@ -56,6 +57,7 @@ export type DocumentIntakeMaxAggregateOutputType = {
   id: string | null
   profileId: string | null
   journeyId: string | null
+  entityId: string | null
   status: string | null
   fileName: string | null
   mimeType: string | null
@@ -72,6 +74,7 @@ export type DocumentIntakeCountAggregateOutputType = {
   id: number
   profileId: number
   journeyId: number
+  entityId: number
   status: number
   fileName: number
   mimeType: number
@@ -102,6 +105,7 @@ export type DocumentIntakeMinAggregateInputType = {
   id?: true
   profileId?: true
   journeyId?: true
+  entityId?: true
   status?: true
   fileName?: true
   mimeType?: true
@@ -118,6 +122,7 @@ export type DocumentIntakeMaxAggregateInputType = {
   id?: true
   profileId?: true
   journeyId?: true
+  entityId?: true
   status?: true
   fileName?: true
   mimeType?: true
@@ -134,6 +139,7 @@ export type DocumentIntakeCountAggregateInputType = {
   id?: true
   profileId?: true
   journeyId?: true
+  entityId?: true
   status?: true
   fileName?: true
   mimeType?: true
@@ -239,6 +245,7 @@ export type DocumentIntakeGroupByOutputType = {
   id: string
   profileId: string
   journeyId: string | null
+  entityId: string | null
   status: string
   fileName: string
   mimeType: string
@@ -280,6 +287,7 @@ export type DocumentIntakeWhereInput = {
   id?: Prisma.StringFilter<"DocumentIntake"> | string
   profileId?: Prisma.StringFilter<"DocumentIntake"> | string
   journeyId?: Prisma.StringNullableFilter<"DocumentIntake"> | string | null
+  entityId?: Prisma.StringNullableFilter<"DocumentIntake"> | string | null
   status?: Prisma.StringFilter<"DocumentIntake"> | string
   fileName?: Prisma.StringFilter<"DocumentIntake"> | string
   mimeType?: Prisma.StringFilter<"DocumentIntake"> | string
@@ -294,12 +302,14 @@ export type DocumentIntakeWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"DocumentIntake"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   journey?: Prisma.XOR<Prisma.JourneyInstanceNullableScalarRelationFilter, Prisma.JourneyInstanceWhereInput> | null
+  entity?: Prisma.XOR<Prisma.CanonicalEntityNullableScalarRelationFilter, Prisma.CanonicalEntityWhereInput> | null
 }
 
 export type DocumentIntakeOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   journeyId?: Prisma.SortOrderInput | Prisma.SortOrder
+  entityId?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
@@ -314,6 +324,7 @@ export type DocumentIntakeOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   profile?: Prisma.UserProfileOrderByWithRelationInput
   journey?: Prisma.JourneyInstanceOrderByWithRelationInput
+  entity?: Prisma.CanonicalEntityOrderByWithRelationInput
 }
 
 export type DocumentIntakeWhereUniqueInput = Prisma.AtLeast<{
@@ -323,6 +334,7 @@ export type DocumentIntakeWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.DocumentIntakeWhereInput | Prisma.DocumentIntakeWhereInput[]
   profileId?: Prisma.StringFilter<"DocumentIntake"> | string
   journeyId?: Prisma.StringNullableFilter<"DocumentIntake"> | string | null
+  entityId?: Prisma.StringNullableFilter<"DocumentIntake"> | string | null
   status?: Prisma.StringFilter<"DocumentIntake"> | string
   fileName?: Prisma.StringFilter<"DocumentIntake"> | string
   mimeType?: Prisma.StringFilter<"DocumentIntake"> | string
@@ -337,12 +349,14 @@ export type DocumentIntakeWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"DocumentIntake"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   journey?: Prisma.XOR<Prisma.JourneyInstanceNullableScalarRelationFilter, Prisma.JourneyInstanceWhereInput> | null
+  entity?: Prisma.XOR<Prisma.CanonicalEntityNullableScalarRelationFilter, Prisma.CanonicalEntityWhereInput> | null
 }, "id">
 
 export type DocumentIntakeOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   journeyId?: Prisma.SortOrderInput | Prisma.SortOrder
+  entityId?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
@@ -369,6 +383,7 @@ export type DocumentIntakeScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"DocumentIntake"> | string
   profileId?: Prisma.StringWithAggregatesFilter<"DocumentIntake"> | string
   journeyId?: Prisma.StringNullableWithAggregatesFilter<"DocumentIntake"> | string | null
+  entityId?: Prisma.StringNullableWithAggregatesFilter<"DocumentIntake"> | string | null
   status?: Prisma.StringWithAggregatesFilter<"DocumentIntake"> | string
   fileName?: Prisma.StringWithAggregatesFilter<"DocumentIntake"> | string
   mimeType?: Prisma.StringWithAggregatesFilter<"DocumentIntake"> | string
@@ -399,12 +414,14 @@ export type DocumentIntakeCreateInput = {
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutDocumentIntakesInput
   journey?: Prisma.JourneyInstanceCreateNestedOneWithoutDocumentIntakesInput
+  entity?: Prisma.CanonicalEntityCreateNestedOneWithoutDocumentIntakesInput
 }
 
 export type DocumentIntakeUncheckedCreateInput = {
   id?: string
   profileId: string
   journeyId?: string | null
+  entityId?: string | null
   status?: string
   fileName: string
   mimeType: string
@@ -435,12 +452,14 @@ export type DocumentIntakeUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutDocumentIntakesNestedInput
   journey?: Prisma.JourneyInstanceUpdateOneWithoutDocumentIntakesNestedInput
+  entity?: Prisma.CanonicalEntityUpdateOneWithoutDocumentIntakesNestedInput
 }
 
 export type DocumentIntakeUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
   journeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  entityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -459,6 +478,7 @@ export type DocumentIntakeCreateManyInput = {
   id?: string
   profileId: string
   journeyId?: string | null
+  entityId?: string | null
   status?: string
   fileName: string
   mimeType: string
@@ -493,6 +513,7 @@ export type DocumentIntakeUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
   journeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  entityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -521,6 +542,7 @@ export type DocumentIntakeCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   journeyId?: Prisma.SortOrder
+  entityId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
@@ -544,6 +566,7 @@ export type DocumentIntakeMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   journeyId?: Prisma.SortOrder
+  entityId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
@@ -560,6 +583,7 @@ export type DocumentIntakeMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   journeyId?: Prisma.SortOrder
+  entityId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
@@ -616,6 +640,48 @@ export type DocumentIntakeUncheckedUpdateManyWithoutProfileNestedInput = {
   connect?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
   update?: Prisma.DocumentIntakeUpdateWithWhereUniqueWithoutProfileInput | Prisma.DocumentIntakeUpdateWithWhereUniqueWithoutProfileInput[]
   updateMany?: Prisma.DocumentIntakeUpdateManyWithWhereWithoutProfileInput | Prisma.DocumentIntakeUpdateManyWithWhereWithoutProfileInput[]
+  deleteMany?: Prisma.DocumentIntakeScalarWhereInput | Prisma.DocumentIntakeScalarWhereInput[]
+}
+
+export type DocumentIntakeCreateNestedManyWithoutEntityInput = {
+  create?: Prisma.XOR<Prisma.DocumentIntakeCreateWithoutEntityInput, Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput> | Prisma.DocumentIntakeCreateWithoutEntityInput[] | Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput[]
+  connectOrCreate?: Prisma.DocumentIntakeCreateOrConnectWithoutEntityInput | Prisma.DocumentIntakeCreateOrConnectWithoutEntityInput[]
+  createMany?: Prisma.DocumentIntakeCreateManyEntityInputEnvelope
+  connect?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+}
+
+export type DocumentIntakeUncheckedCreateNestedManyWithoutEntityInput = {
+  create?: Prisma.XOR<Prisma.DocumentIntakeCreateWithoutEntityInput, Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput> | Prisma.DocumentIntakeCreateWithoutEntityInput[] | Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput[]
+  connectOrCreate?: Prisma.DocumentIntakeCreateOrConnectWithoutEntityInput | Prisma.DocumentIntakeCreateOrConnectWithoutEntityInput[]
+  createMany?: Prisma.DocumentIntakeCreateManyEntityInputEnvelope
+  connect?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+}
+
+export type DocumentIntakeUpdateManyWithoutEntityNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentIntakeCreateWithoutEntityInput, Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput> | Prisma.DocumentIntakeCreateWithoutEntityInput[] | Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput[]
+  connectOrCreate?: Prisma.DocumentIntakeCreateOrConnectWithoutEntityInput | Prisma.DocumentIntakeCreateOrConnectWithoutEntityInput[]
+  upsert?: Prisma.DocumentIntakeUpsertWithWhereUniqueWithoutEntityInput | Prisma.DocumentIntakeUpsertWithWhereUniqueWithoutEntityInput[]
+  createMany?: Prisma.DocumentIntakeCreateManyEntityInputEnvelope
+  set?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+  disconnect?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+  delete?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+  connect?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+  update?: Prisma.DocumentIntakeUpdateWithWhereUniqueWithoutEntityInput | Prisma.DocumentIntakeUpdateWithWhereUniqueWithoutEntityInput[]
+  updateMany?: Prisma.DocumentIntakeUpdateManyWithWhereWithoutEntityInput | Prisma.DocumentIntakeUpdateManyWithWhereWithoutEntityInput[]
+  deleteMany?: Prisma.DocumentIntakeScalarWhereInput | Prisma.DocumentIntakeScalarWhereInput[]
+}
+
+export type DocumentIntakeUncheckedUpdateManyWithoutEntityNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentIntakeCreateWithoutEntityInput, Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput> | Prisma.DocumentIntakeCreateWithoutEntityInput[] | Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput[]
+  connectOrCreate?: Prisma.DocumentIntakeCreateOrConnectWithoutEntityInput | Prisma.DocumentIntakeCreateOrConnectWithoutEntityInput[]
+  upsert?: Prisma.DocumentIntakeUpsertWithWhereUniqueWithoutEntityInput | Prisma.DocumentIntakeUpsertWithWhereUniqueWithoutEntityInput[]
+  createMany?: Prisma.DocumentIntakeCreateManyEntityInputEnvelope
+  set?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+  disconnect?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+  delete?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+  connect?: Prisma.DocumentIntakeWhereUniqueInput | Prisma.DocumentIntakeWhereUniqueInput[]
+  update?: Prisma.DocumentIntakeUpdateWithWhereUniqueWithoutEntityInput | Prisma.DocumentIntakeUpdateWithWhereUniqueWithoutEntityInput[]
+  updateMany?: Prisma.DocumentIntakeUpdateManyWithWhereWithoutEntityInput | Prisma.DocumentIntakeUpdateManyWithWhereWithoutEntityInput[]
   deleteMany?: Prisma.DocumentIntakeScalarWhereInput | Prisma.DocumentIntakeScalarWhereInput[]
 }
 
@@ -684,11 +750,13 @@ export type DocumentIntakeCreateWithoutProfileInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   journey?: Prisma.JourneyInstanceCreateNestedOneWithoutDocumentIntakesInput
+  entity?: Prisma.CanonicalEntityCreateNestedOneWithoutDocumentIntakesInput
 }
 
 export type DocumentIntakeUncheckedCreateWithoutProfileInput = {
   id?: string
   journeyId?: string | null
+  entityId?: string | null
   status?: string
   fileName: string
   mimeType: string
@@ -736,6 +804,7 @@ export type DocumentIntakeScalarWhereInput = {
   id?: Prisma.StringFilter<"DocumentIntake"> | string
   profileId?: Prisma.StringFilter<"DocumentIntake"> | string
   journeyId?: Prisma.StringNullableFilter<"DocumentIntake"> | string | null
+  entityId?: Prisma.StringNullableFilter<"DocumentIntake"> | string | null
   status?: Prisma.StringFilter<"DocumentIntake"> | string
   fileName?: Prisma.StringFilter<"DocumentIntake"> | string
   mimeType?: Prisma.StringFilter<"DocumentIntake"> | string
@@ -748,6 +817,68 @@ export type DocumentIntakeScalarWhereInput = {
   proposalJson?: Prisma.JsonFilter<"DocumentIntake">
   createdAt?: Prisma.DateTimeFilter<"DocumentIntake"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DocumentIntake"> | Date | string
+}
+
+export type DocumentIntakeCreateWithoutEntityInput = {
+  id?: string
+  status?: string
+  fileName: string
+  mimeType: string
+  size: number
+  source: string
+  documentType: string
+  confidence: number
+  contentBase64: string
+  analysisJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  proposalJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutDocumentIntakesInput
+  journey?: Prisma.JourneyInstanceCreateNestedOneWithoutDocumentIntakesInput
+}
+
+export type DocumentIntakeUncheckedCreateWithoutEntityInput = {
+  id?: string
+  profileId: string
+  journeyId?: string | null
+  status?: string
+  fileName: string
+  mimeType: string
+  size: number
+  source: string
+  documentType: string
+  confidence: number
+  contentBase64: string
+  analysisJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  proposalJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type DocumentIntakeCreateOrConnectWithoutEntityInput = {
+  where: Prisma.DocumentIntakeWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentIntakeCreateWithoutEntityInput, Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput>
+}
+
+export type DocumentIntakeCreateManyEntityInputEnvelope = {
+  data: Prisma.DocumentIntakeCreateManyEntityInput | Prisma.DocumentIntakeCreateManyEntityInput[]
+  skipDuplicates?: boolean
+}
+
+export type DocumentIntakeUpsertWithWhereUniqueWithoutEntityInput = {
+  where: Prisma.DocumentIntakeWhereUniqueInput
+  update: Prisma.XOR<Prisma.DocumentIntakeUpdateWithoutEntityInput, Prisma.DocumentIntakeUncheckedUpdateWithoutEntityInput>
+  create: Prisma.XOR<Prisma.DocumentIntakeCreateWithoutEntityInput, Prisma.DocumentIntakeUncheckedCreateWithoutEntityInput>
+}
+
+export type DocumentIntakeUpdateWithWhereUniqueWithoutEntityInput = {
+  where: Prisma.DocumentIntakeWhereUniqueInput
+  data: Prisma.XOR<Prisma.DocumentIntakeUpdateWithoutEntityInput, Prisma.DocumentIntakeUncheckedUpdateWithoutEntityInput>
+}
+
+export type DocumentIntakeUpdateManyWithWhereWithoutEntityInput = {
+  where: Prisma.DocumentIntakeScalarWhereInput
+  data: Prisma.XOR<Prisma.DocumentIntakeUpdateManyMutationInput, Prisma.DocumentIntakeUncheckedUpdateManyWithoutEntityInput>
 }
 
 export type DocumentIntakeCreateWithoutJourneyInput = {
@@ -765,11 +896,13 @@ export type DocumentIntakeCreateWithoutJourneyInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutDocumentIntakesInput
+  entity?: Prisma.CanonicalEntityCreateNestedOneWithoutDocumentIntakesInput
 }
 
 export type DocumentIntakeUncheckedCreateWithoutJourneyInput = {
   id?: string
   profileId: string
+  entityId?: string | null
   status?: string
   fileName: string
   mimeType: string
@@ -813,6 +946,7 @@ export type DocumentIntakeUpdateManyWithWhereWithoutJourneyInput = {
 export type DocumentIntakeCreateManyProfileInput = {
   id?: string
   journeyId?: string | null
+  entityId?: string | null
   status?: string
   fileName: string
   mimeType: string
@@ -842,11 +976,13 @@ export type DocumentIntakeUpdateWithoutProfileInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journey?: Prisma.JourneyInstanceUpdateOneWithoutDocumentIntakesNestedInput
+  entity?: Prisma.CanonicalEntityUpdateOneWithoutDocumentIntakesNestedInput
 }
 
 export type DocumentIntakeUncheckedUpdateWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   journeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  entityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -863,6 +999,79 @@ export type DocumentIntakeUncheckedUpdateWithoutProfileInput = {
 
 export type DocumentIntakeUncheckedUpdateManyWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  journeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  entityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.IntFieldUpdateOperationsInput | number
+  source?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  confidence?: Prisma.FloatFieldUpdateOperationsInput | number
+  contentBase64?: Prisma.StringFieldUpdateOperationsInput | string
+  analysisJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  proposalJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type DocumentIntakeCreateManyEntityInput = {
+  id?: string
+  profileId: string
+  journeyId?: string | null
+  status?: string
+  fileName: string
+  mimeType: string
+  size: number
+  source: string
+  documentType: string
+  confidence: number
+  contentBase64: string
+  analysisJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  proposalJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type DocumentIntakeUpdateWithoutEntityInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.IntFieldUpdateOperationsInput | number
+  source?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  confidence?: Prisma.FloatFieldUpdateOperationsInput | number
+  contentBase64?: Prisma.StringFieldUpdateOperationsInput | string
+  analysisJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  proposalJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutDocumentIntakesNestedInput
+  journey?: Prisma.JourneyInstanceUpdateOneWithoutDocumentIntakesNestedInput
+}
+
+export type DocumentIntakeUncheckedUpdateWithoutEntityInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  journeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.IntFieldUpdateOperationsInput | number
+  source?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  confidence?: Prisma.FloatFieldUpdateOperationsInput | number
+  contentBase64?: Prisma.StringFieldUpdateOperationsInput | string
+  analysisJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  proposalJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type DocumentIntakeUncheckedUpdateManyWithoutEntityInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
   journeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -881,6 +1090,7 @@ export type DocumentIntakeUncheckedUpdateManyWithoutProfileInput = {
 export type DocumentIntakeCreateManyJourneyInput = {
   id?: string
   profileId: string
+  entityId?: string | null
   status?: string
   fileName: string
   mimeType: string
@@ -910,11 +1120,13 @@ export type DocumentIntakeUpdateWithoutJourneyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutDocumentIntakesNestedInput
+  entity?: Prisma.CanonicalEntityUpdateOneWithoutDocumentIntakesNestedInput
 }
 
 export type DocumentIntakeUncheckedUpdateWithoutJourneyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  entityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -932,6 +1144,7 @@ export type DocumentIntakeUncheckedUpdateWithoutJourneyInput = {
 export type DocumentIntakeUncheckedUpdateManyWithoutJourneyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  entityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -952,6 +1165,7 @@ export type DocumentIntakeSelect<ExtArgs extends runtime.Types.Extensions.Intern
   id?: boolean
   profileId?: boolean
   journeyId?: boolean
+  entityId?: boolean
   status?: boolean
   fileName?: boolean
   mimeType?: boolean
@@ -966,12 +1180,14 @@ export type DocumentIntakeSelect<ExtArgs extends runtime.Types.Extensions.Intern
   updatedAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   journey?: boolean | Prisma.DocumentIntake$journeyArgs<ExtArgs>
+  entity?: boolean | Prisma.DocumentIntake$entityArgs<ExtArgs>
 }, ExtArgs["result"]["documentIntake"]>
 
 export type DocumentIntakeSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   profileId?: boolean
   journeyId?: boolean
+  entityId?: boolean
   status?: boolean
   fileName?: boolean
   mimeType?: boolean
@@ -986,12 +1202,14 @@ export type DocumentIntakeSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   updatedAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   journey?: boolean | Prisma.DocumentIntake$journeyArgs<ExtArgs>
+  entity?: boolean | Prisma.DocumentIntake$entityArgs<ExtArgs>
 }, ExtArgs["result"]["documentIntake"]>
 
 export type DocumentIntakeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   profileId?: boolean
   journeyId?: boolean
+  entityId?: boolean
   status?: boolean
   fileName?: boolean
   mimeType?: boolean
@@ -1006,12 +1224,14 @@ export type DocumentIntakeSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   updatedAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   journey?: boolean | Prisma.DocumentIntake$journeyArgs<ExtArgs>
+  entity?: boolean | Prisma.DocumentIntake$entityArgs<ExtArgs>
 }, ExtArgs["result"]["documentIntake"]>
 
 export type DocumentIntakeSelectScalar = {
   id?: boolean
   profileId?: boolean
   journeyId?: boolean
+  entityId?: boolean
   status?: boolean
   fileName?: boolean
   mimeType?: boolean
@@ -1026,18 +1246,21 @@ export type DocumentIntakeSelectScalar = {
   updatedAt?: boolean
 }
 
-export type DocumentIntakeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profileId" | "journeyId" | "status" | "fileName" | "mimeType" | "size" | "source" | "documentType" | "confidence" | "contentBase64" | "analysisJson" | "proposalJson" | "createdAt" | "updatedAt", ExtArgs["result"]["documentIntake"]>
+export type DocumentIntakeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profileId" | "journeyId" | "entityId" | "status" | "fileName" | "mimeType" | "size" | "source" | "documentType" | "confidence" | "contentBase64" | "analysisJson" | "proposalJson" | "createdAt" | "updatedAt", ExtArgs["result"]["documentIntake"]>
 export type DocumentIntakeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   journey?: boolean | Prisma.DocumentIntake$journeyArgs<ExtArgs>
+  entity?: boolean | Prisma.DocumentIntake$entityArgs<ExtArgs>
 }
 export type DocumentIntakeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   journey?: boolean | Prisma.DocumentIntake$journeyArgs<ExtArgs>
+  entity?: boolean | Prisma.DocumentIntake$entityArgs<ExtArgs>
 }
 export type DocumentIntakeIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   journey?: boolean | Prisma.DocumentIntake$journeyArgs<ExtArgs>
+  entity?: boolean | Prisma.DocumentIntake$entityArgs<ExtArgs>
 }
 
 export type $DocumentIntakePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1045,11 +1268,13 @@ export type $DocumentIntakePayload<ExtArgs extends runtime.Types.Extensions.Inte
   objects: {
     profile: Prisma.$UserProfilePayload<ExtArgs>
     journey: Prisma.$JourneyInstancePayload<ExtArgs> | null
+    entity: Prisma.$CanonicalEntityPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     profileId: string
     journeyId: string | null
+    entityId: string | null
     status: string
     fileName: string
     mimeType: string
@@ -1458,6 +1683,7 @@ export interface Prisma__DocumentIntakeClient<T, Null = never, ExtArgs extends r
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profile<T extends Prisma.UserProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   journey<T extends Prisma.DocumentIntake$journeyArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentIntake$journeyArgs<ExtArgs>>): Prisma.Prisma__JourneyInstanceClient<runtime.Types.Result.GetResult<Prisma.$JourneyInstancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  entity<T extends Prisma.DocumentIntake$entityArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentIntake$entityArgs<ExtArgs>>): Prisma.Prisma__CanonicalEntityClient<runtime.Types.Result.GetResult<Prisma.$CanonicalEntityPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1490,6 +1716,7 @@ export interface DocumentIntakeFieldRefs {
   readonly id: Prisma.FieldRef<"DocumentIntake", 'String'>
   readonly profileId: Prisma.FieldRef<"DocumentIntake", 'String'>
   readonly journeyId: Prisma.FieldRef<"DocumentIntake", 'String'>
+  readonly entityId: Prisma.FieldRef<"DocumentIntake", 'String'>
   readonly status: Prisma.FieldRef<"DocumentIntake", 'String'>
   readonly fileName: Prisma.FieldRef<"DocumentIntake", 'String'>
   readonly mimeType: Prisma.FieldRef<"DocumentIntake", 'String'>
@@ -1919,6 +2146,25 @@ export type DocumentIntake$journeyArgs<ExtArgs extends runtime.Types.Extensions.
    */
   include?: Prisma.JourneyInstanceInclude<ExtArgs> | null
   where?: Prisma.JourneyInstanceWhereInput
+}
+
+/**
+ * DocumentIntake.entity
+ */
+export type DocumentIntake$entityArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CanonicalEntity
+   */
+  select?: Prisma.CanonicalEntitySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CanonicalEntity
+   */
+  omit?: Prisma.CanonicalEntityOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CanonicalEntityInclude<ExtArgs> | null
+  where?: Prisma.CanonicalEntityWhereInput
 }
 
 /**

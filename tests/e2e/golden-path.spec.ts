@@ -79,7 +79,7 @@ async function login(page: Page, options: { mockIntake?: boolean } = {}) {
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Open the guided demo" }).click();
-  await expect(page.getByRole("heading", { name: /Continue where you left off|What do you need help with\?|Everything is up to date/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Continue where you left off|What do you need help with\?|Everything is up to date|Your records are saved/ })).toBeVisible();
 }
 
 async function expectCentredInClosest(page: Page, childSelector: string, ancestorSelector: string) {
@@ -101,12 +101,12 @@ test("one request becomes one child with several saved services", async ({ page 
   await page.getByLabel("Tell us what happened").fill("I had a baby and need insurance for her");
   await page.getByRole("button", { name: "Show my steps" }).click();
   await expect(page.getByRole("heading", { name: "Add your daughter and organise her first services." })).toBeVisible();
-  await page.getByRole("button", { name: "Review what will be added" }).click();
+  await page.getByRole("button", { name: "Review proposed changes" }).click();
   await expect(page.getByText("Enter this detail to continue.")).toHaveCount(2);
   await expect(page.getByLabel("What is your baby's name?")).toBeFocused();
   await page.getByLabel("What is your baby's name?").fill("Mira");
   await page.getByLabel("When was she born?").fill("2026-08-20");
-  await page.getByRole("button", { name: "Review what will be added" }).click();
+  await page.getByRole("button", { name: "Review proposed changes" }).click();
   const approvalHeading = page.getByRole("heading", { name: "Add Mira and organise 2 services" });
   await expect(approvalHeading).toBeVisible();
   await expect(approvalHeading).toBeFocused();
@@ -129,7 +129,7 @@ test("one request becomes one child with several saved services", async ({ page 
     const bounds = heading.closest(".life-request-panel")?.getBoundingClientRect();
     return Boolean(bounds && bounds.top >= 0 && bounds.top < window.innerHeight / 2);
   })).toBe(true);
-  await page.getByRole("button", { name: "Review what will be added" }).click();
+  await page.getByRole("button", { name: "Review proposed changes" }).click();
   await expect(approvalHeading).toBeFocused();
   const proposalA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(proposalA11y.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
@@ -141,7 +141,7 @@ test("one request becomes one child with several saved services", async ({ page 
   await expect(page.getByRole("heading", { name: "Health & Insurance" })).toBeVisible();
   await page.locator("main").getByRole("link", { name: "My life" }).click();
   await expect(page.locator(".life-card").getByRole("heading", { name: "Mira", exact: true })).toHaveCount(1);
-  await expect(page.locator(".life-card").getByText("2 services saved here")).toBeVisible();
+  await expect(page.locator(".life-card").getByText("2 guided services", { exact: true })).toBeVisible();
 });
 
 test("a broader record is saved without fabricated service steps", async ({ page }) => {

@@ -19,12 +19,14 @@ export async function POST(request: Request) {
   }
   try {
     const result = await applyLifeRequest(sessionId, prepareLifeRequest(output.data, requestId), answers.data, journeyRepository);
+    const archivedEntityIds = new Set(result.archivedEntityIds);
     const subjectEntityIds = output.data.subjects
       .map((subject) => result.subjectEntityIds[subject.ref])
-      .filter((id): id is string => Boolean(id));
+      .filter((id): id is string => Boolean(id) && !archivedEntityIds.has(id!));
     return NextResponse.json({
       subjectEntityId: subjectEntityIds[0] ?? null,
       subjectEntityIds,
+      archivedEntityIds: result.archivedEntityIds,
       journeyIds: result.journeys.map((journey) => journey.id),
     });
   } catch (error) {

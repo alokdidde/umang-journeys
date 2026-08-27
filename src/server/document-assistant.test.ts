@@ -280,4 +280,30 @@ describe("document assistant", () => {
     expect(saved?.facts).toMatchObject(expectedFacts);
     expect(saved?.evidence).toContainEqual(expect.objectContaining({ type: evidenceType }));
   });
+
+  it("attaches a document directly to a saved record that has no guided service", async () => {
+    const journeys = new MemoryJourneyRepository(approvedTestAgencyAgent);
+    const documents = new MemoryDocumentIntakeRepository();
+    const service = new DocumentAssistantService(journeys, documents);
+    const ids = await journeys.syncEntityGraph("session-farm-document", [{
+      ref: "farm",
+      type: "residence",
+      entityKind: "property",
+      displayName: "Inherited farm",
+      facts: { "property.surveyNumber": "118/2", "intake.recordVisibility": "standalone" },
+    }], []);
+    const intake = await service.propose("session-farm-document", {
+      fileName: "farm-deed.pdf",
+      mimeType: "application/pdf",
+      bytes: new Uint8Array(Buffer.from("%PDF synthetic farm deed")),
+      source: "user_upload",
+      analysis: { kind: "unknown", confidence: 0.7, fields: { documentType: "Registered deed" } },
+    });
+
+    expect(intake.proposal.targetOptions).toContainEqual(expect.objectContaining({ id: ids.farm, label: "Inherited farm", targetType: "entity" }));
+    const result = await service.apply("session-farm-document", intake.id, true, { targetEntityId: ids.farm });
+
+    expect(result).toMatchObject({ status: "applied", journeyId: null, entityId: ids.farm });
+    expect(await documents.get("session-farm-document", intake.id)).toMatchObject({ appliedEntityId: ids.farm });
+  });
 });

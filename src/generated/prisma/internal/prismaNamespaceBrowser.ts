@@ -197,6 +197,7 @@ export const DocumentIntakeScalarFieldEnum = {
   id: 'id',
   profileId: 'profileId',
   journeyId: 'journeyId',
+  entityId: 'entityId',
   status: 'status',
   fileName: 'fileName',
   mimeType: 'mimeType',

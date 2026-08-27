@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, ClipboardList, FileSearch, FileText, Link2, LoaderCircle, Paperclip, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Archive, ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, ClipboardList, FileSearch, FileText, Link2, LoaderCircle, MinusCircle, Paperclip, Plus, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-react";
 import {
   Attachment,
   AttachmentInfo,
@@ -28,7 +28,7 @@ import {
 import type { DocumentDeskRecord } from "@/domain/document-desk-reducer";
 import type { IntakeExperience } from "@/domain/intake-experience";
 import type { LifeRequestPlan } from "@/domain/life-request";
-import { approvalHeading, lifeRequestDestination, presentLifeRequest } from "@/domain/life-request-presentation";
+import { approvalHeading, lifeRequestActionLabel, lifeRequestDestination, presentLifeRequest } from "@/domain/life-request-presentation";
 import { initialLifeRequestState, lifeRequestReducer } from "@/domain/life-request-reducer";
 import { Confirmation, ConfirmationAction, ConfirmationActions, ConfirmationRequest, ConfirmationTitle } from "@/components/ai-elements/confirmation";
 import { LifeEntityIcon } from "@/components/life-entity-icon";
@@ -141,11 +141,12 @@ export function JourneyStarterComposer({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ plan: requestState.plan, answers: requestState.answers }),
       });
-      const body = await response.json() as { subjectEntityId?: string | null; subjectEntityIds?: string[]; journeyIds?: string[]; message?: string };
+      const body = await response.json() as { subjectEntityId?: string | null; subjectEntityIds?: string[]; archivedEntityIds?: string[]; journeyIds?: string[]; message?: string };
       if (!response.ok) throw new Error(body.message ?? "The update could not be added.");
       if (body.subjectEntityIds?.length) router.push(lifeRequestDestination(body.subjectEntityIds));
       else if (body.subjectEntityId) router.push(`/life/${encodeURIComponent(body.subjectEntityId)}`);
       else if (body.journeyIds?.[0]) router.push(`/journeys/${encodeURIComponent(body.journeyIds[0])}`);
+      else if (body.archivedEntityIds?.length) router.push("/journeys");
       else throw new Error("The update was saved, but there is nothing to open.");
     } catch (caught) {
       dispatchRequest({ type: "fail", message: caught instanceof Error ? caught.message : "The update could not be added." });
@@ -263,7 +264,7 @@ function LifeRequestDetails({ plan, answers, answer, review }: { plan: LifeReque
   return <section className="life-request-panel" aria-labelledby="life-request-details-title">
     <header className="life-request-heading"><span><Sparkles /></span><div><p>Check what we understood</p><h2 id="life-request-details-title" tabIndex={-1}>{plan.summary}</h2><span>Each detail stays with the person or thing shown below.</span></div></header>
     <LifeRequestMap plan={plan} answers={answers} answer={answer} mode="collect" invalidQuestionIds={showErrors ? missingQuestionIds : new Set()} />
-    <footer><span><ShieldCheck />Nothing has been added yet.</span><button type="button" className="life-search-submit" onClick={reviewDetails}>Review what will be added<ArrowRight /></button></footer>
+    <footer><span><ShieldCheck />Nothing has changed yet.</span><button type="button" className="life-search-submit" onClick={reviewDetails}>Review proposed changes<ArrowRight /></button></footer>
   </section>;
 }
 
@@ -283,15 +284,19 @@ function LifeRequestMap({ plan, answers = {}, answer, mode = "summary", invalidQ
         const person = association.fromSubjectRef === "account_holder" ? "You" : subjectNameByRef.get(association.fromSubjectRef) ?? "Another person";
         return [{ id: association.id, label: `${person} · ${association.role}`, detail: [association.ownershipShare === undefined ? null : `${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(association.ownershipShare)}% share`, association.canAct === undefined ? null : association.canAct ? "Can act" : "No signing authority"].filter(Boolean).join(" · ") }];
       }
-      if (association.fromSubjectRef === subject.ref) {
-        const target = subjectNameByRef.get(association.toSubjectRef) ?? "this record";
-        return [{ id: association.id, label: `${association.role} of ${target}`, detail: [association.ownershipShare === undefined ? null : `${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(association.ownershipShare)}% share`, association.canAct === undefined ? null : association.canAct ? "Can act" : "No signing authority"].filter(Boolean).join(" · ") }];
-      }
       return [];
     });
-    return <article className="life-request-subject" key={subject.ref}>
+    const subjectOperation = subject.operation ?? "create";
+    const operationCopy = subjectOperation === "archive"
+      ? { label: "Remove this record", detail: "It will leave My life and its guided services will be archived.", Icon: Archive }
+      : subjectOperation === "update"
+        ? { label: "Update saved record", detail: "New details and services will stay with the record already in My life.", Icon: RefreshCw }
+        : subjectOperation === "keep"
+          ? { label: "Keep saved record", detail: "The record stays as it is while the connection below changes.", Icon: CheckCircle2 }
+          : { label: "Add new record", detail: "This person or thing is not currently in My life.", Icon: Plus };
+    return <article className={`life-request-subject operation-${subjectOperation}`} key={subject.ref}>
       <div className="life-request-person"><span><LifeEntityIcon kind={subject.entityKind} /></span><div><small>{subjectTypeLabel(subject)}</small><strong>{subject.displayName}</strong></div></div>
-      <div className="life-request-needs">{plan.needs.filter((need) => need.subjectRef === subject.ref).map((need) => <div key={need.id}><ClipboardList aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description}</small></span></div>)}{(plan.unavailableNeeds ?? []).filter((need) => need.subjectRef === subject.ref).map((need) => <div className="life-request-unavailable" key={need.id}><CircleAlert aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description} UMANG Life will save this record, but will not create service steps.</small></span></div>)}{associations.map((association) => <div className="life-request-association" key={association.id}><Link2 aria-hidden="true" /><span><strong>{association.label}</strong>{association.detail ? <small>{association.detail}</small> : null}</span></div>)}</div>
+      <div className="life-request-needs"><div className={`life-request-operation-row ${subjectOperation}`}><operationCopy.Icon aria-hidden="true" /><span><strong>{operationCopy.label}</strong><small>{operationCopy.detail}</small></span></div>{plan.needs.filter((need) => need.subjectRef === subject.ref).map((need) => <div key={need.id}><ClipboardList aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description}</small></span></div>)}{(plan.unavailableNeeds ?? []).filter((need) => need.subjectRef === subject.ref).map((need) => <div className="life-request-unavailable" key={need.id}><CircleAlert aria-hidden="true" /><span><strong>{need.label}</strong><small>{need.description} UMANG Life will save this record, but will not create service steps.</small></span></div>)}{associations.map((association) => <div className={`life-request-association ${plan.associations.find((candidate) => candidate.id === association.id)?.operation === "disconnect" ? "disconnect" : ""}`} key={association.id}>{plan.associations.find((candidate) => candidate.id === association.id)?.operation === "disconnect" ? <MinusCircle aria-hidden="true" /> : <Link2 aria-hidden="true" />}<span><strong>{plan.associations.find((candidate) => candidate.id === association.id)?.operation === "disconnect" ? `Remove: ${association.label}` : association.label}</strong>{association.detail ? <small>{association.detail}</small> : null}</span></div>)}</div>
       {mode === "collect" && questions.length ? <fieldset className="life-request-subject-fields"><legend>Details for {subject.displayName}</legend>{questions.map((question) => {
         const fieldId = `life-request-${question.id}`;
         const errorId = `${fieldId}-error`;
@@ -307,10 +312,10 @@ function LifeRequestProposal({ plan, answers, edit, apply }: { plan: LifeRequest
   const multipleSubjects = plan.subjects.length > 1;
   return <Confirmation className="life-request-panel life-request-confirmation" approval={{ id: plan.requestId }} state="approval-requested">
     <ConfirmationRequest>
-      <header className="life-request-heading"><span><Sparkles /></span><div><p>Ready to add to My life</p><h2 id="life-request-proposal-title" tabIndex={-1}>{approvalHeading(plan, answers)}</h2><span>{multipleSubjects ? `Each service will be saved with the person or thing it concerns. ` : ""}Check the details below before you continue.</span></div></header>
+      <header className="life-request-heading"><span><Sparkles /></span><div><p>Ready to update My life</p><h2 id="life-request-proposal-title" tabIndex={-1}>{approvalHeading(plan, answers)}</h2><span>{multipleSubjects ? `Each change will stay with the person or thing it concerns. ` : ""}Check exactly what will be added, changed, or removed.</span></div></header>
       <LifeRequestMap plan={plan} answers={answers} mode="review" />
       <ConfirmationTitle><ShieldCheck />I’ll save only what is shown above. No department will be contacted.</ConfirmationTitle>
-      <ConfirmationActions><ConfirmationAction variant="outline" onClick={edit}><ArrowLeft />Change details</ConfirmationAction><ConfirmationAction onClick={() => void apply()}>{multipleSubjects ? "Add these to My life" : "Add to My life"}<ArrowRight /></ConfirmationAction></ConfirmationActions>
+      <ConfirmationActions><ConfirmationAction variant="outline" onClick={edit}><ArrowLeft />Change details</ConfirmationAction><ConfirmationAction className={plan.subjects.some((subject) => subject.operation === "archive") ? "destructive-confirmation" : ""} onClick={() => void apply()}>{lifeRequestActionLabel(plan)}<ArrowRight /></ConfirmationAction></ConfirmationActions>
     </ConfirmationRequest>
   </Confirmation>;
 }

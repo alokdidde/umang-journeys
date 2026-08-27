@@ -7,7 +7,7 @@ describe("life request interaction", () => {
     const details = lifeRequestReducer(analysing, { type: "planned", plan: {
       supported: true, resolver: "ai_gateway", requestId: "request-1", summary: "One child, two needs.",
       associations: [], unavailableNeeds: [],
-      subjects: [{ ref: "baby", type: "child", entityKind: "person", displayName: "Your baby", facts: [] }],
+      subjects: [{ ref: "baby", type: "child", entityKind: "person", displayName: "Your baby", operation: "create", facts: [] }],
       needs: [{ id: "cover", subjectRef: "baby", lifeEvent: "managing_health_cover", templateId: "health-insurance.india.v1", label: "Arrange health cover", description: "Review cover.", confidence: 1, facts: [] }],
       questions: [{ id: "name", subjectRef: "baby", factKey: "child.name", label: "Baby's name", input: "text", required: true }],
     } });

@@ -34,9 +34,23 @@ export function approvalHeading(plan: LifeRequestPlan, answers: Record<string, s
   const subjectNames = names.length <= 3
     ? new Intl.ListFormat("en-IN", { style: "long", type: "conjunction" }).format(names)
     : `${names.slice(0, 2).join(", ")} and ${names.length - 2} others`;
+  const operations = new Set(plan.subjects.map((subject) => subject.operation ?? "create"));
+  if (plan.subjects.length > 1 && (operations.size > 1 || !operations.has("create"))) return `Review changes to ${subjectNames}`;
+  const operation = plan.subjects[0]?.operation ?? "create";
+  if (operation === "archive") return `Remove ${subjectNames} from My life`;
+  if (operation === "update" || operation === "keep") return plan.needs.length
+    ? `Update ${subjectNames} and organise ${plan.needs.length} ${plan.needs.length === 1 ? "service" : "services"}`
+    : `Update ${subjectNames}`;
   return plan.subjects.length === 1
     ? plan.needs.length ? `Add ${subjectNames} and organise ${plan.needs.length} ${plan.needs.length === 1 ? "service" : "services"}` : `Add ${subjectNames} to My life`
     : `Add ${subjectNames}`;
+}
+
+export function lifeRequestActionLabel(plan: LifeRequestPlan) {
+  const operations = new Set(plan.subjects.map((subject) => subject.operation ?? "create"));
+  if (operations.has("archive")) return operations.size === 1 ? "Remove from My life" : "Apply these changes";
+  if (operations.size === 1 && operations.has("create")) return plan.subjects.length > 1 ? "Add these to My life" : "Add to My life";
+  return "Update My life";
 }
 
 export function lifeRequestDestination(subjectEntityIds: string[]) {

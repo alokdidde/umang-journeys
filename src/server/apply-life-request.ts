@@ -47,15 +47,15 @@ export async function applyLifeRequest(sessionId: string, plan: LifeRequestPlan,
   if (missing.length) throw Object.assign(new Error("Complete the required details before adding this to My life."), { code: "MISSING_REQUIRED_ANSWERS", fields: missing.map((question) => question.id) });
 
   const graphSeeds = plan.subjects.map((subject) => {
-    const subjectNeed = plan.needs.find((need) => need.subjectRef === subject.ref);
-    const facts = subjectNeed ? factsForNeed(plan, subject, subjectNeed, answers) : {
+    const subjectNeeds = plan.needs.filter((need) => need.subjectRef === subject.ref);
+    const facts = subjectNeeds.length ? Object.assign({}, ...subjectNeeds.map((need) => factsForNeed(plan, subject, need, answers))) : {
       ...factsFrom(subject.facts),
       ...Object.fromEntries(plan.questions
         .filter((question) => question.subjectRef === subject.ref && answers[question.id]?.trim())
         .map((question) => [question.factKey, answers[question.id].trim()])),
     };
     const unavailableNeeds = plan.unavailableNeeds.filter((need) => need.subjectRef === subject.ref).map(({ label, description, reason }) => ({ label, description, reason }));
-    return { ref: subject.ref, type: subject.type, entityKind: subject.entityKind, displayName: displayNameFor(subject, facts), facts: { ...facts, ...(unavailableNeeds.length ? { "intake.unavailableNeeds": JSON.stringify(unavailableNeeds), "intake.recordVisibility": "standalone" } : {}) }, isAccountHolder: subject.isAccountHolder };
+    return { ref: subject.ref, type: subject.type, entityKind: subject.entityKind, displayName: displayNameFor(subject, facts), facts: { ...facts, ...(unavailableNeeds.length ? { "intake.unavailableNeeds": JSON.stringify(unavailableNeeds), "intake.recordVisibility": "standalone" } : {}) }, isAccountHolder: subject.isAccountHolder, canonicalEntityId: subject.existingEntityId };
   });
   const resolvedIds = await repository.syncEntityGraph(sessionId, graphSeeds, plan.associations);
   const existing = await repository.list(sessionId);
@@ -72,6 +72,14 @@ export async function applyLifeRequest(sessionId: string, plan: LifeRequestPlan,
     const subject = plan.subjects.find((candidate) => candidate.ref === need.subjectRef);
     if (!subject) throw Object.assign(new Error("The request contains an unknown person or thing."), { code: "INVALID_SUBJECT_REFERENCE" });
     const facts = factsForNeed(plan, subject, need, answers);
+    const existingService = existing.find((journey) => journey.subject.canonicalEntityId === entityIds.get(subject.ref) && journey.projection.templateId === need.templateId);
+    if (existingService) {
+      const updated = await repository.updateFacts(sessionId, existingService.id, facts, { source: "user_statement", sourceRef: plan.requestId });
+      if (updated) {
+        journeys.push(updated);
+        continue;
+      }
+    }
     const seed: JourneySubjectSeed = {
       type: subject.type,
       entityKind: subject.entityKind,
@@ -87,8 +95,21 @@ export async function applyLifeRequest(sessionId: string, plan: LifeRequestPlan,
   const graphIds = await repository.syncEntityGraph(sessionId, graphSeeds.map((seed) => ({ ...seed, canonicalEntityId: entityIds.get(seed.ref) })), plan.associations);
 
   for (const [ref, entityId] of Object.entries(graphIds)) entityIds.set(ref, entityId);
+  for (const subject of plan.subjects.filter((candidate) => candidate.operation === "archive")) {
+    const entityId = entityIds.get(subject.ref);
+    if (!entityId || !await repository.archiveEntity(sessionId, entityId, factsFrom(subject.facts)["record.archiveReason"])) {
+      throw Object.assign(new Error(`The record for ${subject.displayName} could not be archived.`), { code: "ENTITY_ARCHIVE_FAILED" });
+    }
+  }
   const refreshed = await repository.list(sessionId);
   const refreshedById = new Map(refreshed.map((journey) => [journey.id, journey]));
 
-  return { journeys: journeys.map((journey) => refreshedById.get(journey.id) ?? journey), subjectEntityIds: Object.fromEntries(entityIds) };
+  return {
+    journeys: journeys.flatMap((journey) => {
+      const refreshedJourney = refreshedById.get(journey.id);
+      return refreshedJourney ? [refreshedJourney] : [];
+    }),
+    subjectEntityIds: Object.fromEntries(entityIds),
+    archivedEntityIds: plan.subjects.filter((subject) => subject.operation === "archive").flatMap((subject) => entityIds.get(subject.ref) ?? []),
+  };
 }

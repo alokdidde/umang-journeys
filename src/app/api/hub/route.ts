@@ -8,12 +8,14 @@ import { journeyRepository } from "@/server/repositories/journey-repository";
 export async function GET() {
   const sessionId = await getDemoSession();
   if (!sessionId) return NextResponse.json({ code: "UNAUTHENTICATED", message: "Sign in to continue." }, { status: 401 });
-  const [journeys, documents] = await Promise.all([
+  const [journeys, documents, entities] = await Promise.all([
     journeyRepository.list(sessionId),
     documentIntakeRepository.list(sessionId),
+    journeyRepository.listEntityRecords(sessionId),
   ]);
   return NextResponse.json(buildCitizenHubSnapshot({
     journeys: journeys.map((journey) => ({ ...journey, title: buildJourneySummary(journey).title })),
     documents,
+    entities: entities.map((entity) => ({ id: entity.id, displayName: entity.displayName })),
   }));
 }

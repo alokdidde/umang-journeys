@@ -7,9 +7,9 @@ const plan: LifeRequestPlan = {
   resolver: "ai_gateway",
   requestId: "request-review",
   summary: "Help your father prepare for retirement and review his health cover.",
-  associations: [{ id: "family-father", fromSubjectRef: "account_holder", toSubjectRef: "father", kind: "family", role: "father" }],
+  associations: [{ id: "family-father", fromSubjectRef: "account_holder", toSubjectRef: "father", kind: "family", role: "father", operation: "connect" }],
   unavailableNeeds: [],
-  subjects: [{ ref: "father", type: "person", entityKind: "person", displayName: "Your father", relationship: "father", facts: [] }],
+  subjects: [{ ref: "father", type: "person", entityKind: "person", displayName: "Your father", relationship: "father", operation: "create", facts: [] }],
   needs: [
     { id: "retirement", subjectRef: "father", lifeEvent: "retirement", templateId: "retirement.india.v1", label: "Prepare for retirement", description: "Organise pension and retirement records.", confidence: 1, facts: [] },
     { id: "cover", subjectRef: "father", lifeEvent: "managing_health_cover", templateId: "health-insurance.india.v1", label: "Review health cover", description: "Check the cover he should maintain.", confidence: 1, facts: [] },
@@ -35,6 +35,11 @@ describe("life request presentation", () => {
 
   it("uses concrete names in the approval heading", () => {
     expect(approvalHeading(plan, { name: "Ramesh" })).toBe("Add Ramesh and organise 2 services");
+  });
+
+  it("names updates and removals instead of presenting every request as an addition", () => {
+    expect(approvalHeading({ ...plan, subjects: [{ ...plan.subjects[0]!, operation: "update", existingEntityId: "entity-father" }] }, { name: "Ramesh" })).toBe("Update Ramesh and organise 2 services");
+    expect(approvalHeading({ ...plan, subjects: [{ ...plan.subjects[0]!, operation: "archive", existingEntityId: "entity-father" }], needs: [] }, { name: "Ramesh" })).toBe("Remove Ramesh from My life");
   });
 
   it("opens one subject directly and gives several subjects a complete receipt", () => {

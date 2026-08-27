@@ -35,6 +35,7 @@ const entityAssociationSchema = z.object({
   role: z.string().min(1).max(60),
   ownershipShare: z.number().min(0).max(100).optional(),
   canAct: z.boolean().optional(),
+  operation: z.enum(["connect", "disconnect"]).optional(),
 });
 
 export type EntityAssociation = z.infer<typeof entityAssociationSchema>;
@@ -47,6 +48,8 @@ const supportedLifeRequestSchema = z.object({
     type: z.enum(["child", "person", "vehicle", "residence", "business"]),
     entityKind: entityKindSchema.optional(),
     displayName: z.string().min(1).max(80),
+    existingEntityId: z.string().min(1).max(128).optional(),
+    operation: z.enum(["create", "update", "keep", "archive"]).optional(),
     isAccountHolder: z.boolean().optional(),
     relationship: z.string().max(40).optional(),
     householdMember: z.boolean().optional(),
@@ -81,7 +84,9 @@ const supportedLifeRequestSchema = z.object({
 }).superRefine((plan, context) => {
   const subjectRefs = new Set(plan.subjects.map((subject) => subject.ref));
   const associationRefs = new Set(["account_holder", ...subjectRefs]);
-  if (plan.needs.length + plan.unavailableNeeds.length === 0) context.addIssue({ code: "custom", path: ["needs"], message: "A supported request needs at least one guided or unavailable service need." });
+  const hasLifecycleChange = plan.subjects.some((subject) => subject.operation && subject.operation !== "create" && subject.operation !== "keep")
+    || plan.associations.length > 0;
+  if (plan.needs.length + plan.unavailableNeeds.length === 0 && !hasLifecycleChange) context.addIssue({ code: "custom", path: ["needs"], message: "A supported request needs at least one service need or record change." });
   if (plan.subjects.filter((subject) => subject.isAccountHolder).length > 1) context.addIssue({ code: "custom", path: ["subjects"], message: "Only one subject can be the account holder." });
   for (const need of plan.needs) {
     if (!subjectRefs.has(need.subjectRef)) context.addIssue({ code: "custom", path: ["needs"], message: `Unknown subject reference: ${need.subjectRef}` });
@@ -98,6 +103,26 @@ const supportedLifeRequestSchema = z.object({
     if (!associationRefs.has(association.toSubjectRef)) context.addIssue({ code: "custom", path: ["associations"], message: `Unknown association reference: ${association.toSubjectRef}` });
     if (association.fromSubjectRef === association.toSubjectRef) context.addIssue({ code: "custom", path: ["associations"], message: "An association must connect two different people or things." });
     if (association.ownershipShare !== undefined && !["owner", "partner", "shareholder"].includes(association.kind)) context.addIssue({ code: "custom", path: ["associations"], message: "Ownership share is only valid for an owner, partner, or shareholder." });
+    if (association.operation === "disconnect" && (association.ownershipShare !== undefined || association.canAct !== undefined)) context.addIssue({ code: "custom", path: ["associations"], message: "A disconnected relationship cannot set ownership or authority." });
+  }
+  const associationKeys = new Set<string>();
+  for (const association of plan.associations) {
+    const key = [association.fromSubjectRef, association.toSubjectRef, association.kind, association.role.trim().toLocaleLowerCase("en-IN")].join(":");
+    if (associationKeys.has(key)) context.addIssue({ code: "custom", path: ["associations"], message: "The same relationship cannot be changed twice in one request." });
+    associationKeys.add(key);
+  }
+  for (const subject of plan.subjects) {
+    const operation = subject.operation ?? "create";
+    if (operation === "create" && subject.existingEntityId) context.addIssue({ code: "custom", path: ["subjects"], message: "A new record cannot point at an existing record." });
+    if (operation !== "create" && !subject.existingEntityId) context.addIssue({ code: "custom", path: ["subjects"], message: `The ${operation} operation requires an existing record.` });
+  }
+  const ownershipTotals = new Map<string, number>();
+  for (const association of plan.associations) {
+    if ((association.operation ?? "connect") !== "connect" || association.ownershipShare === undefined || !["owner", "partner", "shareholder"].includes(association.kind)) continue;
+    ownershipTotals.set(association.toSubjectRef, (ownershipTotals.get(association.toSubjectRef) ?? 0) + association.ownershipShare);
+  }
+  for (const [subjectRef, total] of ownershipTotals) {
+    if (total > 100) context.addIssue({ code: "custom", path: ["associations"], message: `Ownership for ${subjectRef} adds up to more than 100%.` });
   }
 });
 
@@ -165,8 +190,8 @@ export function prepareLifeRequest(input: z.input<typeof lifeRequestOutputSchema
     ...output,
     requestId,
     resolver: "ai_gateway" as const,
-    subjects: output.subjects.map((subject) => ({ ...subject, entityKind: subject.entityKind ?? entityKindFromLegacySubject(subject.type) })),
-    associations: [...associations, ...inferredAssociations, ...inferredHouseholdAssociations] as EntityAssociation[],
+    subjects: output.subjects.map((subject) => ({ ...subject, operation: subject.operation ?? "create" as const, entityKind: subject.entityKind ?? entityKindFromLegacySubject(subject.type) })),
+    associations: [...associations, ...inferredAssociations, ...inferredHouseholdAssociations].map((association) => ({ ...association, operation: association.operation ?? "connect" as const })) as EntityAssociation[],
     needs: output.needs.map((need) => ({ ...need, templateId: templateIdByLifeEvent[need.lifeEvent] })),
     questions: output.questions.map((question) => ({
       ...question,

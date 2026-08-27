@@ -192,4 +192,89 @@ describe("applying a life request", () => {
     expect(new Set(result.journeys.map((journey) => journey.subject.canonicalEntityId))).toHaveLength(1);
     expect(result.journeys.every((journey) => journey.subject.role === "account_holder")).toBe(true);
   });
+
+  it("updates an existing record and reuses its guided service instead of creating a duplicate", async () => {
+    const repository = new MemoryJourneyRepository();
+    const first = await applyLifeRequest("session-existing", prepareLifeRequest({
+      supported: true, summary: "Add Aarohi's health cover.",
+      subjects: [{ ref: "child", type: "child", displayName: "Aarohi", relationship: "daughter", facts: [{ key: "child.name", value: "Aarohi", confidence: 1 }] }],
+      needs: [{ id: "cover", subjectRef: "child", lifeEvent: "managing_health_cover", label: "Health cover", description: "Prepare cover.", confidence: 1, facts: [] }], questions: [],
+    }, "request-first-cover"), {}, repository);
+    const entityId = first.subjectEntityIds.child;
+
+    const updated = await applyLifeRequest("session-existing", prepareLifeRequest({
+      supported: true, summary: "Renew Aarohi's health cover.",
+      subjects: [{ ref: "child", type: "child", displayName: "Aarohi", relationship: "daughter", existingEntityId: entityId, operation: "update", facts: [{ key: "child.name", value: "Aarohi Sharma", confidence: 1 }] }],
+      needs: [{ id: "renew-cover", subjectRef: "child", lifeEvent: "managing_health_cover", label: "Renew health cover", description: "Review the renewed cover.", confidence: 1, facts: [{ key: "health.policyNumber", value: "POL-2027", confidence: 1 }] }], questions: [],
+    }, "request-renew-cover"), {}, repository);
+
+    expect(updated.journeys[0]?.id).toBe(first.journeys[0]?.id);
+    expect(updated.journeys[0]?.facts["health.policyNumber"]).toBe("POL-2027");
+    expect(await repository.list("session-existing")).toHaveLength(1);
+  });
+
+  it("archives an existing record and its guided services after explicit approval", async () => {
+    const repository = new MemoryJourneyRepository();
+    const added = await applyLifeRequest("session-archive", prepareLifeRequest({
+      supported: true, summary: "Add my car.",
+      subjects: [{ ref: "car", type: "vehicle", displayName: "Hyundai Creta", facts: [{ key: "vehicle.registrationNumber", value: "DL01AB1234", confidence: 1 }] }],
+      needs: [{ id: "purchase", subjectRef: "car", lifeEvent: "buying_a_vehicle", label: "Vehicle records", description: "Prepare the vehicle records.", confidence: 1, facts: [] }], questions: [],
+    }, "request-add-car"), {}, repository);
+
+    await applyLifeRequest("session-archive", prepareLifeRequest({
+      supported: true, summary: "Remove the Creta because it was sold.",
+      subjects: [{ ref: "car", type: "vehicle", displayName: "Hyundai Creta", existingEntityId: added.subjectEntityIds.car, operation: "archive", facts: [{ key: "record.archiveReason", value: "Vehicle sold", confidence: 1 }] }],
+      needs: [], questions: [],
+    }, "request-sell-car"), {}, repository);
+
+    expect(await repository.list("session-archive")).toHaveLength(0);
+  });
+
+  it("disconnects a former co-owner without removing either saved record", async () => {
+    const repository = new MemoryJourneyRepository();
+    const added = await applyLifeRequest("session-disconnect", prepareLifeRequest({
+      supported: true, summary: "Add Sharma Foods and Rohan.",
+      subjects: [
+        { ref: "business", type: "business", displayName: "Sharma Foods", facts: [{ key: "business.name", value: "Sharma Foods", confidence: 1 }] },
+        { ref: "rohan", type: "person", displayName: "Rohan", facts: [{ key: "person.name", value: "Rohan", confidence: 1 }] },
+      ],
+      needs: [{ id: "setup", subjectRef: "business", lifeEvent: "starting_a_business", label: "Business setup", description: "Prepare the business.", confidence: 1, facts: [] }], questions: [],
+      associations: [{ id: "rohan-owner", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "owner", role: "Co-owner", ownershipShare: 50, canAct: true }],
+    }, "request-add-business"), {}, repository);
+
+    const result = await applyLifeRequest("session-disconnect", prepareLifeRequest({
+      supported: true, summary: "Rohan is no longer a co-owner.",
+      subjects: [
+        { ref: "business", type: "business", displayName: "Sharma Foods", existingEntityId: added.subjectEntityIds.business, operation: "update", facts: [] },
+        { ref: "rohan", type: "person", displayName: "Rohan", existingEntityId: added.subjectEntityIds.rohan, operation: "keep", facts: [] },
+      ],
+      needs: [], questions: [],
+      associations: [{ id: "rohan-owner", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "owner", role: "Co-owner", operation: "disconnect" }],
+    }, "request-remove-owner"), {}, repository);
+
+    expect((await repository.list("session-disconnect"))[0]?.subject.context?.connectedPeople ?? []).toEqual([]);
+    expect(result.subjectEntityIds.rohan).toBe(added.subjectEntityIds.rohan);
+  });
+
+  it("rejects an ownership change that would push the saved record above one hundred percent", async () => {
+    const repository = new MemoryJourneyRepository();
+    const added = await applyLifeRequest("session-shares", prepareLifeRequest({
+      supported: true, summary: "Add Sharma Foods.",
+      subjects: [{ ref: "business", type: "business", displayName: "Sharma Foods", facts: [] }],
+      needs: [{ id: "setup", subjectRef: "business", lifeEvent: "starting_a_business", label: "Business setup", description: "Prepare the business.", confidence: 1, facts: [] }], questions: [],
+      associations: [{ id: "self-owner", fromSubjectRef: "account_holder", toSubjectRef: "business", kind: "owner", role: "Owner", ownershipShare: 60, canAct: true }],
+    }, "request-share-base"), {}, repository);
+
+    const invalid = prepareLifeRequest({
+      supported: true, summary: "Add Rohan as a co-owner.",
+      subjects: [
+        { ref: "business", type: "business", displayName: "Sharma Foods", existingEntityId: added.subjectEntityIds.business, operation: "update", facts: [] },
+        { ref: "rohan", type: "person", displayName: "Rohan", facts: [] },
+      ],
+      needs: [], questions: [],
+      associations: [{ id: "rohan-owner", fromSubjectRef: "rohan", toSubjectRef: "business", kind: "owner", role: "Co-owner", ownershipShare: 50, canAct: true }],
+    }, "request-invalid-share");
+
+    await expect(applyLifeRequest("session-shares", invalid, {}, repository)).rejects.toMatchObject({ code: "INVALID_OWNERSHIP_TOTAL" });
+  });
 });

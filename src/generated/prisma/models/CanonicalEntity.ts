@@ -204,6 +204,7 @@ export type CanonicalEntityWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"CanonicalEntity"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   journeyLinks?: Prisma.JourneyEntityLinkListRelationFilter
+  documentIntakes?: Prisma.DocumentIntakeListRelationFilter
   outgoingRelationships?: Prisma.EntityRelationshipListRelationFilter
   incomingRelationships?: Prisma.EntityRelationshipListRelationFilter
 }
@@ -219,6 +220,7 @@ export type CanonicalEntityOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   profile?: Prisma.UserProfileOrderByWithRelationInput
   journeyLinks?: Prisma.JourneyEntityLinkOrderByRelationAggregateInput
+  documentIntakes?: Prisma.DocumentIntakeOrderByRelationAggregateInput
   outgoingRelationships?: Prisma.EntityRelationshipOrderByRelationAggregateInput
   incomingRelationships?: Prisma.EntityRelationshipOrderByRelationAggregateInput
 }
@@ -238,6 +240,7 @@ export type CanonicalEntityWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"CanonicalEntity"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   journeyLinks?: Prisma.JourneyEntityLinkListRelationFilter
+  documentIntakes?: Prisma.DocumentIntakeListRelationFilter
   outgoingRelationships?: Prisma.EntityRelationshipListRelationFilter
   incomingRelationships?: Prisma.EntityRelationshipListRelationFilter
 }, "id" | "profileId_type_externalKey">
@@ -280,6 +283,7 @@ export type CanonicalEntityCreateInput = {
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutEntitiesInput
   journeyLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutEntityInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutEntityInput
   outgoingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutFromInput
   incomingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutToInput
 }
@@ -294,6 +298,7 @@ export type CanonicalEntityUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   journeyLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutEntityInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutEntityInput
   outgoingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutFromInput
   incomingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutToInput
 }
@@ -308,6 +313,7 @@ export type CanonicalEntityUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutEntitiesNestedInput
   journeyLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutEntityNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutEntityNestedInput
   outgoingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutFromNestedInput
   incomingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutToNestedInput
 }
@@ -322,6 +328,7 @@ export type CanonicalEntityUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeyLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutEntityNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutEntityNestedInput
   outgoingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutFromNestedInput
   incomingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutToNestedInput
 }
@@ -408,6 +415,11 @@ export type CanonicalEntityMinOrderByAggregateInput = {
 export type CanonicalEntityScalarRelationFilter = {
   is?: Prisma.CanonicalEntityWhereInput
   isNot?: Prisma.CanonicalEntityWhereInput
+}
+
+export type CanonicalEntityNullableScalarRelationFilter = {
+  is?: Prisma.CanonicalEntityWhereInput | null
+  isNot?: Prisma.CanonicalEntityWhereInput | null
 }
 
 export type CanonicalEntityCreateNestedManyWithoutProfileInput = {
@@ -502,6 +514,22 @@ export type CanonicalEntityUpdateOneRequiredWithoutJourneyLinksNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CanonicalEntityUpdateToOneWithWhereWithoutJourneyLinksInput, Prisma.CanonicalEntityUpdateWithoutJourneyLinksInput>, Prisma.CanonicalEntityUncheckedUpdateWithoutJourneyLinksInput>
 }
 
+export type CanonicalEntityCreateNestedOneWithoutDocumentIntakesInput = {
+  create?: Prisma.XOR<Prisma.CanonicalEntityCreateWithoutDocumentIntakesInput, Prisma.CanonicalEntityUncheckedCreateWithoutDocumentIntakesInput>
+  connectOrCreate?: Prisma.CanonicalEntityCreateOrConnectWithoutDocumentIntakesInput
+  connect?: Prisma.CanonicalEntityWhereUniqueInput
+}
+
+export type CanonicalEntityUpdateOneWithoutDocumentIntakesNestedInput = {
+  create?: Prisma.XOR<Prisma.CanonicalEntityCreateWithoutDocumentIntakesInput, Prisma.CanonicalEntityUncheckedCreateWithoutDocumentIntakesInput>
+  connectOrCreate?: Prisma.CanonicalEntityCreateOrConnectWithoutDocumentIntakesInput
+  upsert?: Prisma.CanonicalEntityUpsertWithoutDocumentIntakesInput
+  disconnect?: Prisma.CanonicalEntityWhereInput | boolean
+  delete?: Prisma.CanonicalEntityWhereInput | boolean
+  connect?: Prisma.CanonicalEntityWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CanonicalEntityUpdateToOneWithWhereWithoutDocumentIntakesInput, Prisma.CanonicalEntityUpdateWithoutDocumentIntakesInput>, Prisma.CanonicalEntityUncheckedUpdateWithoutDocumentIntakesInput>
+}
+
 export type CanonicalEntityCreateWithoutProfileInput = {
   id?: string
   type: $Enums.CanonicalEntityType
@@ -511,6 +539,7 @@ export type CanonicalEntityCreateWithoutProfileInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   journeyLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutEntityInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutEntityInput
   outgoingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutFromInput
   incomingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutToInput
 }
@@ -524,6 +553,7 @@ export type CanonicalEntityUncheckedCreateWithoutProfileInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   journeyLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutEntityInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutEntityInput
   outgoingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutFromInput
   incomingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutToInput
 }
@@ -578,6 +608,7 @@ export type CanonicalEntityCreateWithoutOutgoingRelationshipsInput = {
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutEntitiesInput
   journeyLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutEntityInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutEntityInput
   incomingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutToInput
 }
 
@@ -591,6 +622,7 @@ export type CanonicalEntityUncheckedCreateWithoutOutgoingRelationshipsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   journeyLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutEntityInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutEntityInput
   incomingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutToInput
 }
 
@@ -609,6 +641,7 @@ export type CanonicalEntityCreateWithoutIncomingRelationshipsInput = {
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutEntitiesInput
   journeyLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutEntityInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutEntityInput
   outgoingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutFromInput
 }
 
@@ -622,6 +655,7 @@ export type CanonicalEntityUncheckedCreateWithoutIncomingRelationshipsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   journeyLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutEntityInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutEntityInput
   outgoingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutFromInput
 }
 
@@ -651,6 +685,7 @@ export type CanonicalEntityUpdateWithoutOutgoingRelationshipsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutEntitiesNestedInput
   journeyLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutEntityNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutEntityNestedInput
   incomingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutToNestedInput
 }
 
@@ -664,6 +699,7 @@ export type CanonicalEntityUncheckedUpdateWithoutOutgoingRelationshipsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeyLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutEntityNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutEntityNestedInput
   incomingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutToNestedInput
 }
 
@@ -688,6 +724,7 @@ export type CanonicalEntityUpdateWithoutIncomingRelationshipsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutEntitiesNestedInput
   journeyLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutEntityNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutEntityNestedInput
   outgoingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutFromNestedInput
 }
 
@@ -701,6 +738,7 @@ export type CanonicalEntityUncheckedUpdateWithoutIncomingRelationshipsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeyLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutEntityNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutEntityNestedInput
   outgoingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutFromNestedInput
 }
 
@@ -713,6 +751,7 @@ export type CanonicalEntityCreateWithoutJourneyLinksInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutEntitiesInput
+  documentIntakes?: Prisma.DocumentIntakeCreateNestedManyWithoutEntityInput
   outgoingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutFromInput
   incomingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutToInput
 }
@@ -726,6 +765,7 @@ export type CanonicalEntityUncheckedCreateWithoutJourneyLinksInput = {
   dataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  documentIntakes?: Prisma.DocumentIntakeUncheckedCreateNestedManyWithoutEntityInput
   outgoingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutFromInput
   incomingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutToInput
 }
@@ -755,6 +795,7 @@ export type CanonicalEntityUpdateWithoutJourneyLinksInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutEntitiesNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutEntityNestedInput
   outgoingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutFromNestedInput
   incomingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutToNestedInput
 }
@@ -768,6 +809,79 @@ export type CanonicalEntityUncheckedUpdateWithoutJourneyLinksInput = {
   dataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutEntityNestedInput
+  outgoingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutFromNestedInput
+  incomingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutToNestedInput
+}
+
+export type CanonicalEntityCreateWithoutDocumentIntakesInput = {
+  id?: string
+  type: $Enums.CanonicalEntityType
+  displayName: string
+  externalKey?: string | null
+  dataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutEntitiesInput
+  journeyLinks?: Prisma.JourneyEntityLinkCreateNestedManyWithoutEntityInput
+  outgoingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutFromInput
+  incomingRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutToInput
+}
+
+export type CanonicalEntityUncheckedCreateWithoutDocumentIntakesInput = {
+  id?: string
+  profileId: string
+  type: $Enums.CanonicalEntityType
+  displayName: string
+  externalKey?: string | null
+  dataJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  journeyLinks?: Prisma.JourneyEntityLinkUncheckedCreateNestedManyWithoutEntityInput
+  outgoingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutFromInput
+  incomingRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutToInput
+}
+
+export type CanonicalEntityCreateOrConnectWithoutDocumentIntakesInput = {
+  where: Prisma.CanonicalEntityWhereUniqueInput
+  create: Prisma.XOR<Prisma.CanonicalEntityCreateWithoutDocumentIntakesInput, Prisma.CanonicalEntityUncheckedCreateWithoutDocumentIntakesInput>
+}
+
+export type CanonicalEntityUpsertWithoutDocumentIntakesInput = {
+  update: Prisma.XOR<Prisma.CanonicalEntityUpdateWithoutDocumentIntakesInput, Prisma.CanonicalEntityUncheckedUpdateWithoutDocumentIntakesInput>
+  create: Prisma.XOR<Prisma.CanonicalEntityCreateWithoutDocumentIntakesInput, Prisma.CanonicalEntityUncheckedCreateWithoutDocumentIntakesInput>
+  where?: Prisma.CanonicalEntityWhereInput
+}
+
+export type CanonicalEntityUpdateToOneWithWhereWithoutDocumentIntakesInput = {
+  where?: Prisma.CanonicalEntityWhereInput
+  data: Prisma.XOR<Prisma.CanonicalEntityUpdateWithoutDocumentIntakesInput, Prisma.CanonicalEntityUncheckedUpdateWithoutDocumentIntakesInput>
+}
+
+export type CanonicalEntityUpdateWithoutDocumentIntakesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumCanonicalEntityTypeFieldUpdateOperationsInput | $Enums.CanonicalEntityType
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  externalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutEntitiesNestedInput
+  journeyLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutEntityNestedInput
+  outgoingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutFromNestedInput
+  incomingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutToNestedInput
+}
+
+export type CanonicalEntityUncheckedUpdateWithoutDocumentIntakesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumCanonicalEntityTypeFieldUpdateOperationsInput | $Enums.CanonicalEntityType
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  externalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dataJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  journeyLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutEntityNestedInput
   outgoingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutFromNestedInput
   incomingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutToNestedInput
 }
@@ -791,6 +905,7 @@ export type CanonicalEntityUpdateWithoutProfileInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeyLinks?: Prisma.JourneyEntityLinkUpdateManyWithoutEntityNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUpdateManyWithoutEntityNestedInput
   outgoingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutFromNestedInput
   incomingRelationships?: Prisma.EntityRelationshipUpdateManyWithoutToNestedInput
 }
@@ -804,6 +919,7 @@ export type CanonicalEntityUncheckedUpdateWithoutProfileInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   journeyLinks?: Prisma.JourneyEntityLinkUncheckedUpdateManyWithoutEntityNestedInput
+  documentIntakes?: Prisma.DocumentIntakeUncheckedUpdateManyWithoutEntityNestedInput
   outgoingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutFromNestedInput
   incomingRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutToNestedInput
 }
@@ -825,12 +941,14 @@ export type CanonicalEntityUncheckedUpdateManyWithoutProfileInput = {
 
 export type CanonicalEntityCountOutputType = {
   journeyLinks: number
+  documentIntakes: number
   outgoingRelationships: number
   incomingRelationships: number
 }
 
 export type CanonicalEntityCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   journeyLinks?: boolean | CanonicalEntityCountOutputTypeCountJourneyLinksArgs
+  documentIntakes?: boolean | CanonicalEntityCountOutputTypeCountDocumentIntakesArgs
   outgoingRelationships?: boolean | CanonicalEntityCountOutputTypeCountOutgoingRelationshipsArgs
   incomingRelationships?: boolean | CanonicalEntityCountOutputTypeCountIncomingRelationshipsArgs
 }
@@ -850,6 +968,13 @@ export type CanonicalEntityCountOutputTypeDefaultArgs<ExtArgs extends runtime.Ty
  */
 export type CanonicalEntityCountOutputTypeCountJourneyLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.JourneyEntityLinkWhereInput
+}
+
+/**
+ * CanonicalEntityCountOutputType without action
+ */
+export type CanonicalEntityCountOutputTypeCountDocumentIntakesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentIntakeWhereInput
 }
 
 /**
@@ -878,6 +1003,7 @@ export type CanonicalEntitySelect<ExtArgs extends runtime.Types.Extensions.Inter
   updatedAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   journeyLinks?: boolean | Prisma.CanonicalEntity$journeyLinksArgs<ExtArgs>
+  documentIntakes?: boolean | Prisma.CanonicalEntity$documentIntakesArgs<ExtArgs>
   outgoingRelationships?: boolean | Prisma.CanonicalEntity$outgoingRelationshipsArgs<ExtArgs>
   incomingRelationships?: boolean | Prisma.CanonicalEntity$incomingRelationshipsArgs<ExtArgs>
   _count?: boolean | Prisma.CanonicalEntityCountOutputTypeDefaultArgs<ExtArgs>
@@ -922,6 +1048,7 @@ export type CanonicalEntityOmit<ExtArgs extends runtime.Types.Extensions.Interna
 export type CanonicalEntityInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   journeyLinks?: boolean | Prisma.CanonicalEntity$journeyLinksArgs<ExtArgs>
+  documentIntakes?: boolean | Prisma.CanonicalEntity$documentIntakesArgs<ExtArgs>
   outgoingRelationships?: boolean | Prisma.CanonicalEntity$outgoingRelationshipsArgs<ExtArgs>
   incomingRelationships?: boolean | Prisma.CanonicalEntity$incomingRelationshipsArgs<ExtArgs>
   _count?: boolean | Prisma.CanonicalEntityCountOutputTypeDefaultArgs<ExtArgs>
@@ -938,6 +1065,7 @@ export type $CanonicalEntityPayload<ExtArgs extends runtime.Types.Extensions.Int
   objects: {
     profile: Prisma.$UserProfilePayload<ExtArgs>
     journeyLinks: Prisma.$JourneyEntityLinkPayload<ExtArgs>[]
+    documentIntakes: Prisma.$DocumentIntakePayload<ExtArgs>[]
     outgoingRelationships: Prisma.$EntityRelationshipPayload<ExtArgs>[]
     incomingRelationships: Prisma.$EntityRelationshipPayload<ExtArgs>[]
   }
@@ -1346,6 +1474,7 @@ export interface Prisma__CanonicalEntityClient<T, Null = never, ExtArgs extends 
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profile<T extends Prisma.UserProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   journeyLinks<T extends Prisma.CanonicalEntity$journeyLinksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CanonicalEntity$journeyLinksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JourneyEntityLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  documentIntakes<T extends Prisma.CanonicalEntity$documentIntakesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CanonicalEntity$documentIntakesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentIntakePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   outgoingRelationships<T extends Prisma.CanonicalEntity$outgoingRelationshipsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CanonicalEntity$outgoingRelationshipsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EntityRelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   incomingRelationships<T extends Prisma.CanonicalEntity$incomingRelationshipsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CanonicalEntity$incomingRelationshipsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EntityRelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1807,6 +1936,30 @@ export type CanonicalEntity$journeyLinksArgs<ExtArgs extends runtime.Types.Exten
   take?: number
   skip?: number
   distinct?: Prisma.JourneyEntityLinkScalarFieldEnum | Prisma.JourneyEntityLinkScalarFieldEnum[]
+}
+
+/**
+ * CanonicalEntity.documentIntakes
+ */
+export type CanonicalEntity$documentIntakesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentIntake
+   */
+  select?: Prisma.DocumentIntakeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentIntake
+   */
+  omit?: Prisma.DocumentIntakeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentIntakeInclude<ExtArgs> | null
+  where?: Prisma.DocumentIntakeWhereInput
+  orderBy?: Prisma.DocumentIntakeOrderByWithRelationInput | Prisma.DocumentIntakeOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentIntakeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentIntakeScalarFieldEnum | Prisma.DocumentIntakeScalarFieldEnum[]
 }
 
 /**

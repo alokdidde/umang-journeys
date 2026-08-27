@@ -34,6 +34,7 @@ export type HubDocumentInput = {
   analysis: { kind: DocumentKind; confidence: number; fields: Record<string, string> };
   proposal: { title: string };
   appliedJourneyId: string | null;
+  appliedEntityId?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -50,6 +51,7 @@ export type DocumentLibraryItem = {
   sourceLabel: string;
   journeyId: string | null;
   journeyName: string | null;
+  recordHref?: string | null;
   createdAt: string;
   href: string;
   downloadHref: string | null;
@@ -135,8 +137,9 @@ function evidenceTitle(type: string) {
   return type.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 }
 
-export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; documents: HubDocumentInput[] }): CitizenHubSnapshot {
+export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; documents: HubDocumentInput[]; entities?: Array<{ id: string; displayName: string }> }): CitizenHubSnapshot {
   const journeyById = new Map(input.journeys.map((journey) => [journey.id, journey]));
+  const entityById = new Map((input.entities ?? []).map((entity) => [entity.id, entity]));
   const documents: DocumentLibraryItem[] = [];
   const activity: ActivityItem[] = [];
   const tasks: CitizenTask[] = [];
@@ -144,6 +147,7 @@ export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; do
 
   for (const intake of input.documents) {
     const journey = intake.appliedJourneyId ? journeyById.get(intake.appliedJourneyId) : undefined;
+    const entity = intake.appliedEntityId ? entityById.get(intake.appliedEntityId) : undefined;
     if (journey) appliedEvidenceKeys.add(`${journey.id}:${intake.fileName}:${intake.size}`);
     documents.push({
       id: `intake:${intake.id}`,
@@ -156,7 +160,8 @@ export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; do
       status: intake.status === "applied" ? "applied" : intake.status === "rejected" ? "rejected" : "needs_review",
       sourceLabel: intake.source === "sample" ? "Synthetic sample" : "Uploaded by you",
       journeyId: journey?.id ?? null,
-      journeyName: journey?.subject.displayName ?? null,
+      journeyName: journey?.subject.displayName ?? entity?.displayName ?? null,
+      recordHref: journey ? `/journeys/${journey.id}` : entity ? `/life/${entity.id}` : null,
       createdAt: intake.createdAt,
       href: `/api/documents/${intake.id}`,
       downloadHref: `/api/documents/${intake.id}`,
@@ -168,7 +173,7 @@ export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; do
       detail: intake.source === "sample" ? "Synthetic document added for evaluation." : "Document uploaded to your account.",
       occurredAt: intake.createdAt,
       journeyId: journey?.id ?? null,
-      journeyName: journey?.subject.displayName ?? null,
+      journeyName: journey?.subject.displayName ?? entity?.displayName ?? null,
       href: "/documents",
     });
     if (intake.status !== "proposed") activity.push({
@@ -179,7 +184,7 @@ export function buildCitizenHubSnapshot(input: { journeys: HubJourneyInput[]; do
       occurredAt: intake.updatedAt,
       journeyId: journey?.id ?? null,
       journeyName: journey?.subject.displayName ?? null,
-      href: journey ? `/journeys/${journey.id}` : "/documents",
+      href: journey ? `/journeys/${journey.id}` : entity ? `/life/${entity.id}` : "/documents",
     });
   }
 
